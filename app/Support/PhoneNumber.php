@@ -2,7 +2,7 @@
 
 namespace App\Support;
 
-use  League\Csv\InvalidArgumentException;
+use InvalidArgumentException;
 
 class PhoneNumber
 {
@@ -14,11 +14,11 @@ class PhoneNumber
             throw new InvalidArgumentException('Nomor Whatsapp tidak valid');
         }
         if (str_starts_with($phone, '+62')) {
-            $phone = '62' . substr($phone, 3);
+            $phone = '62'.substr($phone, 3);
         } elseif (str_starts_with($phone, '08')) {
-            $phone = '62' . substr($phone, 1);
+            $phone = '62'.substr($phone, 1);
         } elseif (str_starts_with($phone, '8')) {
-            $phone = '62' . $phone;
+            $phone = '62'.$phone;
         }
 
         if (! preg_match('/^628[0-9]{8,13}$/', $phone)) {

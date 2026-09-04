@@ -2,9 +2,8 @@
 
 namespace App\Models;
 
-use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
-use League\Uri\Builder;
 
 class OtpChallenge extends Model
 {
@@ -24,13 +23,11 @@ class OtpChallenge extends Model
     protected function casts(): array
     {
         return [
-            'expires_at'=>'datetime',
-            'verified_at'=>'datetime',
-            'invalidated_at'=>'datetime',
-            'attempts'=>'integer',
-            'max_attempts'=>'integer',
-
-
+            'expires_at' => 'datetime',
+            'verified_at' => 'datetime',
+            'invalidated_at' => 'datetime',
+            'attempts' => 'integer',
+            'max_attempts' => 'integer',
         ];
 
     }
@@ -40,36 +37,35 @@ class OtpChallenge extends Model
         string $phone,
         string $purpose = 'customer_login',
 
-    ):Builder{
+    ): Builder {
         return $query
-            ->where('phone',$phone)
-            ->where('purpose',$purpose);
+            ->where('phone', $phone)
+            ->where('purpose', $purpose);
     }
 
-    public function isExpired():bool
+    public function isExpired(): bool
     {
-        return $this->expires_at instanceof Carbon
-                && $this->expires_at->isPast();
+        return $this->expires_at?->isPast() ?? true;
     }
 
-
-    public function isVerified():bool
+    public function isVerified(): bool
     {
-        return $this->isVerified !== null;
+        return $this->verified_at !== null;
 
     }
 
-    public function isInvalidated():bool
+    public function isInvalidated(): bool
     {
         return $this->invalidated_at !== null;
     }
 
-    public function hasExceededAttempts():bool
+    public function hasExceededAttempts(): bool
     {
         return $this->attempts >= $this->max_attempts;
 
     }
-    public function isUseable(): bool
+
+    public function isUsable(): bool
     {
         return ! $this->isExpired()
             && ! $this->isVerified()

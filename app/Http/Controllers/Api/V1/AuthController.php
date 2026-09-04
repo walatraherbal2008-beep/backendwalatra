@@ -13,9 +13,16 @@ class AuthController extends Controller
 {
     public function login(LoginRequest $request): JsonResponse
     {
-        $user = User::query()->where('email', $request->string('email'))->first();
+        $user = User::query()
+            ->where('email', $request->string('email')->toString())
+            ->where('status', 'active')
+            ->first();
 
-        if (! $user || ! Hash::check($request->string('password'), $user->password)) {
+        if (
+            ! $user
+            || $user->password === null
+            || ! Hash::check($request->string('password')->toString(), $user->password)
+        ) {
             return response()->json([
                 'success' => false,
                 'message' => 'Email atau password tidak valid.',

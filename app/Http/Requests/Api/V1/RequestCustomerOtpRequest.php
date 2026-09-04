@@ -2,8 +2,11 @@
 
 namespace App\Http\Requests\Api\V1;
 
+use App\Support\PhoneNumber;
+use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use InvalidArgumentException;
 
 class RequestCustomerOtpRequest extends FormRequest
 {
@@ -23,11 +26,18 @@ class RequestCustomerOtpRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'phone'=>[
-                'require',
+            'phone' => [
+                'required',
                 'string',
                 'max:20',
-            ]
+                function (string $attribute, mixed $value, Closure $fail): void {
+                    try {
+                        PhoneNumber::normalize((string) $value);
+                    } catch (InvalidArgumentException) {
+                        $fail('Format nomor WhatsApp tidak valid.');
+                    }
+                },
+            ],
         ];
     }
 }

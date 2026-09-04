@@ -34,5 +34,8 @@ return [
             'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
         ],
     ],
+    'otp' => [
+        'expose_code' => env('OTP_EXPOSE_CODE', false),
+    ],
 
 ];

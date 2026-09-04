@@ -48,6 +48,51 @@ class AuthTest extends TestCase
             ->assertJsonPath('success', false);
     }
 
+    public function test_invalid_customer_phone_returns_json_validation_error(): void
+    {
+        $this->postJson('/api/v1/auth/customer/request-otp', [
+            'phone' => '123',
+        ])->assertUnprocessable()
+            ->assertJsonValidationErrors(['phone'])
+            ->assertJsonPath('errors.phone.0', 'Format nomor WhatsApp tidak valid.');
+    }
+
+    public function test_customer_can_verify_otp_and_receive_a_token(): void
+    {
+        $user = User::factory()->create([
+            'phone' => '628123456789',
+            'user_type' => 'customer',
+            'status' => 'active',
+        ]);
+
+        config(['services.otp.expose_code' => true]);
+
+        $requestOtp = $this->postJson('/api/v1/auth/customer/request-otp', [
+            'phone' => '08123456789',
+        ])->assertOk();
+
+        $requestOtp->assertJsonStructure([
+            'data' => ['challenge_id', 'otp', 'expires_at'],
+        ]);
+
+        $data = $requestOtp->json('data');
+
+        $this->postJson('/api/v1/auth/customer/verify-otp', [
+            'phone' => '08123456789',
+            'challenge_id' => $data['challenge_id'],
+            'otp' => $data['otp'],
+            'device_name' => 'test-device',
+        ])->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.user.id', $user->id)
+            ->assertJsonPath('data.token_type', 'Bearer')
+            ->assertJsonStructure(['data' => ['token']]);
+
+        $this->assertDatabaseHas('otp_challenges', [
+            'id' => $data['challenge_id'],
+        ]);
+    }
+
     public function test_authenticated_user_can_view_profile_and_logout(): void
     {
         $user = User::factory()->create();
