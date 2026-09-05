@@ -27,6 +27,7 @@ class RequestCustomerOtpRequest extends FormRequest
     {
         return [
             'phone' => [
+                'bail',
                 'required',
                 'string',
                 'max:20',

@@ -31,11 +31,11 @@ class CustomerAuthController extends Controller
             ],
         ];
 
-        if (config('services.otp.expose_code')) {
+        if (app()->environment(['local', 'testing']) && config('services.otp.expose_code')) {
             $response['data']['otp'] = $result['plain_code'];
         }
 
-        return response()->json($response);
+        return response()->json($response)->header('Cache-Control', 'no-store, private');
     }
 
     public function verifyOtp(
@@ -57,10 +57,13 @@ class CustomerAuthController extends Controller
                     'id',
                     'name',
                     'phone',
+                    'profile_completed_at',
                 ]),
                 'token' => $result['token'],
                 'token_type' => 'Bearer',
+                'is_new_user' => $result['is_new_user'],
+                'requires_profile_completion' => $result['requires_profile_completion'],
             ],
-        ]);
+        ])->header('Cache-Control', 'no-store, private');
     }
 }

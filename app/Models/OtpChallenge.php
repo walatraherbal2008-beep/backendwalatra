@@ -45,7 +45,7 @@ class OtpChallenge extends Model
 
     public function isExpired(): bool
     {
-        return $this->expires_at?->isPast() ?? true;
+        return $this->expires_at?->lessThanOrEqualTo(now()) ?? true;
     }
 
     public function isVerified(): bool

@@ -8,7 +8,13 @@ class PhoneNumber
 {
     public static function normalize(string $phone): string
     {
-        $phone = preg_replace('/[^0-9+]/', '', trim($phone));
+        $phone = trim($phone);
+
+        if (! preg_match('/\A[0-9+() -]+\z/', $phone)) {
+            throw new InvalidArgumentException('Format nomor WhatsApp tidak valid.');
+        }
+
+        $phone = preg_replace('/[() -]/', '', $phone);
 
         if ($phone === null || $phone === '') {
             throw new InvalidArgumentException('Nomor Whatsapp tidak valid');

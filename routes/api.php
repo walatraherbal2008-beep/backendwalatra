@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\CustomerAuthController;
+use App\Http\Middleware\EnsureUserIsActive;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function (): void {
@@ -10,7 +11,10 @@ Route::prefix('v1')->group(function (): void {
 
     Route::middleware('auth:sanctum')->group(function (): void {
         Route::post('/auth/logout', [AuthController::class, 'logout']);
-        Route::get('/auth/me', [AuthController::class, 'me']);
+        Route::patch('/auth/customer/profile', [AuthController::class, 'updateCustomerProfile'])
+            ->middleware(EnsureUserIsActive::class);
+        Route::get('/auth/me', [AuthController::class, 'me'])
+            ->middleware(EnsureUserIsActive::class);
     });
     Route::post(
         '/auth/customer/request-otp',

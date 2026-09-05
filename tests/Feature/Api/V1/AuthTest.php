@@ -95,7 +95,7 @@ class AuthTest extends TestCase
 
     public function test_authenticated_user_can_view_profile_and_logout(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['status' => 'active']);
         Sanctum::actingAs($user, ['customer-api']);
 
         $this->getJson('/api/v1/auth/me')

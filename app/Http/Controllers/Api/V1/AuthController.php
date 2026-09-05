@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\LoginRequest;
+use App\Http\Requests\Api\V1\UpdateCustomerProfileRequest;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -30,7 +31,7 @@ class AuthController extends Controller
         }
 
         $token = $user->createToken(
-            $request->string('device_name'),
+            $request->string('device_name')->toString(),
             ['customer-api'],
         );
 
@@ -42,7 +43,7 @@ class AuthController extends Controller
                 'token' => $token->plainTextToken,
                 'token_type' => 'Bearer',
             ],
-        ]);
+        ])->header('Cache-Control', 'no-store, private');
     }
 
     public function logout(Request $request): JsonResponse
@@ -55,13 +56,44 @@ class AuthController extends Controller
         ]);
     }
 
+    public function updateCustomerProfile(UpdateCustomerProfileRequest $request): JsonResponse
+    {
+        $user = $request->user();
+        $user->forceFill([
+            'name' => $request->string('name')->trim()->toString(),
+            'profile_completed_at' => now(),
+        ])->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Profil berhasil dilengkapi.',
+            'data' => [
+                'user' => $user->only([
+                    'id',
+                    'name',
+                    'email',
+                    'phone',
+                    'profile_completed_at',
+                ]),
+                'requires_profile_completion' => false,
+            ],
+        ]);
+    }
+
     public function me(Request $request): JsonResponse
     {
         return response()->json([
             'success' => true,
             'message' => 'User aktif.',
             'data' => [
-                'user' => $request->user()->only(['id', 'name', 'email']),
+                'user' => $request->user()->only([
+                    'id',
+                    'name',
+                    'email',
+                    'phone',
+                    'profile_completed_at',
+                ]),
+                'requires_profile_completion' => $request->user()->profile_completed_at === null,
             ],
         ]);
     }
