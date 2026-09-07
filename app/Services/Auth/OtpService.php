@@ -9,6 +9,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
+use Spatie\Permission\Models\Role;
 
 class OtpService
 {
@@ -118,6 +119,11 @@ class OtpService
                     'profile_completed_at' => null,
                 ]);
                 $isNewUser = true;
+            }
+
+            if (! $user->hasRole('customer')) {
+                Role::findOrCreate('customer', 'web');
+                $user->assignRole('customer');
             }
 
             $challenge->forceFill([
