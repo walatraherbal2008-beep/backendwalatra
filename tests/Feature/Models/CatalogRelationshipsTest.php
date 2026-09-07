@@ -20,8 +20,7 @@ class CatalogRelationshipsTest extends TestCase
         $store = Store::factory()->create();
         $product = Product::factory()->create();
         $variant = ProductVariant::factory()->create(['product_id' => $product->id]);
-        $bundleProduct = Product::factory()->bundle()->create();
-        $bundle = ProductBundle::factory()->create(['product_id' => $bundleProduct->id]);
+        $bundle = ProductBundle::factory()->create();
         $bundleItem = ProductBundleItem::factory()->create([
             'product_bundle_id' => $bundle->id,
             'product_variant_id' => $variant->id,
@@ -35,7 +34,6 @@ class CatalogRelationshipsTest extends TestCase
         $this->assertTrue($store->listings->contains($listing));
         $this->assertTrue($store->products->contains($product));
         $this->assertTrue($product->variants->contains($variant));
-        $this->assertTrue($bundleProduct->bundle->is($bundle));
         $this->assertTrue($bundle->items->contains($bundleItem));
         $this->assertTrue($bundleItem->variant->is($variant));
     }

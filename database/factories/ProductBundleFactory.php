@@ -2,9 +2,9 @@
 
 namespace Database\Factories;
 
-use App\Models\Product;
 use App\Models\ProductBundle;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Str;
 
 /** @extends Factory<ProductBundle> */
 class ProductBundleFactory extends Factory
@@ -13,8 +13,14 @@ class ProductBundleFactory extends Factory
 
     public function definition(): array
     {
+        $name = 'Paket Herbal '.fake()->unique()->word();
+
         return [
-            'product_id' => Product::factory()->bundle(),
+            'name' => $name,
+            'slug' => Str::slug($name).'-'.fake()->unique()->numerify('###'),
+            'code' => 'BND-'.fake()->unique()->numerify('########'),
+            'description' => fake()->sentence(),
+            'price' => fake()->randomFloat(2, 50000, 500000),
             'status' => 'active',
         ];
     }

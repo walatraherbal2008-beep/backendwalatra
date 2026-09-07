@@ -20,16 +20,7 @@ class ProductFactory extends Factory
             'slug' => Str::slug($name).'-'.fake()->unique()->numerify('###'),
             'product_code' => 'PROD-'.fake()->unique()->numerify('#####'),
             'bpom_number' => 'TR'.fake()->unique()->numerify('###########'),
-            'description' => fake()->sentence(),
-            'product_type' => 'simple',
             'status' => 'active',
         ];
-    }
-
-    public function bundle(): static
-    {
-        return $this->state(fn (): array => [
-            'product_type' => 'bundle',
-        ]);
     }
 }

@@ -13,6 +13,7 @@ class StoreProductListing extends Model
     protected $fillable = [
         'store_id',
         'product_id',
+        'description',
         'status',
         'sort_order',
         'published_at',

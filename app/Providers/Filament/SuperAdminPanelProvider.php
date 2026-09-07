@@ -34,6 +34,7 @@ class SuperAdminPanelProvider extends PanelProvider
             ])
             ->navigationGroups([
                 'Manajemen Marketplace',
+                'Katalog',
             ])
             ->sidebarCollapsibleOnDesktop()
             ->sidebarFullyCollapsibleOnDesktop()
