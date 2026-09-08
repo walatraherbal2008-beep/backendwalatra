@@ -4,7 +4,6 @@ namespace App\Filament\Resources\ProductBundles\Schemas;
 
 use App\Models\ProductVariant;
 use Filament\Forms\Components\Repeater;
-use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;
@@ -34,16 +33,6 @@ class ProductBundleForm
                     ])
                     ->default('active')
                     ->required(),
-                RichEditor::make('description')
-                    ->label('Deskripsi bundle')
-                    ->toolbarButtons([
-                        ['bold', 'italic', 'underline'],
-                        ['bulletList', 'orderedList'],
-                        ['undo', 'redo'],
-                    ])
-                    ->fileAttachments(false)
-                    ->maxLength(5000)
-                    ->columnSpanFull(),
                 Repeater::make('items')
                     ->label('Komponen bundle')
                     ->relationship()
@@ -74,6 +63,7 @@ class ProductBundleForm
                     ->columns(2)
                     ->addActionLabel('Tambah Komponen')
                     ->minItems(1)
+                    ->required()
                     ->columnSpanFull(),
             ]);
     }

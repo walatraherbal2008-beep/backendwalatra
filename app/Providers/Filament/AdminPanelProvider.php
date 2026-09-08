@@ -29,6 +29,11 @@ class AdminPanelProvider extends PanelProvider
             ->colors([
                 'primary' => Color::Amber,
             ])
+            ->navigationGroups([
+                'Toko Saya',
+            ])
+            ->sidebarCollapsibleOnDesktop()
+            ->discoverResources(in: app_path('Filament/Admin/Resources'), for: 'App\\Filament\\Admin\\Resources')
             ->pages([
                 Dashboard::class,
             ])

@@ -70,7 +70,9 @@ class User extends Authenticatable implements FilamentUser
 
         return match ($panel->getId()) {
             'superadmin' => $this->hasRole('super_admin'),
-            'admin' => $this->hasRole('store_admin') && $this->email_verified_at !== null,
+            'admin' => $this->hasRole('store_admin')
+                && $this->email_verified_at !== null
+                && $this->store()->where('status', 'active')->exists(),
             default => false,
         };
     }

@@ -91,6 +91,11 @@ class Store extends Model implements HasMedia
         return $this->hasMany(StoreProductListing::class);
     }
 
+    public function bundleListings(): HasMany
+    {
+        return $this->hasMany(StoreBundleListing::class);
+    }
+
     public function products(): BelongsToMany
     {
         return $this->belongsToMany(Product::class, 'store_product_listings')

@@ -19,7 +19,6 @@ class ProductBundleFactory extends Factory
             'name' => $name,
             'slug' => Str::slug($name).'-'.fake()->unique()->numerify('###'),
             'code' => 'BND-'.fake()->unique()->numerify('########'),
-            'description' => fake()->sentence(),
             'price' => fake()->randomFloat(2, 50000, 500000),
             'status' => 'active',
         ];

@@ -50,7 +50,6 @@ class ProductBundle extends Model
         'name',
         'slug',
         'code',
-        'description',
         'price',
         'status',
     ];
@@ -65,5 +64,10 @@ class ProductBundle extends Model
     public function items(): HasMany
     {
         return $this->hasMany(ProductBundleItem::class);
+    }
+
+    public function storeListings(): HasMany
+    {
+        return $this->hasMany(StoreBundleListing::class, 'product_bundle_id');
     }
 }
