@@ -16,5 +16,6 @@ class DatabaseSeeder extends Seeder
     {
         $this->call(SuperAdminSeeder::class);
         $this->call(WalatraCatalogSeeder::class);
+        $this->call(CategorySeeder::class);
     }
 }

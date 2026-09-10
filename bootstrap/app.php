@@ -1,9 +1,12 @@
 <?php
 
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -21,5 +24,41 @@ return Application::configure(basePath: dirname(__DIR__))
             Throwable $exception
         ): bool {
             return $request->is('api/*') || $request->expectsJson();
+        });
+
+        $exceptions->render(function (ValidationException $exception, Request $request) {
+            if (! $request->is('api/*')) {
+                return null;
+            }
+
+            $errors = $exception->errors();
+
+            return response()->json([
+                'success' => false,
+                'message' => collect($errors)->flatten()->first() ?? 'Data yang dikirim tidak valid.',
+                'errors' => $errors,
+            ], 422);
+        });
+
+        $exceptions->render(function (AuthenticationException $exception, Request $request) {
+            if (! $request->is('api/*')) {
+                return null;
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthenticated.',
+            ], 401);
+        });
+
+        $exceptions->render(function (HttpExceptionInterface $exception, Request $request) {
+            if (! $request->is('api/*') || $exception->getStatusCode() !== 404) {
+                return null;
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => $exception->getMessage() ?: 'Data tidak ditemukan.',
+            ], 404);
         });
     })->create();

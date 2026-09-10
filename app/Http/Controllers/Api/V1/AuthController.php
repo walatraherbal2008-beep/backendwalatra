@@ -68,12 +68,13 @@ class AuthController extends Controller
             'success' => true,
             'message' => 'Profil berhasil dilengkapi.',
             'data' => [
-                'user' => $user->only([
+                'user' => array_merge($user->only([
                     'id',
                     'name',
                     'email',
                     'phone',
-                    'profile_completed_at',
+                ]), [
+                    'profile_completed_at' => $user->profile_completed_at?->toIso8601String(),
                 ]),
                 'requires_profile_completion' => false,
             ],
@@ -86,12 +87,13 @@ class AuthController extends Controller
             'success' => true,
             'message' => 'User aktif.',
             'data' => [
-                'user' => $request->user()->only([
+                'user' => array_merge($request->user()->only([
                     'id',
                     'name',
                     'email',
                     'phone',
-                    'profile_completed_at',
+                ]), [
+                    'profile_completed_at' => $request->user()->profile_completed_at?->toIso8601String(),
                 ]),
                 'requires_profile_completion' => $request->user()->profile_completed_at === null,
             ],

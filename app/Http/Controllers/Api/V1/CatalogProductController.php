@@ -20,6 +20,7 @@ class CatalogProductController extends Controller
     {
         $query = $this->activeListingQuery();
         $search = trim($request->string('q')->toString());
+        $sort = $request->string('sort', 'relevance')->toString();
 
         $this->applySearch($query, $search);
 
@@ -60,7 +61,11 @@ class CatalogProductController extends Controller
                 );
             });
 
-        $this->applySort($query, $request->string('sort', 'latest')->toString());
+        if ($sort === 'relevance') {
+            $this->applyMarketplaceRanking($query, $search);
+        } else {
+            $this->applySort($query, $sort);
+        }
 
         $perPage = min(max($request->integer('per_page', 15), 1), 50);
 
@@ -76,6 +81,7 @@ class CatalogProductController extends Controller
         $product = Product::query()
             ->where('slug', $slug)
             ->where('status', 'active')
+            ->whereHas('variants', fn (Builder $query): Builder => $query->where('status', 'active'))
             ->with([
                 'variants' => fn ($query) => $query->where('status', 'active')->orderBy('id'),
                 'categories' => fn ($query) => $query->where('status', 'active')->orderBy('sort_order'),
@@ -99,6 +105,7 @@ class CatalogProductController extends Controller
         return StoreProductListing::query()
             ->where('store_product_listings.status', 'active')
             ->whereHas('product', fn (Builder $query): Builder => $query->where('status', 'active'))
+            ->whereHas('product.variants', fn (Builder $query): Builder => $query->where('status', 'active'))
             ->whereHas('store', fn (Builder $query): Builder => $query->where('status', 'active'))
             ->with([
                 'product.variants' => fn ($query) => $query->where('status', 'active')->orderBy('id'),
@@ -171,8 +178,72 @@ class CatalogProductController extends Controller
                     WHERE search_variants_score.product_id = search_products.id), 0) * 20
                 ) AS search_relevance',
                 [$search, $prefix, $like, $search, $search, $search, $search],
+            );
+    }
+
+    private function applyMarketplaceRanking(Builder $query, string $search): void
+    {
+        if (DB::connection()->getDriverName() !== 'pgsql') {
+            $query->latest('store_product_listings.created_at');
+
+            return;
+        }
+
+        $productTable = $search === '' ? 'ranking_products' : 'search_products';
+
+        if ($search === '') {
+            $query
+                ->join('products as ranking_products', 'ranking_products.id', '=', 'store_product_listings.product_id')
+                ->select('store_product_listings.*');
+        }
+
+        $searchScore = $search === '' ? '100' : 'LEAST(COALESCE((CASE
+            WHEN LOWER(search_products.name) = LOWER(?) THEN 100
+            WHEN LOWER(search_products.name) LIKE LOWER(?) THEN 80
+            WHEN LOWER(search_products.name) LIKE LOWER(?) THEN 50
+            WHEN LOWER(search_products.product_code) = LOWER(?) THEN 70
+            ELSE 0
+        END
+        + (similarity(search_products.name, ?) * 30)
+        + (similarity(search_stores.name, ?) * 10)
+        + COALESCE((SELECT MAX(similarity(search_variants_score.sku, ?))
+            FROM product_variants as search_variants_score
+            WHERE search_variants_score.product_id = search_products.id), 0) * 20), 0), 100)';
+
+        $qualityScore = "(
+            CASE WHEN EXISTS (
+                SELECT 1 FROM media
+                WHERE media.model_type = 'App\\Models\\StoreProductListing'
+                  AND media.model_id = store_product_listings.id
+                  AND media.collection_name = 'images'
+            ) THEN 25 ELSE 0 END
+            + CASE WHEN NULLIF(BTRIM(COALESCE(store_product_listings.description, '')), '') IS NOT NULL THEN 20 ELSE 0 END
+            + CASE WHEN EXISTS (
+                SELECT 1 FROM category_product
+                WHERE category_product.product_id = {$productTable}.id
+            ) THEN 15 ELSE 0 END
+            + CASE WHEN NULLIF(BTRIM(COALESCE({$productTable}.bpom_number, '')), '') IS NOT NULL THEN 15 ELSE 0 END
+            + 25
+        )";
+
+        $freshnessScore = "(
+            CASE
+                WHEN COALESCE(store_product_listings.published_at, store_product_listings.created_at) >= NOW() - INTERVAL '7 days' THEN 100
+                WHEN COALESCE(store_product_listings.published_at, store_product_listings.created_at) >= NOW() - INTERVAL '30 days' THEN 60
+                ELSE 20
+            END
+        )";
+
+        $query
+            ->selectRaw("{$qualityScore} AS listing_quality_score")
+            ->selectRaw("{$freshnessScore} AS freshness_score")
+            ->selectRaw(
+                "(({$searchScore} * 0.70) + ({$qualityScore} * 0.20) + ({$freshnessScore} * 0.10)) AS marketplace_score",
+                $search === '' ? [] : [$search, "{$search}%", "%{$search}%", $search, $search, $search, $search],
             )
-            ->orderByDesc('search_relevance');
+            ->orderByDesc('marketplace_score')
+            ->orderBy('store_product_listings.sort_order')
+            ->latest('store_product_listings.created_at');
     }
 
     private function applySort(Builder $query, string $sort): void

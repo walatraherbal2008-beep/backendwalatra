@@ -16,6 +16,12 @@ class ProductForm
                     ->label('Nama produk')
                     ->required()
                     ->maxLength(255),
+                TextInput::make('product_code')
+                    ->label('Kode produk')
+                    ->required()
+                    ->maxLength(100)
+                    ->unique(ignoreRecord: true)
+                    ->helperText('Kode produk dikelola manual oleh Superadmin.'),
                 TextInput::make('bpom_number')
                     ->label('Nomor BPOM')
                     ->maxLength(100),

@@ -2,14 +2,16 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
 class ProductBundle extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected static function booted(): void
     {
@@ -69,5 +71,31 @@ class ProductBundle extends Model
     public function storeListings(): HasMany
     {
         return $this->hasMany(StoreBundleListing::class, 'product_bundle_id');
+    }
+
+    public function isPurchasable(): bool
+    {
+        return $this->items->isNotEmpty()
+            && $this->items->every(fn (ProductBundleItem $item): bool => $item->variant?->status === 'active'
+                && $item->variant->product?->status === 'active'
+            );
+    }
+
+    public function scopePurchasable(Builder $query): Builder
+    {
+        return $query
+            ->whereHas('items')
+            ->whereDoesntHave('items', function (Builder $itemQuery): void {
+                $itemQuery
+                    ->whereDoesntHave('variant')
+                    ->orWhereHas('variant', function (Builder $variantQuery): void {
+                        $variantQuery->where(function (Builder $query): void {
+                            $query
+                                ->where('status', '!=', 'active')
+                                ->orWhereDoesntHave('product')
+                                ->orWhereHas('product', fn (Builder $productQuery): Builder => $productQuery->where('status', '!=', 'active'));
+                        });
+                    });
+            });
     }
 }

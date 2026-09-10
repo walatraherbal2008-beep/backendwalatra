@@ -32,6 +32,7 @@ class CatalogProductTest extends TestCase
         StoreProductListing::factory()->create([
             'product_id' => $activeProduct->id,
             'store_id' => $inactiveStore->id,
+            'status' => 'inactive',
         ]);
 
         $response = $this->getJson('/api/v1/catalog/products?q=Keloreena');
@@ -104,6 +105,31 @@ class CatalogProductTest extends TestCase
             ->assertJsonPath('data.0.product.name', 'Keloreena Kombinasi Filter');
     }
 
+    public function test_catalog_accepts_relevance_sort_as_default_marketplace_sort(): void
+    {
+        $product = Product::factory()->create(['name' => 'Produk Relevansi']);
+        ProductVariant::factory()->create(['product_id' => $product->id]);
+        $store = Store::factory()->create();
+
+        StoreProductListing::factory()->create([
+            'product_id' => $product->id,
+            'store_id' => $store->id,
+            'description' => 'Deskripsi listing yang lengkap.',
+        ]);
+
+        $this->getJson('/api/v1/catalog/products?sort=relevance')
+            ->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('data.0.product.name', 'Produk Relevansi');
+    }
+
+    public function test_catalog_rejects_unknown_marketplace_sort(): void
+    {
+        $this->getJson('/api/v1/catalog/products?sort=popular')
+            ->assertStatus(422)
+            ->assertJsonPath('errors.sort.0', 'Urutan produk tidak valid.');
+    }
+
     public function test_catalog_can_filter_by_master_category(): void
     {
         $category = Category::factory()->create(['name' => 'Pencernaan', 'slug' => 'pencernaan']);
@@ -119,5 +145,22 @@ class CatalogProductTest extends TestCase
             ->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.product.name', 'Produk Pencernaan')
             ->assertJsonPath('data.0.product.categories.0.slug', 'pencernaan');
+    }
+
+    public function test_soft_deleted_product_is_not_visible_in_catalog(): void
+    {
+        $product = Product::factory()->create();
+        ProductVariant::factory()->create(['product_id' => $product->id]);
+        StoreProductListing::factory()->create(['product_id' => $product->id]);
+
+        $product->delete();
+
+        $this->getJson('/api/v1/catalog/products')
+            ->assertOk()
+            ->assertJsonCount(0, 'data');
+
+        $this->getJson('/api/v1/catalog/products/'.$product->slug)
+            ->assertNotFound()
+            ->assertJsonPath('success', false);
     }
 }

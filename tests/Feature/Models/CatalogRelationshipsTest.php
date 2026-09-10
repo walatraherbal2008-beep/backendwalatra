@@ -61,7 +61,7 @@ class CatalogRelationshipsTest extends TestCase
     {
         Storage::fake('public');
 
-        $listing = StoreProductListing::factory()->create();
+        $listing = StoreProductListing::factory()->create(['status' => 'draft', 'published_at' => null]);
 
         $listing
             ->addMedia(UploadedFile::fake()->image('product-one.jpg'))
@@ -87,11 +87,26 @@ class CatalogRelationshipsTest extends TestCase
         $this->assertTrue($immunity->fresh()->products->contains($product));
     }
 
+    public function test_variant_sku_is_generated_automatically(): void
+    {
+        $product = Product::factory()->create([
+            'product_code' => 'PROD-TEST-SKU',
+        ]);
+
+        $variant = ProductVariant::factory()->create([
+            'product_id' => $product->id,
+            'name' => '50 Kapsul',
+            'sku' => null,
+        ]);
+
+        $this->assertSame('SKU-WAL-PROD-TEST-SKU-50-KAPSUL', $variant->sku);
+    }
+
     public function test_store_bundle_listing_supports_multiple_store_images(): void
     {
         Storage::fake('public');
 
-        $listing = StoreBundleListing::factory()->create();
+        $listing = StoreBundleListing::factory()->create(['status' => 'draft', 'published_at' => null]);
 
         $listing
             ->addMedia(UploadedFile::fake()->image('bundle-one.jpg'))

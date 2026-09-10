@@ -29,10 +29,10 @@ class VariantsRelationManager extends RelationManager
                     ->required()
                     ->maxLength(255),
                 TextInput::make('sku')
-                    ->label('SKU')
-                    ->required()
-                    ->maxLength(100)
-                    ->unique(ignoreRecord: true),
+                    ->label('SKU otomatis')
+                    ->disabled()
+                    ->dehydrated(false)
+                    ->helperText('SKU dibuat otomatis saat varian disimpan.'),
                 TextInput::make('price')
                     ->label('Harga dasar')
                     ->numeric()

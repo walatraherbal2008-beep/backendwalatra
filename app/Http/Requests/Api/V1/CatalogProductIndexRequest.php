@@ -26,7 +26,7 @@ class CatalogProductIndexRequest extends FormRequest
             'sort' => [
                 'nullable',
                 'string',
-                Rule::in(['latest', 'name_asc', 'name_desc', 'price_asc', 'price_desc']),
+                Rule::in(['relevance', 'latest', 'name_asc', 'name_desc', 'price_asc', 'price_desc']),
             ],
             'per_page' => ['nullable', 'integer', 'min:1', 'max:50'],
             'page' => ['nullable', 'integer', 'min:1'],

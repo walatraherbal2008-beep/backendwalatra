@@ -5,13 +5,40 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Validation\ValidationException;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class StoreBundleListing extends Model implements HasMedia
 {
-    use HasFactory, InteractsWithMedia;
+    use HasFactory, InteractsWithMedia, SoftDeletes;
+
+    protected static function booted(): void
+    {
+        static::saving(function (StoreBundleListing $listing): void {
+            if ($listing->status !== 'active') {
+                return;
+            }
+
+            $bundle = $listing->bundle()->with('items.variant.product')->first();
+            $store = $listing->store()->first();
+            $itemsAreAvailable = $bundle
+                && $bundle->items->isNotEmpty()
+                && $bundle->items->every(fn ($item): bool => $item->variant?->status === 'active'
+                    && $item->variant->product?->status === 'active'
+                );
+
+            if (! $bundle || $bundle->status !== 'active' || ! $itemsAreAvailable || ! $store || $store->status !== 'active') {
+                throw ValidationException::withMessages([
+                    'status' => 'Listing bundle hanya dapat diaktifkan jika bundle, seluruh komponen, dan toko aktif.',
+                ]);
+            }
+
+            $listing->published_at ??= now();
+        });
+    }
 
     protected $fillable = [
         'store_id',

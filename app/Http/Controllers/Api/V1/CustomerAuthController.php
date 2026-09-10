@@ -27,7 +27,7 @@ class CustomerAuthController extends Controller
             'message' => 'Jika nomor dapat menerima WhatsApp, OTP akan dikirim.',
             'data' => [
                 'challenge_id' => $result['challenge']->id,
-                'expires_at' => $result['challenge']->expires_at?->toISOString(),
+                'expires_at' => $result['challenge']->expires_at?->toIso8601String(),
             ],
         ];
 
@@ -53,11 +53,12 @@ class CustomerAuthController extends Controller
             'success' => true,
             'message' => 'Login berhasil.',
             'data' => [
-                'user' => $result['user']->only([
+                'user' => array_merge($result['user']->only([
                     'id',
                     'name',
                     'phone',
-                    'profile_completed_at',
+                ]), [
+                    'profile_completed_at' => $result['user']->profile_completed_at?->toIso8601String(),
                 ]),
                 'token' => $result['token'],
                 'token_type' => 'Bearer',
