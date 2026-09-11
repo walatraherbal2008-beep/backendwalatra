@@ -2,6 +2,7 @@
 
 namespace App\Services\Auth;
 
+use App\Jobs\SendCustomerOtpJob;
 use App\Models\OtpChallenge;
 use App\Models\User;
 use App\Support\PhoneNumber;
@@ -44,6 +45,22 @@ class OtpService
                 'user_agent' => $userAgent,
             ]);
         });
+
+        if (config('queue.default') === 'sync') {
+            SendCustomerOtpJob::dispatchSync(
+                challengeId: $challenge->id,
+                phone: $phone,
+                code: $plainCode,
+            );
+        } else {
+            SendCustomerOtpJob::dispatch(
+                challengeId: $challenge->id,
+                phone: $phone,
+                code: $plainCode,
+            )->onQueue('otp');
+        }
+
+        $challenge->refresh();
 
         return [
             'challenge' => $challenge,

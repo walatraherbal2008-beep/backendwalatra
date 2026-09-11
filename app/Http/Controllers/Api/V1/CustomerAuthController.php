@@ -24,10 +24,15 @@ class CustomerAuthController extends Controller
 
         $response = [
             'success' => true,
-            'message' => 'Jika nomor dapat menerima WhatsApp, OTP akan dikirim.',
+            'message' => in_array($result['challenge']->delivery_status, ['pending', 'unknown'], true)
+                ? 'OTP sedang diproses. Silakan periksa WhatsApp Anda.'
+                : ($result['challenge']->delivery_status === 'failed'
+                    ? 'OTP gagal dikirim. Silakan coba lagi.'
+                    : 'Jika nomor dapat menerima WhatsApp, OTP akan dikirim.'),
             'data' => [
                 'challenge_id' => $result['challenge']->id,
                 'expires_at' => $result['challenge']->expires_at?->toIso8601String(),
+                'delivery_status' => $result['challenge']->delivery_status,
             ],
         ];
 

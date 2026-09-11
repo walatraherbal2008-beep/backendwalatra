@@ -37,5 +37,12 @@ return [
     'otp' => [
         'expose_code' => env('OTP_EXPOSE_CODE', false),
     ],
+    'maxchat' => [
+        'enabled' => env('MAXCHAT_ENABLED', false),
+        'base_url' => env('MAXCHAT_BASE_URL', 'https://core.maxchat.id/walatra-herbal'),
+        'api_token' => env('MAXCHAT_API_TOKEN'),
+        'timeout' => (int) env('MAXCHAT_TIMEOUT', 30),
+        'connect_timeout' => (int) env('MAXCHAT_CONNECT_TIMEOUT', 5),
+    ],
 
 ];

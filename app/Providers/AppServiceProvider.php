@@ -42,7 +42,7 @@ class AppServiceProvider extends ServiceProvider
 
             return [
                 // perMinute(maximum requests, duration in minutes).
-                Limit::perMinute(10, 1)
+                Limit::perMinute(1, 1)
                     ->by('phone:'.$phoneKey)
                     ->response($throttledResponse),
                 Limit::perMinute(5, 15)

@@ -1,5 +1,6 @@
 <?php
 
+use App\Exceptions\OtpDeliveryException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -49,6 +50,20 @@ return Application::configure(basePath: dirname(__DIR__))
                 'success' => false,
                 'message' => 'Unauthenticated.',
             ], 401);
+        });
+
+        $exceptions->render(function (OtpDeliveryException $exception, Request $request) {
+            if (! $request->is('api/*')) {
+                return null;
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Layanan WhatsApp sedang tidak tersedia. Silakan coba lagi.',
+                'errors' => [
+                    'otp' => ['OTP gagal dikirim.'],
+                ],
+            ], 503);
         });
 
         $exceptions->render(function (HttpExceptionInterface $exception, Request $request) {

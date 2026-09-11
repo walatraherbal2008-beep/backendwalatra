@@ -6,8 +6,10 @@ use App\Models\OtpChallenge;
 use App\Models\User;
 use App\Services\Auth\OtpService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
 use Laravel\Sanctum\PersonalAccessToken;
 use PHPUnit\Framework\Attributes\DataProvider;
 use RuntimeException;
@@ -16,6 +18,13 @@ use Tests\TestCase;
 class CustomerOtpAuthTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        config(['queue.default' => 'sync']);
+    }
 
     public function test_wrong_attempts_persist_and_five_failures_block_even_the_correct_code(): void
     {
@@ -133,6 +142,134 @@ class CustomerOtpAuthTest extends TestCase
         } finally {
             $this->app['env'] = $previousEnvironment;
         }
+    }
+
+    public function test_otp_is_sent_through_maxchat_and_delivery_is_recorded(): void
+    {
+        config([
+            'services.maxchat.enabled' => true,
+            'services.maxchat.base_url' => 'https://core.maxchat.id/walatra-herbal',
+            'services.maxchat.api_token' => 'test-maxchat-token',
+            'services.otp.expose_code' => true,
+        ]);
+        Http::fake([
+            'https://core.maxchat.id/walatra-herbal/api/send*' => Http::response([
+                'id' => 'maxchat-message-123',
+                'to' => '628123456789',
+                'status' => 'sent',
+            ], 200),
+        ]);
+
+        $response = $this->postJson('/api/v1/auth/customer/request-otp', [
+            'phone' => '08123456789',
+        ])->assertOk();
+
+        Http::assertSent(function ($request): bool {
+            return $request->method() === 'GET'
+                && str_starts_with($request->url(), 'https://core.maxchat.id/walatra-herbal/api/send?')
+                && $request->hasHeader('Authorization', 'Bearer test-maxchat-token')
+                && $request['to'] === '628123456789'
+                && $request['type'] === 'text'
+                && str_contains($request['text'], 'Kode OTP Walatra Anda adalah');
+        });
+
+        $this->assertDatabaseHas('otp_challenges', [
+            'id' => $response->json('data.challenge_id'),
+            'delivery_status' => 'sent',
+            'provider_message_id' => 'maxchat-message-123',
+        ]);
+    }
+
+    public function test_pending_maxchat_message_is_checked_again_for_final_status(): void
+    {
+        config([
+            'services.maxchat.enabled' => true,
+            'services.maxchat.api_token' => 'test-maxchat-token',
+            'services.otp.expose_code' => true,
+        ]);
+        Http::fake(function ($request) {
+            if (str_contains($request->url(), '/api/send?')) {
+                return Http::response([
+                    'id' => 'maxchat-message-pending',
+                    'to' => '628123456789',
+                    'status' => 'pending',
+                ], 200);
+            }
+
+            return Http::response([
+                'data' => [
+                    'id' => 'maxchat-message-pending',
+                    'status' => 'delivered',
+                ],
+            ], 200);
+        });
+
+        $response = $this->postJson('/api/v1/auth/customer/request-otp', [
+            'phone' => '08123456789',
+        ])->assertOk()
+            ->assertJsonPath('data.delivery_status', 'delivered');
+
+        $this->assertDatabaseHas('otp_challenges', [
+            'id' => $response->json('data.challenge_id'),
+            'delivery_status' => 'delivered',
+        ]);
+    }
+
+    public function test_maxchat_failure_invalidates_challenge_and_returns_safe_json_error(): void
+    {
+        config([
+            'services.maxchat.enabled' => true,
+            'services.maxchat.api_token' => 'test-maxchat-token',
+        ]);
+        Http::fake([
+            'https://core.maxchat.id/walatra-herbal/api/send*' => Http::response([
+                'statusCode' => 401,
+                'error' => 'Unauthorized',
+                'message' => 'Missing authentication',
+            ], 401),
+        ]);
+
+        $this->postJson('/api/v1/auth/customer/request-otp', [
+            'phone' => '08123456789',
+        ])->assertOk()
+            ->assertJsonPath('message', 'OTP gagal dikirim. Silakan coba lagi.')
+            ->assertJsonPath('data.delivery_status', 'failed');
+
+        $this->assertDatabaseHas('otp_challenges', [
+            'phone' => '628123456789',
+            'delivery_status' => 'failed',
+        ]);
+        $this->assertDatabaseCount('personal_access_tokens', 0);
+    }
+
+    public function test_maxchat_timeout_keeps_challenge_usable_because_message_may_have_been_sent(): void
+    {
+        config([
+            'services.maxchat.enabled' => true,
+            'services.maxchat.api_token' => 'test-maxchat-token',
+            'services.otp.expose_code' => true,
+        ]);
+        Http::fake(function (): never {
+            throw new ConnectionException('Simulated timeout after provider accepted request.');
+        });
+
+        $response = $this->postJson('/api/v1/auth/customer/request-otp', [
+            'phone' => '08123456789',
+        ])->assertOk()
+            ->assertJsonPath('message', 'OTP sedang diproses. Silakan periksa WhatsApp Anda.')
+            ->assertJsonPath('data.delivery_status', 'unknown');
+
+        $challenge = OtpChallenge::findOrFail($response->json('data.challenge_id'));
+
+        $this->assertNull($challenge->invalidated_at);
+        $this->assertSame('unknown', $challenge->delivery_status);
+
+        $this->postJson('/api/v1/auth/customer/verify-otp', [
+            'phone' => '08123456789',
+            'challenge_id' => $challenge->id,
+            'otp' => $response->json('data.otp'),
+            'device_name' => 'timeout-test',
+        ])->assertOk();
     }
 
     public function test_account_disabled_after_login_cannot_access_profile_but_can_logout(): void

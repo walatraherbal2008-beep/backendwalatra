@@ -18,6 +18,12 @@ class OtpChallenge extends Model
         'invalidated_at',
         'request_ip',
         'user_agent',
+        'delivery_status',
+        'provider_message_id',
+        'sent_at',
+        'failed_at',
+        'delivered_at',
+        'provider_response',
     ];
 
     protected function casts(): array
@@ -28,6 +34,10 @@ class OtpChallenge extends Model
             'invalidated_at' => 'datetime',
             'attempts' => 'integer',
             'max_attempts' => 'integer',
+            'sent_at' => 'datetime',
+            'failed_at' => 'datetime',
+            'delivered_at' => 'datetime',
+            'provider_response' => 'array',
         ];
 
     }
