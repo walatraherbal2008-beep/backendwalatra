@@ -10,9 +10,11 @@ use App\Models\ProductVariant;
 use App\Models\Store;
 use App\Models\StoreBundleListing;
 use App\Models\StoreProductListing;
+use App\Services\Marketplace\StoreListingReactivationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
 
 class CatalogRelationshipsTest extends TestCase
@@ -102,6 +104,56 @@ class CatalogRelationshipsTest extends TestCase
         $this->assertSame('SKU-WAL-PROD-TEST-SKU-50-KAPSUL', $variant->sku);
     }
 
+    public function test_product_code_is_generated_automatically_and_immutable_when_name_changes(): void
+    {
+        $product = Product::factory()->create([
+            'product_code' => null,
+            'name' => 'Produk Herbal Otomatis',
+        ]);
+        $productCode = $product->product_code;
+
+        $this->assertMatchesRegularExpression('/^PRD-WAL-[A-Z0-9]{8}$/', $productCode);
+
+        $product->update(['name' => 'Produk Herbal Diperbarui']);
+
+        $this->assertSame($productCode, $product->fresh()->product_code);
+
+        $this->expectException(ValidationException::class);
+        $product->update(['product_code' => 'PRD-WAL-CHANGED']);
+    }
+
+    public function test_product_code_from_soft_deleted_product_is_not_reused(): void
+    {
+        $deletedProduct = Product::factory()->create(['product_code' => null]);
+        $deletedCode = $deletedProduct->product_code;
+        $deletedProduct->delete();
+
+        $newProduct = Product::factory()->create(['product_code' => null]);
+
+        $this->assertNotSame($deletedCode, $newProduct->product_code);
+    }
+
+    public function test_product_cannot_be_activated_without_an_active_variant(): void
+    {
+        $product = Product::factory()->create(['status' => 'draft']);
+
+        $this->expectException(ValidationException::class);
+        $product->update(['status' => 'active']);
+    }
+
+    public function test_product_can_be_activated_after_an_active_variant_is_added(): void
+    {
+        $product = Product::factory()->create(['status' => 'draft']);
+        ProductVariant::factory()->create([
+            'product_id' => $product->id,
+            'status' => 'active',
+        ]);
+
+        $product->update(['status' => 'active']);
+
+        $this->assertSame('active', $product->fresh()->status);
+    }
+
     public function test_store_bundle_listing_supports_multiple_store_images(): void
     {
         Storage::fake('public');
@@ -117,5 +169,53 @@ class CatalogRelationshipsTest extends TestCase
 
         $this->assertCount(2, $listing->fresh()->getMedia('images'));
         $this->assertSame('bundle-one.jpg', $listing->getFirstMedia('images')?->file_name);
+    }
+
+    public function test_deleted_product_listing_is_restored_instead_of_duplicated(): void
+    {
+        $listing = StoreProductListing::factory()->create([
+            'status' => 'draft',
+            'published_at' => null,
+            'description' => 'Deskripsi lama',
+        ]);
+        $listing->delete();
+
+        $restored = app(StoreListingReactivationService::class)->createOrRestoreProductListing([
+            'store_id' => $listing->store_id,
+            'product_id' => $listing->product_id,
+            'description' => 'Deskripsi baru',
+            'status' => 'draft',
+            'sort_order' => 3,
+            'published_at' => null,
+        ]);
+
+        $this->assertSame($listing->id, $restored->id);
+        $this->assertFalse($restored->fresh()->trashed());
+        $this->assertSame('Deskripsi baru', $restored->fresh()->description);
+        $this->assertSame(3, $restored->fresh()->sort_order);
+        $this->assertDatabaseCount('store_product_listings', 1);
+    }
+
+    public function test_deleted_bundle_listing_is_restored_instead_of_duplicated(): void
+    {
+        $listing = StoreBundleListing::factory()->create([
+            'status' => 'draft',
+            'published_at' => null,
+        ]);
+        $listing->delete();
+
+        $restored = app(StoreListingReactivationService::class)->createOrRestoreBundleListing([
+            'store_id' => $listing->store_id,
+            'product_bundle_id' => $listing->product_bundle_id,
+            'description' => 'Bundle dipublikasikan kembali',
+            'status' => 'draft',
+            'sort_order' => 2,
+            'published_at' => null,
+        ]);
+
+        $this->assertSame($listing->id, $restored->id);
+        $this->assertFalse($restored->fresh()->trashed());
+        $this->assertSame('Bundle dipublikasikan kembali', $restored->fresh()->description);
+        $this->assertDatabaseCount('store_bundle_listings', 1);
     }
 }

@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
@@ -25,6 +26,24 @@ class Product extends Model implements HasMedia
 
             if (blank($product->product_code)) {
                 $product->product_code = static::generateUniqueCode();
+            }
+        });
+
+        static::updating(function (Product $product): void {
+            if ($product->isDirty('product_code')) {
+                throw ValidationException::withMessages([
+                    'product_code' => 'Kode produk tidak dapat diubah setelah produk dibuat.',
+                ]);
+            }
+
+            if (
+                $product->isDirty('status')
+                && $product->status === 'active'
+                && ! $product->variants()->where('status', 'active')->exists()
+            ) {
+                throw ValidationException::withMessages([
+                    'status' => 'Produk belum dapat diaktifkan. Tambahkan minimal satu varian aktif terlebih dahulu.',
+                ]);
             }
         });
     }
@@ -45,8 +64,8 @@ class Product extends Model implements HasMedia
     protected static function generateUniqueCode(): string
     {
         do {
-            $code = 'PRD-'.Str::upper(Str::random(8));
-        } while (static::query()->where('product_code', $code)->exists());
+            $code = 'PRD-WAL-'.Str::upper(Str::random(8));
+        } while (static::withTrashed()->where('product_code', $code)->exists());
 
         return $code;
     }

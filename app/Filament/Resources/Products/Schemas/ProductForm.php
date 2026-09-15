@@ -18,10 +18,11 @@ class ProductForm
                     ->maxLength(255),
                 TextInput::make('product_code')
                     ->label('Kode produk')
-                    ->required()
                     ->maxLength(100)
-                    ->unique(ignoreRecord: true)
-                    ->helperText('Kode produk dikelola manual oleh Superadmin.'),
+                    ->disabled()
+                    ->dehydrated(false)
+                    ->hiddenOn('create')
+                    ->helperText('Kode produk dibuat otomatis dan tidak dapat diubah.'),
                 TextInput::make('bpom_number')
                     ->label('Nomor BPOM')
                     ->maxLength(100),
@@ -39,11 +40,13 @@ class ProductForm
                     ->columnSpanFull(),
                 Select::make('status')
                     ->label('Status')
-                    ->options([
-                        'draft' => 'Draft',
-                        'active' => 'Aktif',
-                        'inactive' => 'Tidak aktif',
-                    ])
+                    ->options(fn (string $operation): array => $operation === 'create'
+                        ? ['draft' => 'Draft']
+                        : [
+                            'draft' => 'Draft',
+                            'active' => 'Aktif',
+                            'inactive' => 'Tidak aktif',
+                        ])
                     ->default('draft')
                     ->required(),
             ]);
