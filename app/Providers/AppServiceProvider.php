@@ -2,6 +2,10 @@
 
 namespace App\Providers;
 
+use App\Models\Product;
+use App\Models\ProductVariant;
+use App\Observers\ProductObserver;
+use App\Observers\ProductVariantObserver;
 use App\Support\PhoneNumber;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\JsonResponse;
@@ -22,6 +26,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Product::observe(ProductObserver::class);
+        ProductVariant::observe(ProductVariantObserver::class);
+
         $throttledResponse = function (Request $request, array $headers): JsonResponse {
             return response()->json([
                 'success' => false,
