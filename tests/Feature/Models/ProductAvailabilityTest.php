@@ -10,6 +10,7 @@ use App\Models\Store;
 use App\Models\StoreBundleListing;
 use App\Models\StoreProductListing;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
 
 class ProductAvailabilityTest extends TestCase
@@ -95,6 +96,69 @@ class ProductAvailabilityTest extends TestCase
         $product->restore();
 
         $this->assertSame('inactive', $listing->fresh()->status);
+    }
+
+    public function test_inactivating_bundle_variant_inactivates_bundle_listing_even_when_product_has_another_active_variant(): void
+    {
+        $product = Product::factory()->create(['status' => 'active']);
+        $variant = ProductVariant::factory()->create([
+            'product_id' => $product->id,
+            'name' => '50 Kapsul',
+            'status' => 'active',
+        ]);
+        ProductVariant::factory()->create([
+            'product_id' => $product->id,
+            'name' => '100 Kapsul',
+            'status' => 'active',
+        ]);
+        $bundle = ProductBundle::factory()->create(['status' => 'active']);
+        ProductBundleItem::factory()->create([
+            'product_bundle_id' => $bundle->id,
+            'product_variant_id' => $variant->id,
+        ]);
+        $listing = StoreBundleListing::factory()->create([
+            'product_bundle_id' => $bundle->id,
+            'status' => 'active',
+        ]);
+
+        $variant->update(['status' => 'inactive']);
+
+        $this->assertSame('active', $product->fresh()->status);
+        $this->assertSame('inactive', $listing->fresh()->status);
+    }
+
+    public function test_variant_rejects_invalid_price_and_weight(): void
+    {
+        $product = Product::factory()->create();
+
+        $this->expectException(ValidationException::class);
+        ProductVariant::factory()->create([
+            'product_id' => $product->id,
+            'price' => 0,
+        ]);
+    }
+
+    public function test_variant_name_must_be_unique_within_the_same_product(): void
+    {
+        $product = Product::factory()->create();
+        ProductVariant::factory()->create([
+            'product_id' => $product->id,
+            'name' => '50 Kapsul',
+        ]);
+
+        $this->expectException(ValidationException::class);
+        ProductVariant::factory()->create([
+            'product_id' => $product->id,
+            'name' => '50 kapsul',
+        ]);
+    }
+
+    public function test_variant_sku_cannot_be_changed_after_creation(): void
+    {
+        $variant = ProductVariant::factory()->create();
+
+        $this->expectException(ValidationException::class);
+        $variant->update(['sku' => 'SKU-WAL-CHANGED']);
     }
 
     /** @return array{0: Product, 1: ProductVariant} */

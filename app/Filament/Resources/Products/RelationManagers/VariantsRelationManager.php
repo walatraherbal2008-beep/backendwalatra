@@ -27,7 +27,8 @@ class VariantsRelationManager extends RelationManager
                 TextInput::make('name')
                     ->label('Nama varian')
                     ->required()
-                    ->maxLength(255),
+                    ->maxLength(255)
+                    ->helperText('Nama varian tidak boleh sama dalam satu produk.'),
                 TextInput::make('sku')
                     ->label('SKU otomatis')
                     ->disabled()
@@ -37,12 +38,12 @@ class VariantsRelationManager extends RelationManager
                     ->label('Harga dasar')
                     ->numeric()
                     ->prefix('Rp')
-                    ->minValue(0)
+                    ->minValue(0.01)
                     ->required(),
                 TextInput::make('weight_grams')
                     ->label('Berat (gram)')
                     ->numeric()
-                    ->minValue(0)
+                    ->minValue(1)
                     ->required(),
                 Select::make('status')
                     ->label('Status')

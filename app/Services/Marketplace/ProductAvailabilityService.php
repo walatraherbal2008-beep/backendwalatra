@@ -46,7 +46,7 @@ class ProductAvailabilityService
             return;
         }
 
-        DB::transaction(function () use ($product): void {
+        DB::transaction(function () use ($product, $variant): void {
             $hasActiveVariant = ProductVariant::query()
                 ->where('product_id', $product->id)
                 ->where('status', 'active')
@@ -57,6 +57,8 @@ class ProductAvailabilityService
 
                 return;
             }
+
+            $this->deactivateBundleListings($this->bundleIdsForVariant($variant->id));
 
             if ($product->trashed() || $product->status !== 'active' || ! $hasActiveVariant) {
                 $this->deactivateProductListings($product->id);
@@ -112,6 +114,16 @@ class ProductAvailabilityService
 
         return ProductBundleItem::withTrashed()
             ->whereIn('product_variant_id', $variantIds)
+            ->pluck('product_bundle_id');
+    }
+
+    /**
+     * @return Collection<int, int>
+     */
+    private function bundleIdsForVariant(int $variantId)
+    {
+        return ProductBundleItem::withTrashed()
+            ->where('product_variant_id', $variantId)
             ->pluck('product_bundle_id');
     }
 }

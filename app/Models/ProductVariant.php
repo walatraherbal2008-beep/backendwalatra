@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class ProductVariant extends Model
 {
@@ -18,6 +19,46 @@ class ProductVariant extends Model
         static::creating(function (ProductVariant $variant): void {
             if (blank($variant->sku)) {
                 $variant->sku = static::generateUniqueSku($variant);
+            }
+        });
+
+        static::saving(function (ProductVariant $variant): void {
+            if (! is_numeric($variant->price) || (float) $variant->price <= 0) {
+                throw ValidationException::withMessages([
+                    'price' => 'Harga varian harus lebih besar dari 0.',
+                ]);
+            }
+
+            if (! is_numeric($variant->weight_grams) || (int) $variant->weight_grams < 1) {
+                throw ValidationException::withMessages([
+                    'weight_grams' => 'Berat varian minimal 1 gram.',
+                ]);
+            }
+
+            $duplicateName = static::query()
+                ->where('product_id', $variant->product_id)
+                ->whereRaw('LOWER(name) = LOWER(?)', [$variant->name])
+                ->when($variant->exists, fn ($query) => $query->whereKeyNot($variant->getKey()))
+                ->exists();
+
+            if ($duplicateName) {
+                throw ValidationException::withMessages([
+                    'name' => 'Nama varian sudah digunakan pada produk ini.',
+                ]);
+            }
+        });
+
+        static::updating(function (ProductVariant $variant): void {
+            if ($variant->isDirty('sku')) {
+                throw ValidationException::withMessages([
+                    'sku' => 'SKU varian tidak dapat diubah setelah dibuat.',
+                ]);
+            }
+
+            if ($variant->isDirty('product_id')) {
+                throw ValidationException::withMessages([
+                    'product_id' => 'Produk induk varian tidak dapat diubah setelah dibuat.',
+                ]);
             }
         });
     }
@@ -36,6 +77,7 @@ class ProductVariant extends Model
     {
         return [
             'price' => 'decimal:2',
+            'weight_grams' => 'integer',
             'attributes' => 'array',
         ];
     }
