@@ -69,10 +69,12 @@ class CatalogProductTest extends TestCase
         $product = Product::factory()->create(['name' => 'Produk Filter Harga']);
         ProductVariant::factory()->create([
             'product_id' => $product->id,
+            'name' => '10 Kapsul',
             'price' => 10000,
         ]);
         ProductVariant::factory()->create([
             'product_id' => $product->id,
+            'name' => '100 Kapsul',
             'price' => 100000,
         ]);
         StoreProductListing::factory()->create(['product_id' => $product->id]);
