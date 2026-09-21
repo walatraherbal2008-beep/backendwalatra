@@ -92,7 +92,8 @@ class StoreProductListingResource extends Resource
                 ->searchable()
                 ->preload()
                 ->required()
-                ->disabled(fn (string $operation): bool => $operation === 'edit'),
+                ->disabledOn('edit')
+                ->helperText('Produk master dikunci setelah listing dibuat. Untuk mengganti produk, hapus listing ini dan buat baru.'),
             RichEditor::make('description')
                 ->label('Deskripsi produk di toko')
                 ->toolbarButtons([

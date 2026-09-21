@@ -17,6 +17,20 @@ class StoreBundleListing extends Model implements HasMedia
 
     protected static function booted(): void
     {
+        static::updating(function (StoreBundleListing $listing): void {
+            if ($listing->isDirty('store_id')) {
+                throw ValidationException::withMessages([
+                    'store_id' => 'Toko pemilik listing tidak dapat diubah setelah listing dibuat.',
+                ]);
+            }
+
+            if ($listing->isDirty('product_bundle_id')) {
+                throw ValidationException::withMessages([
+                    'product_bundle_id' => 'Bundle master tidak dapat diubah setelah listing dibuat. Hapus listing ini dan buat listing baru untuk bundle lain.',
+                ]);
+            }
+        });
+
         static::saving(function (StoreBundleListing $listing): void {
             if ($listing->status !== 'active') {
                 return;

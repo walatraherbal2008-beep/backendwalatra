@@ -17,14 +17,16 @@ class CatalogController extends Controller
     public function index(CatalogIndexRequest $request): AnonymousResourceCollection
     {
         $type = $request->string('type')->toString();
+        $search = trim($request->string('q')->toString());
+        $sort = $request->string('sort', $search === '' ? 'latest' : 'relevance')->toString();
         $queries = [];
 
         if ($type !== 'bundle') {
-            $queries[] = $this->productQuery($request);
+            $queries[] = $this->productQuery($request, $search);
         }
 
         if ($type !== 'product') {
-            $queries[] = $this->bundleQuery($request);
+            $queries[] = $this->bundleQuery($request, $search);
         }
 
         $query = array_shift($queries);
@@ -34,9 +36,9 @@ class CatalogController extends Controller
         }
 
         $catalogQuery = DB::query()->fromSub($query, 'catalog_items');
-        $sort = $request->string('sort', 'latest')->toString();
 
         match ($sort) {
+            'relevance' => $catalogQuery->orderByDesc('relevance_score')->orderByDesc('created_at'),
             'name_asc' => $catalogQuery->orderBy('name')->orderByDesc('created_at'),
             'name_desc' => $catalogQuery->orderByDesc('name')->orderByDesc('created_at'),
             'price_asc' => $catalogQuery->orderBy('price_min')->orderByDesc('created_at'),
@@ -44,18 +46,12 @@ class CatalogController extends Controller
             default => $catalogQuery->orderByDesc('created_at'),
         };
 
-        $paginator = $catalogQuery
-            ->paginate(min(max($request->integer('per_page', 15), 1), 50));
+        $paginator = $catalogQuery->paginate(
+            perPage: min(max($request->integer('per_page', 15), 1), 50),
+            page: max($request->integer('page', 1), 1),
+        );
 
-        $paginator->getCollection()->transform(function (object $item): object {
-            $listing = $item->type === 'product'
-                ? StoreProductListing::find($item->listing_id)
-                : StoreBundleListing::find($item->listing_id);
-
-            $item->image_url = $listing?->getFirstMedia('images')?->getUrl();
-
-            return $item;
-        });
+        $this->attachImages($paginator->getCollection());
 
         return CatalogItemResource::collection($paginator)
             ->additional([
@@ -64,7 +60,40 @@ class CatalogController extends Controller
             ]);
     }
 
-    private function productQuery(CatalogIndexRequest $request): EloquentBuilder
+    /**
+     * Preload gambar etalase sekaligus untuk 1 halaman agar tidak N+1.
+     *
+     * @param  \Illuminate\Support\Collection<int, object>  $items
+     */
+    private function attachImages($items): void
+    {
+        $productIds = $items->where('type', 'product')->pluck('listing_id')->unique()->values();
+        $bundleIds = $items->where('type', 'bundle')->pluck('listing_id')->unique()->values();
+
+        $productImages = $productIds->isEmpty() ? collect() : StoreProductListing::query()
+            ->whereIn('id', $productIds)
+            ->with('media')
+            ->get()
+            ->mapWithKeys(fn (StoreProductListing $listing): array => [
+                $listing->getKey() => $listing->getFirstMedia('images')?->getUrl(),
+            ]);
+
+        $bundleImages = $bundleIds->isEmpty() ? collect() : StoreBundleListing::query()
+            ->whereIn('id', $bundleIds)
+            ->with('media')
+            ->get()
+            ->mapWithKeys(fn (StoreBundleListing $listing): array => [
+                $listing->getKey() => $listing->getFirstMedia('images')?->getUrl(),
+            ]);
+
+        foreach ($items as $item) {
+            $item->image_url = $item->type === 'product'
+                ? ($productImages[$item->listing_id] ?? null)
+                : ($bundleImages[$item->listing_id] ?? null);
+        }
+    }
+
+    private function productQuery(CatalogIndexRequest $request, string $search = ''): EloquentBuilder
     {
         $query = StoreProductListing::query()
             ->join('products', 'products.id', '=', 'store_product_listings.product_id')
@@ -106,10 +135,11 @@ class CatalogController extends Controller
             'stores.province',
             'store_product_listings.published_at',
             'store_product_listings.created_at',
+            DB::raw($this->productRelevanceExpression($search).' as relevance_score'),
         ]);
     }
 
-    private function bundleQuery(CatalogIndexRequest $request): EloquentBuilder
+    private function bundleQuery(CatalogIndexRequest $request, string $search = ''): EloquentBuilder
     {
         $query = StoreBundleListing::query()
             ->join('product_bundles', 'product_bundles.id', '=', 'store_bundle_listings.product_bundle_id')
@@ -170,19 +200,147 @@ class CatalogController extends Controller
             'stores.province',
             'store_bundle_listings.published_at',
             'store_bundle_listings.created_at',
+            DB::raw($this->bundleRelevanceExpression($search).' as relevance_score'),
         ]);
+    }
+
+    /**
+     * Skor 0-100 lintas driver: exact > prefix > contains, plus kode/SKU,
+     * toko, kualitas etalase, dan freshness. Kolom harus identik di kedua
+     * sisi UNION agar bisa diurutkan di outer query.
+     */
+    private function productRelevanceExpression(string $search): string
+    {
+        $search = trim($search);
+
+        if ($search === '') {
+            return '0';
+        }
+
+        $pdo = DB::connection()->getPdo();
+        $exact = $pdo->quote($search);
+        $prefix = $pdo->quote($search.'%');
+        $contains = $pdo->quote('%'.$search.'%');
+
+        return 'COALESCE(('.
+            "CASE WHEN products.name = {$exact} THEN 100 ".
+            "WHEN products.name LIKE {$prefix} THEN 80 ".
+            "WHEN products.name LIKE {$contains} THEN 50 ELSE 0 END".
+            " + CASE WHEN products.product_code = {$exact} THEN 70 ".
+            "WHEN products.product_code LIKE {$contains} THEN 30 ELSE 0 END".
+            ' + CASE WHEN EXISTS (SELECT 1 FROM product_variants search_variants'.
+            ' WHERE search_variants.product_id = products.id'.
+            " AND (search_variants.sku = {$exact} OR search_variants.sku LIKE {$contains})) THEN 20 ELSE 0 END".
+            " + CASE WHEN stores.name LIKE {$contains} THEN 10 ELSE 0 END".
+            ' + CASE WHEN COALESCE(store_product_listings.description, \'\') <> \'\' THEN 8 ELSE 0 END'.
+            ' + CASE WHEN EXISTS (SELECT 1 FROM media search_media'.
+            " WHERE search_media.model_type = 'App\\\\Models\\\\StoreProductListing'".
+            ' AND search_media.model_id = store_product_listings.id'.
+            " AND search_media.collection_name = 'images') THEN 7 ELSE 0 END".
+            '), 0)';
+    }
+
+    private function bundleRelevanceExpression(string $search): string
+    {
+        $search = trim($search);
+
+        if ($search === '') {
+            return '0';
+        }
+
+        $pdo = DB::connection()->getPdo();
+        $exact = $pdo->quote($search);
+        $prefix = $pdo->quote($search.'%');
+        $contains = $pdo->quote('%'.$search.'%');
+
+        return 'COALESCE(('.
+            "CASE WHEN product_bundles.name = {$exact} THEN 100 ".
+            "WHEN product_bundles.name LIKE {$prefix} THEN 80 ".
+            "WHEN product_bundles.name LIKE {$contains} THEN 50 ELSE 0 END".
+            " + CASE WHEN product_bundles.code = {$exact} THEN 70 ".
+            "WHEN product_bundles.code LIKE {$contains} THEN 30 ELSE 0 END".
+            ' + CASE WHEN EXISTS (SELECT 1 FROM product_bundle_items search_items'.
+            ' JOIN product_variants search_variants ON search_variants.id = search_items.product_variant_id'.
+            ' JOIN products search_products ON search_products.id = search_variants.product_id'.
+            ' WHERE search_items.product_bundle_id = product_bundles.id'.
+            " AND (search_variants.sku LIKE {$contains} OR search_products.name LIKE {$contains})) THEN 20 ELSE 0 END".
+            " + CASE WHEN stores.name LIKE {$contains} THEN 10 ELSE 0 END".
+            ' + CASE WHEN COALESCE(store_bundle_listings.description, \'\') <> \'\' THEN 8 ELSE 0 END'.
+            ' + CASE WHEN EXISTS (SELECT 1 FROM media search_media'.
+            " WHERE search_media.model_type = 'App\\\\Models\\\\StoreBundleListing'".
+            ' AND search_media.model_id = store_bundle_listings.id'.
+            " AND search_media.collection_name = 'images') THEN 7 ELSE 0 END".
+            '), 0)';
     }
 
     private function applyCommonFilters(EloquentBuilder $query, CatalogIndexRequest $request, string $itemTable, string $storeTable): void
     {
         if ($request->filled('q')) {
-            $search = '%'.$request->string('q')->toString().'%';
-            $query->where(function (EloquentBuilder $searchQuery) use ($search, $itemTable, $storeTable): void {
-                $searchQuery
-                    ->whereLike($itemTable.'.name', $search)
-                    ->orWhereLike($itemTable.'.'.($itemTable === 'products' ? 'product_code' : 'code'), $search)
-                    ->orWhereLike($storeTable.'.name', $search);
-            });
+            $keyword = trim($request->string('q')->toString());
+            $listingTable = $itemTable === 'products' ? 'store_product_listings' : 'store_bundle_listings';
+            $codeColumn = $itemTable === 'products' ? 'product_code' : 'code';
+
+            // Token AND: "kronis lambung" tetap ketemu walau urutan beda.
+            // Tiap token boleh cocok di field mana saja (nama/SKU/deskripsi/
+            // varian/kategori/komponen-bundle). Satu grup OR per token,
+            // digabung AND antar token.
+            $tokens = collect(preg_split('/\s+/', $keyword) ?: [])
+                ->map(fn ($token): string => trim((string) $token))
+                ->filter(fn ($token): bool => $token !== '')
+                ->take(10)
+                ->values();
+
+            foreach ($tokens as $token) {
+                $search = '%'.$token.'%';
+                $query->where(function (EloquentBuilder $searchQuery) use ($search, $keyword, $itemTable, $storeTable, $listingTable, $codeColumn): void {
+                    $searchQuery
+                        ->whereLike($itemTable.'.name', $search)
+                        ->orWhereLike($itemTable.'.'.$codeColumn, $search)
+                        ->orWhereLike($storeTable.'.name', $search)
+                        ->orWhereLike($listingTable.'.description', $search)
+                        ->orWhereExists(fn (Builder $variantQuery): Builder => $variantQuery
+                            ->selectRaw('1')
+                            ->from('product_variants as search_token_variants')
+                            ->when(
+                                $itemTable === 'products',
+                                fn (Builder $variantLink): Builder => $variantLink->whereColumn('search_token_variants.product_id', 'products.id'),
+                                fn (Builder $variantLink): Builder => $variantLink
+                                    ->join('product_bundle_items as search_token_items', 'search_token_items.product_variant_id', '=', 'search_token_variants.id')
+                                    ->whereColumn('search_token_items.product_bundle_id', 'product_bundles.id'),
+                            )
+                            ->where(function (Builder $variantMatch) use ($search): void {
+                                $variantMatch
+                                    ->whereLike('search_token_variants.sku', $search)
+                                    ->orWhereLike('search_token_variants.name', $search);
+                            }))
+                        ->orWhereExists(fn (Builder $categoryQuery): Builder => $categoryQuery
+                            ->selectRaw('1')
+                            ->from('category_product as search_token_cp')
+                            ->join('categories as search_token_categories', 'search_token_categories.id', '=', 'search_token_cp.category_id')
+                            ->when(
+                                $itemTable === 'products',
+                                fn (Builder $categoryLink): Builder => $categoryLink->whereColumn('search_token_cp.product_id', 'products.id'),
+                                fn (Builder $categoryLink): Builder => $categoryLink
+                                    ->join('product_variants as search_token_cv', 'search_token_cv.product_id', '=', 'search_token_cp.product_id')
+                                    ->join('product_bundle_items as search_token_ci', 'search_token_ci.product_variant_id', '=', 'search_token_cv.id')
+                                    ->whereColumn('search_token_ci.product_bundle_id', 'product_bundles.id'),
+                            )
+                            ->where('search_token_categories.status', 'active')
+                            ->whereLike('search_token_categories.name', $search));
+
+                    // Nama produk komponen bundle ikut dalam grup OR token yang
+                    // sama agar tidak membobol logika AND antar token.
+                    if ($itemTable !== 'products' && mb_strlen($keyword) >= 2) {
+                        $searchQuery->orWhereExists(fn (Builder $itemQuery): Builder => $itemQuery
+                            ->selectRaw('1')
+                            ->from('product_bundle_items as search_items')
+                            ->join('product_variants as search_variants', 'search_variants.id', '=', 'search_items.product_variant_id')
+                            ->join('products as search_products', 'search_products.id', '=', 'search_variants.product_id')
+                            ->whereColumn('search_items.product_bundle_id', 'product_bundles.id')
+                            ->whereLike('search_products.name', $search));
+                    }
+                });
+            }
         }
 
         if ($request->filled('store')) {

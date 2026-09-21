@@ -36,14 +36,14 @@ Endpoint ini digunakan untuk halaman beranda, eksplorasi, dan pencarian marketpl
 
 | Parameter | Tipe | Wajib | Keterangan |
 |---|---|---:|---|
-| `q` | string | Tidak | Mencari berdasarkan nama, kode, atau nama toko. Maksimal 100 karakter. |
+| `q` | string | Tidak | Pencarian token-AND: tiap kata dipisah spasi, semua kata harus cocok (boleh beda urutan & beda field). Mencari nama, kode/SKU, nama varian, nama kategori aktif, nama/SKU produk komponen bundle, deskripsi etalase toko, atau nama toko. Maksimal 100 karakter, maksimal 10 kata. |
 | `type` | string | Tidak | `product` atau `bundle`. Jika dikosongkan, keduanya ditampilkan. |
 | `store` | string | Tidak | Filter berdasarkan slug toko. |
 | `category` | string | Tidak | Filter slug kategori. Untuk bundle, kategori dicari dari produk komponennya. |
 | `min_price` | number | Tidak | Harga minimum. |
 | `max_price` | number | Tidak | Harga maksimum. |
-| `sort` | string | Tidak | `latest`, `name_asc`, `name_desc`, `price_asc`, atau `price_desc`. Default: `latest`. |
-| `page` | integer | Tidak | Nomor halaman. Default: `1`. |
+| `sort` | string | Tidak | `relevance`, `latest`, `name_asc`, `name_desc`, `price_asc`, atau `price_desc`. Default: `relevance` saat `q` terisi, `latest` saat kosong. |
+| `page` | integer | Tidak | Nomor halaman eksplisit. Default: `1`. |
 | `per_page` | integer | Tidak | Jumlah data per halaman, minimal 1 dan maksimal 50. Default: `15`. |
 
 Contoh request:

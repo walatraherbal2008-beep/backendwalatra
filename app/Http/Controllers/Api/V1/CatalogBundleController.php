@@ -24,20 +24,40 @@ class CatalogBundleController extends Controller
                 );
             })
             ->when($request->filled('q'), function (Builder $listingQuery) use ($request): void {
-                $search = '%'.$request->string('q')->trim().'%';
+                $keyword = trim($request->string('q')->toString());
+                $tokens = collect(preg_split('/\s+/', $keyword) ?: [])
+                    ->map(fn ($token): string => trim((string) $token))
+                    ->filter(fn ($token): bool => $token !== '')
+                    ->take(10)
+                    ->values();
 
-                $listingQuery->where(function (Builder $query) use ($search): void {
-                    $query
-                        ->whereHas('bundle', fn (Builder $bundleQuery): Builder => $bundleQuery
-                            ->whereLike('name', $search)
-                            ->orWhereLike('code', $search))
-                        ->orWhereHas('store', fn (Builder $storeQuery): Builder => $storeQuery->whereLike('name', $search));
-                });
+                foreach ($tokens as $token) {
+                    $search = '%'.$token.'%';
+
+                    $listingQuery->where(function (Builder $query) use ($search): void {
+                        $query
+                            ->whereHas('bundle', fn (Builder $bundleQuery): Builder => $bundleQuery
+                                ->whereLike('name', $search)
+                                ->orWhereLike('code', $search))
+                            ->orWhereHas('store', fn (Builder $storeQuery): Builder => $storeQuery->whereLike('name', $search))
+                            ->orWhereLike('store_bundle_listings.description', $search)
+                            // Samakan dengan unified: cari SKU + nama varian komponen bundle.
+                            ->orWhereHas('bundle.items.variant', fn (Builder $variantQuery): Builder => $variantQuery
+                                ->whereLike('sku', $search)
+                                ->orWhereLike('name', $search))
+                            // Cari nama produk komponen bundle.
+                            ->orWhereHas('bundle.items.variant.product', fn (Builder $productQuery): Builder => $productQuery
+                                ->whereLike('name', $search));
+                    });
+                }
             });
 
         $this->applySort($query, $request->string('sort', 'latest')->toString());
 
-        return BundleListingResource::collection($query->paginate($request->integer('per_page', 15)))
+        return BundleListingResource::collection($query->paginate(
+            perPage: min(max($request->integer('per_page', 15), 1), 50),
+            page: max($request->integer('page', 1), 1),
+        ))
             ->additional([
                 'success' => true,
                 'message' => 'Katalog bundle berhasil diambil.',

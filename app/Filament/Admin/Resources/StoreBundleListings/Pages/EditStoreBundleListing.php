@@ -11,7 +11,9 @@ class EditStoreBundleListing extends EditRecord
 
     protected function mutateFormDataBeforeSave(array $data): array
     {
-        $data['store_id'] = auth()->user()->store->getKey();
+        // store_id & product_bundle_id dikunci: abaikan kiriman form/browser
+        // agar tidak bisa dimanipulasi menjadi toko/bundle lain.
+        unset($data['store_id'], $data['product_bundle_id']);
         $data['published_at'] = ($data['status'] ?? null) === 'active' ? now() : null;
 
         return $data;

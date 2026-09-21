@@ -101,7 +101,8 @@ class StoreBundleListingResource extends Resource
                 ->preload()
                 ->live()
                 ->required()
-                ->disabled(fn (string $operation): bool => $operation === 'edit'),
+                ->disabledOn('edit')
+                ->helperText('Bundle master dikunci setelah listing dibuat. Untuk mengganti bundle, hapus listing ini dan buat baru.'),
             TextEntry::make('bundle_items_preview')
                 ->label('Isi paket bundle')
                 ->state(function (Get $get): string|Htmlable {

@@ -28,6 +28,48 @@ class CatalogItemResource extends JsonResource
                 'province' => $this->province,
             ],
             'published_at' => $this->published_at,
+            'matched_in' => $this->matchedIn($request),
         ];
+    }
+
+    /**
+     * Beri tahu FE field mana yang cocok agar bisa tampil
+     * "ketemu di deskripsi / varian / kategori". Non-breaking: tambahan field.
+     *
+     * @return list<string>
+     */
+    private function matchedIn(Request $request): array
+    {
+        $keyword = trim((string) $request->query('q', ''));
+
+        if ($keyword === '') {
+            return [];
+        }
+
+        $tokens = collect(preg_split('/\s+/', mb_strtolower($keyword)) ?: [])
+            ->map(fn ($token): string => trim((string) $token))
+            ->filter(fn ($token): bool => $token !== '')
+            ->take(10)
+            ->values();
+
+        if ($tokens->isEmpty()) {
+            return [];
+        }
+
+        $haystacks = [
+            'name' => mb_strtolower((string) ($this->name ?? '')),
+            'code' => mb_strtolower((string) ($this->code ?? '')),
+            'store' => mb_strtolower((string) ($this->store_name ?? '')),
+        ];
+
+        $matched = [];
+
+        foreach ($haystacks as $field => $haystack) {
+            if ($haystack !== '' && $tokens->every(fn (string $token): bool => str_contains($haystack, $token))) {
+                $matched[] = $field;
+            }
+        }
+
+        return array_values(array_unique($matched));
     }
 }

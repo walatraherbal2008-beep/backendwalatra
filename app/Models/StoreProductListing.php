@@ -17,6 +17,20 @@ class StoreProductListing extends Model implements HasMedia
 
     protected static function booted(): void
     {
+        static::updating(function (StoreProductListing $listing): void {
+            if ($listing->isDirty('store_id')) {
+                throw ValidationException::withMessages([
+                    'store_id' => 'Toko pemilik listing tidak dapat diubah setelah listing dibuat.',
+                ]);
+            }
+
+            if ($listing->isDirty('product_id')) {
+                throw ValidationException::withMessages([
+                    'product_id' => 'Produk master tidak dapat diubah setelah listing dibuat. Hapus listing ini dan buat listing baru untuk produk lain.',
+                ]);
+            }
+        });
+
         static::saving(function (StoreProductListing $listing): void {
             if ($listing->status !== 'active') {
                 return;
