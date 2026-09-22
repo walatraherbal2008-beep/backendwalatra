@@ -80,7 +80,8 @@ curl --request GET \
         "city": "Bandung",
         "province": "Jawa Barat"
       },
-      "published_at": "2026-09-17T10:00:00+07:00"
+      "published_at": "2026-09-17T10:00:00+07:00",
+      "matched_in": ["name"]
     },
     {
       "type": "bundle",
@@ -100,7 +101,8 @@ curl --request GET \
         "city": "Bandung",
         "province": "Jawa Barat"
       },
-      "published_at": "2026-09-17T10:00:00+07:00"
+      "published_at": "2026-09-17T10:00:00+07:00",
+      "matched_in": []
     }
   ],
   "links": {
@@ -153,12 +155,112 @@ curl --request GET \
   --header 'Accept: application/json'
 ```
 
+### Contoh pencarian (token-AND + relevance)
+
+Pencarian dipecah per kata, semua kata wajib cocok, boleh beda urutan dan beda field. Contoh: `kronis lambung` tetap menemukan produk bernama `Madu Asli Sumbawa` yang deskripsinya `Untuk kesehatan lambung kronis`.
+
+```bash
+# 1. Urutan kata tidak penting (token-AND)
+curl --request GET \
+  --url 'http://127.0.0.1:8001/api/v1/catalog?q=kronis%20lambung' \
+  --header 'Accept: application/json'
+# -> data[0].name = "Madu Asli Sumbawa" (kronis ada di deskripsi, lambung ada di nama)
+
+# 2. Cari berdasarkan SKU varian
+curl --request GET \
+  --url 'http://127.0.0.1:8001/api/v1/catalog?q=SKU-UNIK-12345' \
+  --header 'Accept: application/json'
+# -> data[0].name = produk pemilik SKU tersebut
+
+# 3. Cari berdasarkan kata di deskripsi etalase toko
+curl --request GET \
+  --url 'http://127.0.0.1:8001/api/v1/catalog?q=lambung%20kronis' \
+  --header 'Accept: application/json'
+
+# 4. Cari berdasarkan nama varian (misal kemasan)
+curl --request GET \
+  --url 'http://127.0.0.1:8001/api/v1/catalog?q=100ml' \
+  --header 'Accept: application/json'
+# -> menemukan "Herbal Lambung X" yang variannya bernama "Kemasan 100ml"
+
+# 5. Cari berdasarkan nama kategori
+curl --request GET \
+  --url 'http://127.0.0.1:8001/api/v1/catalog?q=pencernaan' \
+  --header 'Accept: application/json'
+
+# 6. Cari bundle dari nama produk komponennya
+curl --request GET \
+  --url 'http://127.0.0.1:8001/api/v1/catalog?q=Jahe%20Merah&type=bundle' \
+  --header 'Accept: application/json'
+# -> data[0].name = "Paket Sehat Keluarga" (isinya "Jahe Merah Premium")
+
+# 7. Relevance eksplisit: nama persis selalu paling depan
+curl --request GET \
+  --url 'http://127.0.0.1:8001/api/v1/catalog?q=Madu%20Lambung&sort=relevance' \
+  --header 'Accept: application/json'
+# -> data[0].name = "Madu Lambung" (exact match, skor 100),
+#    bukan "Teh Herbal Madu Lambung Campur" (contains, skor 50)
+
+# 8. Tanpa sort + ada q = otomatis relevance
+curl --request GET \
+  --url 'http://127.0.0.1:8001/api/v1/catalog?q=Propolis' \
+  --header 'Accept: application/json'
+```
+
+Skor relevance 0-100 dihitung dari: nama persis 100, awalan nama 80, mengandung 50, kode persis 70, SKU/komponen 20, nama toko 10, ada deskripsi 8, ada gambar 7. Tanpa `q`, skor semua 0 sehingga `sort` default menjadi `latest`.
+
+### Contoh respons pencarian + `matched_in`
+
+Request:
+
+```bash
+curl --request GET \
+  --url 'http://127.0.0.1:8001/api/v1/catalog?q=Hutan%20Kalimantan' \
+  --header 'Accept: application/json'
+```
+
+Respons (dipotong):
+
+```json
+{
+  "success": true,
+  "message": "Katalog gabungan berhasil diambil.",
+  "data": [
+    {
+      "type": "product",
+      "listing_id": 21,
+      "id": 9,
+      "name": "Madu Hutan Kalimantan",
+      "slug": "madu-hutan-kalimantan",
+      "code": "PRD-WAL-1A2B3C4D",
+      "price": { "min": "93000.00", "max": "93000.00" },
+      "image_url": "http://127.0.0.1:8001/storage/21/image.jpg",
+      "store": {
+        "id": 3,
+        "name": "Walatra Herbal",
+        "slug": "walatra-herbal",
+        "city": "Bandung",
+        "province": "Jawa Barat"
+      },
+      "published_at": "2026-09-17T10:00:00+07:00",
+      "matched_in": ["name"]
+    }
+  ]
+}
+```
+
 ### Contoh penggunaan di web frontend
 
 ```javascript
+// 1. Homepage: tanpa q = otomatis latest
+const homeRes = await fetch(`${BASE_URL}/api/v1/catalog?per_page=20`, {
+  headers: { Accept: 'application/json' },
+});
+
+// 2. Searchbar: ketik "kronis lambung" (urutan bebas)
 const params = new URLSearchParams({
-  q: 'lambung',
-  sort: 'price_asc',
+  q: 'kronis lambung',
+  sort: 'relevance', // boleh dihilangkan, default saat ada q = relevance
   page: '1',
   per_page: '20',
 });
@@ -178,11 +280,47 @@ result.data.forEach((item) => {
     ? `/produk/${item.slug}`
     : `/bundle/${item.slug}`;
 
-  console.log(item.name, item.type, detailUrl);
+  // Label "ketemu di ..." dari field matched_in (non-breaking, bisa kosong)
+  const foundIn = (item.matched_in ?? []).join(', ') || 'katalog';
+
+  console.log(item.name, item.type, detailUrl, `ketemu di ${foundIn}`);
 });
 ```
 
+```javascript
+// 3. Pagination: halaman 1 vs 2 harus beda listing_id
+const page1 = await (await fetch(`${BASE_URL}/api/v1/catalog?type=product&per_page=2&page=1&sort=name_asc`, {
+  headers: { Accept: 'application/json' },
+})).json();
+
+const page2 = await (await fetch(`${BASE_URL}/api/v1/catalog?type=product&per_page=2&page=2&sort=name_asc`, {
+  headers: { Accept: 'application/json' },
+})).json();
+
+console.log(page2.meta.current_page); // 2
+console.log(page1.data[0].listing_id !== page2.data[0].listing_id); // true
+```
+
 Gunakan `links.next` atau `meta.current_page` dan `meta.last_page` untuk pagination. Jangan menebak URL halaman berikutnya sendiri jika `links.next` bernilai `null`.
+
+Field `matched_in` hanya terisi bermakna saat parameter `q` diisi. Nilainya subset dari `name`, `code`, atau `store` yang cocok dengan seluruh kata kunci. Contoh: `q=Hutan Kalimantan` menghasilkan `"matched_in": ["name"]`. Tanpa `q`, nilainya `[]`. Field ini bersifat tambahan (non-breaking) agar frontend bisa menampilkan label "ketemu di nama/toko" tanpa parsing manual. Keterbatasan saat ini: kecocokan di deskripsi, varian, kategori, atau komponen bundle tetap membuat item muncul di hasil, tetapi tidak mengubah nilai `matched_in`.
+
+```kotlin
+// 4. Android (Kotlin + Retrofit): search + pagination
+interface CatalogApi {
+    @GET("catalog")
+    suspend fun searchCatalog(
+        @Query("q") query: String, // misal "100ml" atau "pencernaan"
+        @Query("sort") sort: String = "relevance",
+        @Query("page") page: Int = 1,
+        @Query("per_page") perPage: Int = 20,
+    ): CatalogResponse
+}
+
+// Pemakaian:
+// val result = api.searchCatalog(query = "kronis lambung")
+// val label = result.data.firstOrNull()?.matchedIn?.joinToString() ?: "katalog"
+```
 
 ## Katalog produk
 
@@ -197,7 +335,9 @@ Endpoint list produk mendukung `q`, `store`, `category`, `min_price`, `max_price
 relevance, latest, name_asc, name_desc, price_asc, price_desc
 ```
 
-Response list menggunakan struktur `listing_id`, `product`, `store`, `variants`, `images`, dan `published_at`.
+Response list menggunakan struktur `listing_id`, `product`, `store`, `variants`, `images`, dan `published_at`. Pencarian `q` menggunakan token-AND yang sama dengan katalog gabungan: tiap kata wajib cocok dan boleh beda field (nama produk, kode, SKU/nama varian, nama kategori aktif, nama toko, deskripsi etalase toko).
+
+Detail produk (`GET /catalog/products/{slug}`) tidak memiliki field deskripsi di root karena deskripsi pusat tidak dipakai. Deskripsi etalase tiap toko ada di `stores[].description` (bisa `null` apa adanya jika toko tidak mengisi). Contoh: `data.stores[0].description`.
 
 Contoh request list dan detail:
 
@@ -218,7 +358,7 @@ GET /catalog/bundles
 GET /catalog/bundles/{slug}
 ```
 
-Endpoint list bundle mendukung `q`, `store`, `sort`, `page`, dan `per_page`. Nilai `sort` yang tersedia:
+Endpoint list bundle mendukung `q`, `store`, `sort`, `page`, dan `per_page`. Pencarian `q` menggunakan token-AND seperti katalog gabungan dan mencari nama bundle, kode, nama toko, deskripsi etalase, SKU/nama varian komponen, serta nama produk komponen. Nilai `sort` yang tersedia:
 
 ```text
 latest, name_asc, name_desc, price_asc, price_desc
@@ -236,6 +376,16 @@ curl --request GET \
 curl --request GET \
   --url 'http://127.0.0.1:8001/api/v1/catalog/bundles/paket-lambung-sehat' \
   --header 'Accept: application/json'
+
+# Cari bundle dari nama produk komponennya (token-AND, konsisten dengan /catalog)
+curl --request GET \
+  --url 'http://127.0.0.1:8001/api/v1/catalog/bundles?q=Jahe%20Merah' \
+  --header 'Accept: application/json'
+
+# Cari bundle dari SKU varian komponen
+curl --request GET \
+  --url 'http://127.0.0.1:8001/api/v1/catalog/bundles?q=SKU-TEST-BUNDLE-01' \
+  --header 'Accept: application/json'
 ```
 
 ## Katalog kategori
@@ -245,7 +395,7 @@ GET /catalog/categories
 GET /catalog/categories/{slug}
 ```
 
-Kategori hanya dikelola oleh superadmin. Produk dapat memiliki lebih dari satu kategori. Endpoint kategori hanya menghitung dan menampilkan produk katalog yang memenuhi aturan aktif.
+Kategori hanya dikelola oleh superadmin. Produk dapat memiliki lebih dari satu kategori. Endpoint kategori hanya menghitung dan menampilkan produk katalog yang memenuhi aturan aktif (termasuk wajib memiliki minimal satu varian aktif, sama seperti aturan visibilitas di bawah).
 
 Contoh request:
 

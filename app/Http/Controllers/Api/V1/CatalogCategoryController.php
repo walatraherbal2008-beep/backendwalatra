@@ -62,6 +62,7 @@ class CatalogCategoryController extends Controller
     {
         return $query
             ->where('products.status', 'active')
+            ->whereHas('variants', fn (Builder $variantQuery): Builder => $variantQuery->where('status', 'active'))
             ->whereHas('listings', function (Builder $listingQuery): void {
                 $listingQuery
                     ->where('store_product_listings.status', 'active')

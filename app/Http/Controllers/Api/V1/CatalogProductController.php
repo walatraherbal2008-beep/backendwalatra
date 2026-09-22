@@ -117,27 +117,50 @@ class CatalogProductController extends Controller
 
     private function applySearch(Builder $query, string $search): void
     {
+        $search = trim($search);
+
         if ($search === '') {
             return;
         }
 
-        $like = "%{$search}%";
-        $prefix = "{$search}%";
+        // Token-AND konsisten dengan unified /catalog: tiap kata wajib cocok,
+        // boleh beda urutan dan beda field. Max 10 token.
+        $tokens = collect(preg_split('/\s+/', $search) ?: [])
+            ->map(fn ($token): string => trim((string) $token))
+            ->filter(fn ($token): bool => $token !== '')
+            ->take(10)
+            ->values();
 
-        if (DB::connection()->getDriverName() !== 'pgsql' || mb_strlen($search) < 2) {
+        foreach ($tokens as $token) {
+            $like = '%'.$token.'%';
+
             $query->where(function (Builder $listingQuery) use ($like): void {
                 $listingQuery
                     ->whereHas('product', function (Builder $productQuery) use ($like): void {
                         $productQuery
                             ->whereLike('name', $like)
                             ->orWhereLike('product_code', $like)
-                            ->orWhereHas('variants', fn (Builder $variantQuery): Builder => $variantQuery->whereLike('sku', $like));
+                            // SKU + nama varian (misal "100ml").
+                            ->orWhereHas('variants', fn (Builder $variantQuery): Builder => $variantQuery
+                                ->whereLike('sku', $like)
+                                ->orWhereLike('name', $like))
+                            // Nama kategori aktif.
+                            ->orWhereHas('categories', fn (Builder $categoryQuery): Builder => $categoryQuery
+                                ->where('categories.status', 'active')
+                                ->whereLike('categories.name', $like));
                     })
-                    ->orWhereHas('store', fn (Builder $storeQuery): Builder => $storeQuery->whereLike('name', $like));
+                    ->orWhereHas('store', fn (Builder $storeQuery): Builder => $storeQuery->whereLike('name', $like))
+                    // Deskripsi etalase toko.
+                    ->orWhereLike('store_product_listings.description', $like);
             });
+        }
 
+        if (DB::connection()->getDriverName() !== 'pgsql' || mb_strlen($search) < 2) {
             return;
         }
+
+        $like = "%{$search}%";
+        $prefix = "{$search}%";
 
         $query
             ->join('products as search_products', 'search_products.id', '=', 'store_product_listings.product_id')
@@ -217,12 +240,12 @@ class CatalogProductController extends Controller
                   AND media.model_id = store_product_listings.id
                   AND media.collection_name = 'images'
             ) THEN 25 ELSE 0 END
-            + CASE WHEN NULLIF(BTRIM(COALESCE(store_product_listings.description, '')), '') IS NOT NULL THEN 20 ELSE 0 END
+            + CASE WHEN COALESCE(store_product_listings.description, '') <> '' THEN 20 ELSE 0 END
             + CASE WHEN EXISTS (
                 SELECT 1 FROM category_product
                 WHERE category_product.product_id = {$productTable}.id
             ) THEN 15 ELSE 0 END
-            + CASE WHEN NULLIF(BTRIM(COALESCE({$productTable}.bpom_number, '')), '') IS NOT NULL THEN 15 ELSE 0 END
+            + CASE WHEN COALESCE({$productTable}.bpom_number, '') <> '' THEN 15 ELSE 0 END
             + 25
         )";
 
