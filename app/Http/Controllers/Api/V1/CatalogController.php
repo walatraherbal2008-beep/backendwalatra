@@ -7,6 +7,7 @@ use App\Http\Requests\Api\V1\CatalogIndexRequest;
 use App\Http\Resources\Api\V1\CatalogItemResource;
 use App\Models\StoreBundleListing;
 use App\Models\StoreProductListing;
+use App\Support\ListingImageConversions;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -75,7 +76,7 @@ class CatalogController extends Controller
             ->with('media')
             ->get()
             ->mapWithKeys(fn (StoreProductListing $listing): array => [
-                $listing->getKey() => $listing->getFirstMedia('images')?->getUrl(),
+                $listing->getKey() => ListingImageConversions::urls($listing->getFirstMedia('images')),
             ]);
 
         $bundleImages = $bundleIds->isEmpty() ? collect() : StoreBundleListing::query()
@@ -83,13 +84,19 @@ class CatalogController extends Controller
             ->with('media')
             ->get()
             ->mapWithKeys(fn (StoreBundleListing $listing): array => [
-                $listing->getKey() => $listing->getFirstMedia('images')?->getUrl(),
+                $listing->getKey() => ListingImageConversions::urls($listing->getFirstMedia('images')),
             ]);
 
+        $fallback = ['url' => null, 'thumb' => null, 'preview' => null, 'full' => null];
+
         foreach ($items as $item) {
-            $item->image_url = $item->type === 'product'
-                ? ($productImages[$item->listing_id] ?? null)
-                : ($bundleImages[$item->listing_id] ?? null);
+            $images = $item->type === 'product'
+                ? ($productImages[$item->listing_id] ?? $fallback)
+                : ($bundleImages[$item->listing_id] ?? $fallback);
+
+            // image_url lama tetap (full original) agar FE lama tidak broken.
+            $item->image_url = $images['url'];
+            $item->image = $images;
         }
     }
 

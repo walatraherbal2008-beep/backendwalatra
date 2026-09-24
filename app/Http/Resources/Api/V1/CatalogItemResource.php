@@ -20,6 +20,7 @@ class CatalogItemResource extends JsonResource
                 ? ['min' => $this->price_min, 'max' => $this->price_max]
                 : ['value' => $this->price_min],
             'image_url' => $this->image_url,
+            'image' => $this->image ?? ['url' => $this->image_url, 'thumb' => null, 'preview' => null, 'full' => null],
             'store' => [
                 'id' => (int) $this->store_id,
                 'name' => $this->store_name,

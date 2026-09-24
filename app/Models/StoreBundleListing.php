@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\ListingImageConversions;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -88,6 +89,6 @@ class StoreBundleListing extends Model implements HasMedia
 
     public function registerMediaConversions(?Media $media = null): void
     {
-        // Conversions can be added when the frontend image requirements are finalized.
+        ListingImageConversions::register($this);
     }
 }

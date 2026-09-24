@@ -73,6 +73,12 @@ curl --request GET \
         "max": "75000.00"
       },
       "image_url": "http://127.0.0.1:8001/storage/12/image.jpg",
+      "image": {
+        "url": "http://127.0.0.1:8001/storage/12/image.jpg",
+        "thumb": "http://127.0.0.1:8001/storage/12/conversions/image-thumb.jpg",
+        "preview": "http://127.0.0.1:8001/storage/12/conversions/image-preview.jpg",
+        "full": "http://127.0.0.1:8001/storage/12/conversions/image-full.jpg"
+      },
       "store": {
         "id": 3,
         "name": "Walatra Herbal",
@@ -94,6 +100,7 @@ curl --request GET \
         "value": "120000.00"
       },
       "image_url": null,
+      "image": { "url": null, "thumb": null, "preview": null, "full": null },
       "store": {
         "id": 3,
         "name": "Walatra Herbal",
@@ -209,6 +216,21 @@ curl --request GET \
 
 Skor relevance 0-100 dihitung dari: nama persis 100, awalan nama 80, mengandung 50, kode persis 70, SKU/komponen 20, nama toko 10, ada deskripsi 8, ada gambar 7. Tanpa `q`, skor semua 0 sehingga `sort` default menjadi `latest`.
 
+### Gambar etalase (thumb / preview / full)
+
+Setiap listing mengembalikan `image_url` (original, kompatibilitas lama) plus objek `image`:
+
+```json
+"image": {
+  "url": "http://127.0.0.1:8001/storage/12/image.jpg",
+  "thumb": "http://127.0.0.1:8001/storage/12/conversions/image-thumb.jpg",
+  "preview": "http://127.0.0.1:8001/storage/12/conversions/image-preview.jpg",
+  "full": "http://127.0.0.1:8001/storage/12/conversions/image-full.jpg"
+}
+```
+
+Ukuran: `thumb` 300x300 crop (kartu katalog), `preview` max 800 (halaman detail), `full` max 1600 (zoom). `thumb` dibuat sync saat upload sehingga langsung tersedia; `preview` + `full` diproses via queue redis sehingga bisa `null` sesaat setelah upload — frontend wajib fallback ke `url` jika `null`. Daftar `images[]` di `/catalog/products`, `/catalog/bundles`, dan detail juga memakai bentuk `url/thumb/preview/full` per item.
+
 ### Contoh respons pencarian + `matched_in`
 
 Request:
@@ -235,6 +257,12 @@ Respons (dipotong):
       "code": "PRD-WAL-1A2B3C4D",
       "price": { "min": "93000.00", "max": "93000.00" },
       "image_url": "http://127.0.0.1:8001/storage/21/image.jpg",
+      "image": {
+        "url": "http://127.0.0.1:8001/storage/21/image.jpg",
+        "thumb": "http://127.0.0.1:8001/storage/21/conversions/image-thumb.jpg",
+        "preview": "http://127.0.0.1:8001/storage/21/conversions/image-preview.jpg",
+        "full": "http://127.0.0.1:8001/storage/21/conversions/image-full.jpg"
+      },
       "store": {
         "id": 3,
         "name": "Walatra Herbal",
@@ -280,10 +308,15 @@ result.data.forEach((item) => {
     ? `/produk/${item.slug}`
     : `/bundle/${item.slug}`;
 
+  // Gambar: list pakai thumb, detail pakai preview, zoom pakai full.
+  // preview/full bisa null sesaat (queue) -> fallback ke url.
+  const cardSrc = item.image?.thumb ?? item.image_url;
+  const detailSrc = item.image?.preview ?? item.image_url;
+
   // Label "ketemu di ..." dari field matched_in (non-breaking, bisa kosong)
   const foundIn = (item.matched_in ?? []).join(', ') || 'katalog';
 
-  console.log(item.name, item.type, detailUrl, `ketemu di ${foundIn}`);
+  console.log(item.name, item.type, detailUrl, cardSrc, `ketemu di ${foundIn}`);
 });
 ```
 

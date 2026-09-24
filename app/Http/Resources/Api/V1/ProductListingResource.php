@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\Api\V1;
 
+use App\Support\ListingImageConversions;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -34,12 +35,10 @@ class ProductListingResource extends JsonResource
             'description' => $this->description,
             'status' => $this->status,
             'sort_order' => $this->sort_order,
-            'images' => $this->getMedia('images')->map(fn ($media): array => [
-                'id' => $media->id,
-                'url' => $media->getUrl(),
-                'name' => $media->name,
-                'order' => $media->order_column,
-            ])->values(),
+            'images' => $this->getMedia('images')->map(fn ($media): array => array_merge(
+                ['id' => $media->id, 'name' => $media->name, 'order' => $media->order_column],
+                ListingImageConversions::urls($media),
+            ))->values(),
             'variants' => $this->product->variants->map(fn ($variant): array => [
                 'id' => $variant->id,
                 'name' => $variant->name,

@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\Api\V1;
 
+use App\Support\ListingImageConversions;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -30,12 +31,10 @@ class BundleListingResource extends JsonResource
             'description' => $this->description,
             'status' => $this->status,
             'sort_order' => $this->sort_order,
-            'images' => $this->getMedia('images')->map(fn ($media): array => [
-                'id' => $media->id,
-                'url' => $media->getUrl(),
-                'name' => $media->name,
-                'order' => $media->order_column,
-            ])->values(),
+            'images' => $this->getMedia('images')->map(fn ($media): array => array_merge(
+                ['id' => $media->id, 'name' => $media->name, 'order' => $media->order_column],
+                ListingImageConversions::urls($media),
+            ))->values(),
             'published_at' => $this->published_at?->toIso8601String(),
         ];
     }
