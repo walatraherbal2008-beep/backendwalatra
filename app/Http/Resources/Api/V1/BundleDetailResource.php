@@ -16,7 +16,13 @@ class BundleDetailResource extends JsonResource
             'code' => $this->code,
             'price' => $this->price,
             'items' => BundleItemsResource::collection($this->items),
-            'stores' => BundleStoreOfferResource::collection($this->storeListings),
+            // Pakai instance bundle yang sama (items.variant.product sudah
+            // eager) agar fallback gambar master di tiap offer tidak N+1.
+            'stores' => BundleStoreOfferResource::collection(
+                $this->storeListings->each(
+                    fn ($listing) => $listing->setRelation('bundle', $this->resource),
+                ),
+            ),
         ];
     }
 }

@@ -35,10 +35,11 @@ class ProductListingResource extends JsonResource
             'description' => $this->description,
             'status' => $this->status,
             'sort_order' => $this->sort_order,
-            'images' => $this->getMedia('images')->map(fn ($media): array => array_merge(
-                ['id' => $media->id, 'name' => $media->name, 'order' => $media->order_column],
-                ListingImageConversions::urls($media),
-            ))->values(),
+            'images' => ListingImageConversions::gallery($this->resource, $this->product)
+                ->map(fn ($media): array => array_merge(
+                    ['id' => $media->id, 'name' => $media->name, 'order' => $media->order_column],
+                    ListingImageConversions::urls($media),
+                ))->values(),
             'variants' => $this->product->variants->map(fn ($variant): array => [
                 'id' => $variant->id,
                 'name' => $variant->name,

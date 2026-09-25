@@ -2,7 +2,9 @@
 
 namespace App\Support;
 
+use Illuminate\Support\Collection;
 use Spatie\Image\Enums\Fit;
+use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class ListingImageConversions
@@ -37,6 +39,23 @@ class ListingImageConversions
             ->fit(Fit::Max, self::FULL_SIZE, self::FULL_SIZE)
             ->quality(85)
             ->keepOriginalImageFormat();
+    }
+
+    /**
+     * Galeri gambar etalase: pakai gambar toko; kalau kosong, fallback ke
+     * gambar master (pusat) agar kartu/galeri katalog tidak tampil kosong.
+     *
+     * @return Collection<int, Media>
+     */
+    public static function gallery(HasMedia $listing, ?HasMedia $master = null): Collection
+    {
+        $images = collect($listing->getMedia('images'));
+
+        if ($images->isNotEmpty() || $master === null) {
+            return $images;
+        }
+
+        return collect($master->getMedia('images'));
     }
 
     /**

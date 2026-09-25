@@ -21,10 +21,11 @@ class ProductStoreOfferResource extends JsonResource
                 'province' => $this->store->province,
             ],
             'description' => $this->description,
-            'images' => $this->getMedia('images')->map(fn ($media): array => array_merge(
-                ['id' => $media->id, 'name' => $media->name, 'order' => $media->order_column],
-                ListingImageConversions::urls($media),
-            ))->values(),
+            'images' => ListingImageConversions::gallery($this->resource, $this->product)
+                ->map(fn ($media): array => array_merge(
+                    ['id' => $media->id, 'name' => $media->name, 'order' => $media->order_column],
+                    ListingImageConversions::urls($media),
+                ))->values(),
             'published_at' => $this->published_at,
         ];
     }

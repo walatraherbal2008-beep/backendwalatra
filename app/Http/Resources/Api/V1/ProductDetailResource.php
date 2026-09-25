@@ -28,7 +28,13 @@ class ProductDetailResource extends JsonResource
                 'weight_grams' => $variant->weight_grams,
                 'attributes' => $variant->attributes,
             ])->values(),
-            'stores' => ProductStoreOfferResource::collection($this->listings),
+            'stores' => ProductStoreOfferResource::collection(
+                $this->listings->each(
+                    // Pakai instance produk yang sama (variants/categories sudah
+                    // eager) agar fallback gambar master di tiap offer tidak N+1.
+                    fn ($listing) => $listing->setRelation('product', $this->resource),
+                ),
+            ),
         ];
     }
 }

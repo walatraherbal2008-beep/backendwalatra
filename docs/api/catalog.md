@@ -231,6 +231,14 @@ Setiap listing mengembalikan `image_url` (original, kompatibilitas lama) plus ob
 
 Ukuran: `thumb` 300x300 crop (kartu katalog), `preview` max 800 (halaman detail), `full` max 1600 (zoom). `thumb` dibuat sync saat upload sehingga langsung tersedia; `preview` + `full` diproses via queue redis sehingga bisa `null` sesaat setelah upload — frontend wajib fallback ke `url` jika `null`. Daftar `images[]` di `/catalog/products`, `/catalog/bundles`, dan detail juga memakai bentuk `url/thumb/preview/full` per item.
 
+### Fallback gambar master (pusat)
+
+Listing etalase yang **tidak punya gambar sendiri** tidak pernah tampil kosong: backend otomatis memakai gambar master pusat — gambar produk (koleksi `images` pada `Product`) untuk item produk, atau gambar master **produk pertama** pada bundle untuk item bundle. Karena itu minimalnya `image_url`/`image.url` hanya `null` bila listing *dan* sumber gambar master sama-sama belum punya gambar. Gambar master diunggah lewat panel superadmin (form Produk, field "Gambar produk (pusat)") dan mengonversi thumb/preview/full yang sama.
+
+### Invariant listing aktif
+
+Form panel toko mewajibkan **minimal 1 gambar** untuk listing berstatus `Aktif` — saat create baru, saat transisi draft/inactive → aktif, dan saat menghapus gambar terakhir dari listing aktif. Pengecualian (tetap bisa disimpan tanpa gambar): listing aktif legasi yang memang sudah tidak bergambar, dan kandidat restore (listing lama ber-soft-delete yang sudah bergambar) agar tidak perlu upload ulang. Listing `draft`/`inactive` boleh tanpa gambar.
+
 ### Contoh respons pencarian + `matched_in`
 
 Request:

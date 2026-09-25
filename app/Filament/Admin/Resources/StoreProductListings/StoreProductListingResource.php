@@ -14,6 +14,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\SpatieMediaLibraryImageColumn;
@@ -130,7 +131,34 @@ class StoreProductListingResource extends Resource
                 ->maxFiles(10)
                 ->maxSize(5120)
                 ->panelLayout('grid')
-                ->helperText('Maksimal 10 gambar, masing-masing 5 MB.')
+                ->helperText('Maksimal 10 gambar, masing-masing 5 MB. Wajib minimal 1 gambar saat status Aktif.')
+                ->required(function (Get $get, ?StoreProductListing $record): bool {
+                    if ($get('status') !== 'active') {
+                        return false;
+                    }
+
+                    if ($record instanceof StoreProductListing) {
+                        // Listing aktif legasi yang memang sudah tanpa gambar tetap
+                        // boleh disimpan; guard hanya untuk aktivasi baru dan
+                        // mencegah penghapusan gambar terakhir saat masih aktif.
+                        return $record->status !== 'active'
+                            || $record->getMedia('images')->isNotEmpty();
+                    }
+
+                    // Create: wajib gambar, kecuali ada listing lama (soft-delete)
+                    // milik toko+produk yang sudah bergambar — halaman create akan
+                    // me-restore-annya, jadi gambar etalase lama tetap terpakai.
+                    return ! StoreProductListing::withTrashed()
+                        ->where('store_id', auth()->user()?->store?->getKey())
+                        ->where('product_id', $get('product_id'))
+                        ->whereNotNull('deleted_at')
+                        ->whereHas('media', fn (Builder $query): Builder => $query
+                            ->where('collection_name', 'images'))
+                        ->exists();
+                })
+                ->validationMessages([
+                    'required' => 'Minimal satu gambar wajib diunggah untuk listing berstatus Aktif.',
+                ])
                 ->columnSpanFull(),
         ]);
     }

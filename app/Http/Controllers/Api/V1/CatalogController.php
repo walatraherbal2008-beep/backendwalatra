@@ -5,12 +5,15 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\CatalogIndexRequest;
 use App\Http\Resources\Api\V1\CatalogItemResource;
+use App\Models\Product;
+use App\Models\ProductBundleItem;
 use App\Models\StoreBundleListing;
 use App\Models\StoreProductListing;
 use App\Support\ListingImageConversions;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class CatalogController extends Controller
@@ -64,40 +67,112 @@ class CatalogController extends Controller
     /**
      * Preload gambar etalase sekaligus untuk 1 halaman agar tidak N+1.
      *
-     * @param  \Illuminate\Support\Collection<int, object>  $items
+     * @param  Collection<int, object>  $items
      */
     private function attachImages($items): void
     {
-        $productIds = $items->where('type', 'product')->pluck('listing_id')->unique()->values();
-        $bundleIds = $items->where('type', 'bundle')->pluck('listing_id')->unique()->values();
+        $productListingIds = $items->where('type', 'product')->pluck('listing_id')->unique()->values();
+        $bundleListingIds = $items->where('type', 'bundle')->pluck('listing_id')->unique()->values();
 
-        $productImages = $productIds->isEmpty() ? collect() : StoreProductListing::query()
-            ->whereIn('id', $productIds)
+        $productImages = $productListingIds->isEmpty() ? collect() : StoreProductListing::query()
+            ->whereIn('id', $productListingIds)
             ->with('media')
             ->get()
             ->mapWithKeys(fn (StoreProductListing $listing): array => [
                 $listing->getKey() => ListingImageConversions::urls($listing->getFirstMedia('images')),
             ]);
 
-        $bundleImages = $bundleIds->isEmpty() ? collect() : StoreBundleListing::query()
-            ->whereIn('id', $bundleIds)
+        $bundleImages = $bundleListingIds->isEmpty() ? collect() : StoreBundleListing::query()
+            ->whereIn('id', $bundleListingIds)
             ->with('media')
             ->get()
             ->mapWithKeys(fn (StoreBundleListing $listing): array => [
                 $listing->getKey() => ListingImageConversions::urls($listing->getFirstMedia('images')),
             ]);
 
+        // Fallback gambar master (pusat): etalase tanpa gambar tidak boleh
+        // tampil kosong di katalog — pakai gambar produk pusat, atau gambar
+        // produk pertama pada bundle untuk item bundle.
+        $masterProductImages = $this->masterProductImages(
+            $items->where('type', 'product')->pluck('item_id')->unique()->values(),
+        );
+        $masterBundleImages = $this->masterBundleImages(
+            $items->where('type', 'bundle')->pluck('item_id')->unique()->values(),
+        );
+
         $fallback = ['url' => null, 'thumb' => null, 'preview' => null, 'full' => null];
 
         foreach ($items as $item) {
-            $images = $item->type === 'product'
-                ? ($productImages[$item->listing_id] ?? $fallback)
-                : ($bundleImages[$item->listing_id] ?? $fallback);
+            $isProduct = $item->type === 'product';
+            $images = ($isProduct ? $productImages : $bundleImages)[$item->listing_id] ?? $fallback;
+
+            if (($images['url'] ?? null) === null) {
+                // Listing etalase tanpa gambar → fallback ke gambar master (pusat).
+                $images = ($isProduct ? $masterProductImages : $masterBundleImages)[$item->item_id] ?? $fallback;
+            }
 
             // image_url lama tetap (full original) agar FE lama tidak broken.
             $item->image_url = $images['url'];
             $item->image = $images;
         }
+    }
+
+    /**
+     * Gambar master produk (pusat) untuk fallback listing etalase kosong.
+     *
+     * @param  Collection<int, int|string>  $productIds
+     * @return Collection<int, array{url: ?string, thumb: ?string, preview: ?string, full: ?string}>
+     */
+    private function masterProductImages(Collection $productIds): Collection
+    {
+        if ($productIds->isEmpty()) {
+            return collect();
+        }
+
+        return Product::query()
+            ->whereIn('id', $productIds)
+            ->with('media')
+            ->get()
+            ->mapWithKeys(fn (Product $product): array => [
+                $product->getKey() => ListingImageConversions::urls($product->getFirstMedia('images')),
+            ]);
+    }
+
+    /**
+     * Fallback bundle: gambar master produk pertama pada bundle
+     * (master bundle sendiri belum punya koleksi gambar).
+     *
+     * @param  Collection<int, int|string>  $bundleIds
+     * @return Collection<int, array{url: ?string, thumb: ?string, preview: ?string, full: ?string}>
+     */
+    private function masterBundleImages(Collection $bundleIds): Collection
+    {
+        if ($bundleIds->isEmpty()) {
+            return collect();
+        }
+
+        $firstProductPerBundle = ProductBundleItem::query()
+            ->join('product_variants', 'product_variants.id', '=', 'product_bundle_items.product_variant_id')
+            ->whereIn('product_bundle_items.product_bundle_id', $bundleIds)
+            ->orderBy('product_bundle_items.id')
+            ->get(['product_bundle_items.product_bundle_id', 'product_variants.product_id'])
+            ->unique('product_bundle_id')
+            ->mapWithKeys(fn (ProductBundleItem $item): array => [
+                $item->product_bundle_id => $item->product_id,
+            ]);
+
+        if ($firstProductPerBundle->isEmpty()) {
+            return collect();
+        }
+
+        $imagesByProductId = $this->masterProductImages(
+            $firstProductPerBundle->values()->unique()->values(),
+        );
+
+        return $firstProductPerBundle->mapWithKeys(fn ($productId, $bundleId): array => [
+            $bundleId => $imagesByProductId[$productId]
+                ?? ['url' => null, 'thumb' => null, 'preview' => null, 'full' => null],
+        ]);
     }
 
     private function productQuery(CatalogIndexRequest $request, string $search = ''): EloquentBuilder

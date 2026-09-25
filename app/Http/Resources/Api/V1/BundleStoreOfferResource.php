@@ -21,7 +21,10 @@ class BundleStoreOfferResource extends JsonResource
                 'province' => $this->store->province,
             ],
             'description' => $this->description,
-            'images' => $this->getMedia('images')->map(fn ($media): array => array_merge(
+            'images' => ListingImageConversions::gallery(
+                $this->resource,
+                $this->bundle->items->first()?->variant?->product,
+            )->map(fn ($media): array => array_merge(
                 ['id' => $media->id, 'name' => $media->name, 'order' => $media->order_column],
                 ListingImageConversions::urls($media),
             ))->values(),
