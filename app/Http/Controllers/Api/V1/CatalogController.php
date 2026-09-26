@@ -183,6 +183,9 @@ class CatalogController extends Controller
             ->where('store_product_listings.status', 'active')
             ->where('products.status', 'active')
             ->where('stores.status', 'active')
+            ->where(function (EloquentBuilder $storeQuery): void {
+                $this->applyEligibleStoreOwnerFilter($storeQuery);
+            })
             ->whereExists(fn (Builder $variant): Builder => $variant
                 ->selectRaw('1')
                 ->from('product_variants')
@@ -229,6 +232,9 @@ class CatalogController extends Controller
             ->where('store_bundle_listings.status', 'active')
             ->where('product_bundles.status', 'active')
             ->where('stores.status', 'active')
+            ->where(function (EloquentBuilder $storeQuery): void {
+                $this->applyEligibleStoreOwnerFilter($storeQuery);
+            })
             ->whereExists(fn (Builder $item): Builder => $item
                 ->selectRaw('1')
                 ->from('product_bundle_items')
@@ -442,5 +448,30 @@ class CatalogController extends Controller
                     ->when($request->filled('max_price'), fn (EloquentBuilder $q): EloquentBuilder => $q->where('product_bundles.price', '<=', $request->input('max_price')));
             }
         }
+    }
+
+    private function applyEligibleStoreOwnerFilter(EloquentBuilder $query): void
+    {
+        $query
+            ->whereNull('stores.owner_user_id')
+            ->orWhereExists(function (Builder $ownerQuery): void {
+                $ownerQuery
+                    ->selectRaw('1')
+                    ->from('users as marketplace_owners')
+                    ->whereColumn('marketplace_owners.id', 'stores.owner_user_id')
+                    ->where('marketplace_owners.user_type', 'customer')
+                    ->where('marketplace_owners.status', 'active')
+                    ->whereNotNull('marketplace_owners.email_verified_at')
+                    ->whereExists(function (Builder $roleQuery): void {
+                        $roleQuery
+                            ->selectRaw('1')
+                            ->from('model_has_roles')
+                            ->join('roles', 'roles.id', '=', 'model_has_roles.role_id')
+                            ->whereColumn('model_has_roles.model_id', 'marketplace_owners.id')
+                            ->where('model_has_roles.model_type', 'App\\Models\\User')
+                            ->where('roles.name', 'store_admin')
+                            ->where('roles.guard_name', 'web');
+                    });
+            });
     }
 }

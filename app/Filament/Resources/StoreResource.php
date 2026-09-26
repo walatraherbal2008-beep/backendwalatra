@@ -70,6 +70,7 @@ class StoreResource extends Resource
                 modifyQueryUsing: function (Builder $query, ?Store $record): Builder {
                     return $query
                         ->role('store_admin')
+                        ->where('user_type', 'customer')
                         ->where('status', 'active')
                         ->whereNotNull('email_verified_at')
                         ->whereDoesntHave('store', function (Builder $storeQuery) use ($record): void {

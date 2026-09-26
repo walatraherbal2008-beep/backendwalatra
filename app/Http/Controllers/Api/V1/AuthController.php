@@ -16,6 +16,7 @@ class AuthController extends Controller
     {
         $user = User::query()
             ->where('email', $request->string('email')->toString())
+            ->where('user_type', 'customer')
             ->where('status', 'active')
             ->first();
 

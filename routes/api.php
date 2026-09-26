@@ -6,28 +6,51 @@ use App\Http\Controllers\Api\V1\CatalogCategoryController;
 use App\Http\Controllers\Api\V1\CatalogController;
 use App\Http\Controllers\Api\V1\CatalogProductController;
 use App\Http\Controllers\Api\V1\CustomerAuthController;
+use App\Http\Controllers\Api\V1\CartController;
+use App\Http\Controllers\Api\V1\CheckoutController;
+use App\Http\Controllers\Api\V1\OrderController;
+use App\Http\Controllers\Api\V1\PaymentController;
+use App\Http\Controllers\Api\V1\AddressController;
 use App\Http\Middleware\EnsureUserIsActive;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function (): void {
-    Route::get('/catalog/products', [CatalogProductController::class, 'index']);
-    Route::get('/catalog', [CatalogController::class, 'index']);
-    Route::get('/catalog/products/{slug}', [CatalogProductController::class, 'show']);
-    Route::get('/catalog/categories', [CatalogCategoryController::class, 'index']);
-    Route::get('/catalog/categories/{slug}', [CatalogCategoryController::class, 'show']);
-    Route::get('/catalog/bundles', [CatalogBundleController::class, 'index']);
-    Route::get('/catalog/bundles/{slug}', [CatalogBundleController::class, 'show']);
+    Route::middleware('throttle:catalog')->group(function (): void {
+        Route::get('/catalog/products', [CatalogProductController::class, 'index']);
+        Route::get('/catalog', [CatalogController::class, 'index']);
+        Route::get('/catalog/products/{slug}', [CatalogProductController::class, 'show']);
+        Route::get('/catalog/categories', [CatalogCategoryController::class, 'index']);
+        Route::get('/catalog/categories/{slug}', [CatalogCategoryController::class, 'show']);
+        Route::get('/catalog/bundles', [CatalogBundleController::class, 'index']);
+        Route::get('/catalog/bundles/{slug}', [CatalogBundleController::class, 'show']);
+    });
 
     Route::post('/auth/login', [AuthController::class, 'login'])
         ->middleware('throttle:login');
 
-    Route::middleware('auth:sanctum')->group(function (): void {
+    Route::middleware(['auth:sanctum', 'abilities:customer-api'])->group(function (): void {
         Route::post('/auth/logout', [AuthController::class, 'logout']);
         Route::patch('/auth/customer/profile', [AuthController::class, 'updateCustomerProfile'])
             ->middleware(EnsureUserIsActive::class);
         Route::get('/auth/me', [AuthController::class, 'me'])
             ->middleware(EnsureUserIsActive::class);
+        Route::middleware(EnsureUserIsActive::class)->group(function (): void {
+            Route::get('/cart', [CartController::class, 'show']);
+            Route::post('/cart/items', [CartController::class, 'store']);
+            Route::patch('/cart/items/{item}', [CartController::class, 'update']);
+            Route::delete('/cart/items/{item}', [CartController::class, 'destroy']);
+            Route::delete('/cart', [CartController::class, 'clear']);
+            Route::apiResource('addresses', AddressController::class)->only(['index', 'store', 'update', 'destroy']);
+            Route::post('/checkout/preview', [CheckoutController::class, 'preview']);
+            Route::get('/orders', [OrderController::class, 'index']);
+            Route::post('/orders', [OrderController::class, 'store']);
+            Route::get('/orders/{order}', [OrderController::class, 'show']);
+            Route::post('/orders/{order}/cancel', [OrderController::class, 'cancel']);
+            Route::post('/orders/{order}/payment', [PaymentController::class, 'create']);
+        });
     });
+
+    Route::post('/payments/midtrans/webhook', [PaymentController::class, 'webhook']);
     Route::post(
         '/auth/customer/request-otp',
         [CustomerAuthController::class, 'requestOtp'],

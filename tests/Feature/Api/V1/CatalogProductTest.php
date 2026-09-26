@@ -8,6 +8,7 @@ use App\Models\ProductVariant;
 use App\Models\Store;
 use App\Models\StoreProductListing;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
 class CatalogProductTest extends TestCase
@@ -62,6 +63,28 @@ class CatalogProductTest extends TestCase
             ->assertJsonPath('data.stores.0.store.name', Store::query()->firstOrFail()->name)
             ->assertJsonMissingPath('data.stores.0.product')
             ->assertJsonMissingPath('data.stores.0.variants');
+    }
+
+    public function test_catalog_hides_store_when_owner_is_no_longer_an_active_member(): void
+    {
+        Role::findOrCreate('store_admin', 'web');
+        $owner = \App\Models\User::factory()->create([
+            'user_type' => 'customer',
+            'status' => 'active',
+            'email_verified_at' => now(),
+        ]);
+        $owner->assignRole('store_admin');
+
+        $store = Store::factory()->create(['owner_user_id' => $owner->id]);
+        $product = Product::factory()->create();
+        ProductVariant::factory()->create(['product_id' => $product->id]);
+        StoreProductListing::factory()->create(['store_id' => $store->id, 'product_id' => $product->id]);
+
+        $owner->update(['status' => 'inactive']);
+
+        $this->getJson('/api/v1/catalog/products/'.$product->slug)
+            ->assertOk()
+            ->assertJsonCount(0, 'data.stores');
     }
 
     public function test_catalog_price_range_matches_one_variant(): void

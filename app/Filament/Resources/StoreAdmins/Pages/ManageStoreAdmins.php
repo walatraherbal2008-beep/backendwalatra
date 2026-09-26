@@ -21,7 +21,9 @@ class ManageStoreAdmins extends ManageRecords
                 ->icon('heroicon-m-plus')
                 ->using(function (array $data): User {
                     return DB::transaction(function () use ($data): User {
-                        $data['user_type'] = 'admin';
+                        // Seller accounts are members who receive store-admin
+                        // permissions; they are not platform administrators.
+                        $data['user_type'] = 'customer';
                         $data['email_verified_at'] = null;
 
                         $seller = User::query()->create($data);

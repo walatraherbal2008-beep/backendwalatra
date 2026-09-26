@@ -44,5 +44,29 @@ return [
         'timeout' => (int) env('MAXCHAT_TIMEOUT', 30),
         'connect_timeout' => (int) env('MAXCHAT_CONNECT_TIMEOUT', 5),
     ],
+    'midtrans' => [
+        'server_key' => env('MIDTRANS_SERVER_KEY'),
+        'client_key' => env('MIDTRANS_CLIENT_KEY'),
+        'is_production' => (bool) env('MIDTRANS_IS_PRODUCTION', false),
+    ],
+    'warehouse' => [
+        'enabled' => (bool) env('WAREHOUSE_STOCK_ENABLED', false),
+        'base_url' => env('WAREHOUSE_STOCK_BASE_URL'),
+        'token' => env('WAREHOUSE_STOCK_TOKEN'),
+        'timeout' => (int) env('WAREHOUSE_STOCK_TIMEOUT', 10),
+        'paths' => [
+            'check' => env('WAREHOUSE_STOCK_CHECK_PATH', '/stock/check'),
+            'reserve' => env('WAREHOUSE_STOCK_RESERVE_PATH', '/stock/reserve'),
+            'confirm' => env('WAREHOUSE_STOCK_CONFIRM_PATH', '/stock/confirm'),
+            'release' => env('WAREHOUSE_STOCK_RELEASE_PATH', '/stock/release'),
+        ],
+    ],
+    'shipping' => [
+        'enabled' => (bool) env('SHIPPING_RATE_ENABLED', false),
+        'base_url' => env('SHIPPING_RATE_BASE_URL'),
+        'token' => env('SHIPPING_RATE_TOKEN'),
+        'timeout' => (int) env('SHIPPING_RATE_TIMEOUT', 10),
+        'quote_path' => env('SHIPPING_RATE_QUOTE_PATH', '/shipping/quote'),
+    ],
 
 ];

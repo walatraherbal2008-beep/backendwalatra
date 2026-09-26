@@ -3,11 +3,13 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
@@ -25,6 +27,25 @@ class Store extends Model implements HasMedia
 
             if (blank($store->code)) {
                 $store->code = static::generateUniqueCode();
+            }
+        });
+
+        static::saving(function (Store $store): void {
+            if ($store->owner_user_id === null) {
+                return;
+            }
+
+            $owner = $store->owner()->first();
+
+            if (
+                ! $owner
+                || ! $owner->isWalatraMember()
+                || ! $owner->hasRole('store_admin')
+                || $owner->email_verified_at === null
+            ) {
+                throw ValidationException::withMessages([
+                    'owner_user_id' => 'Pemilik toko harus merupakan member Walatra aktif yang telah diverifikasi dan memiliki akses seller.',
+                ]);
             }
         });
     }
@@ -84,6 +105,23 @@ class Store extends Model implements HasMedia
     public function owner(): BelongsTo
     {
         return $this->belongsTo(User::class, 'owner_user_id');
+    }
+
+    public function scopeEligibleForMarketplace(Builder $query): Builder
+    {
+        return $query->where('status', 'active')->where(function (Builder $storeQuery): void {
+            $storeQuery
+                ->whereNull('owner_user_id')
+                ->orWhereHas('owner', function (Builder $ownerQuery): void {
+                    $ownerQuery
+                        ->where('user_type', 'customer')
+                        ->where('status', 'active')
+                        ->whereNotNull('email_verified_at')
+                        ->whereHas('roles', fn (Builder $roleQuery): Builder => $roleQuery
+                            ->where('name', 'store_admin')
+                            ->where('guard_name', 'web'));
+                });
+        });
     }
 
     public function listings(): HasMany

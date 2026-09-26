@@ -1,11 +1,15 @@
 <?php
 
 use App\Exceptions\OtpDeliveryException;
+use App\Exceptions\WarehouseUnavailableException;
+use App\Exceptions\PaymentGatewayUnavailableException;
+use App\Exceptions\ShippingUnavailableException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Laravel\Sanctum\Http\Middleware\CheckAbilities;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
@@ -17,7 +21,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        $middleware->alias([
+            'abilities' => CheckAbilities::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(function (
@@ -63,6 +69,39 @@ return Application::configure(basePath: dirname(__DIR__))
                 'errors' => [
                     'otp' => ['OTP gagal dikirim.'],
                 ],
+            ], 503);
+        });
+
+        $exceptions->render(function (WarehouseUnavailableException $exception, Request $request) {
+            if (! $request->is('api/*')) {
+                return null;
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Layanan gudang sedang tidak tersedia. Silakan coba lagi.',
+            ], 503);
+        });
+
+        $exceptions->render(function (PaymentGatewayUnavailableException $exception, Request $request) {
+            if (! $request->is('api/*')) {
+                return null;
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Layanan pembayaran sedang tidak tersedia. Silakan coba lagi.',
+            ], 503);
+        });
+
+        $exceptions->render(function (ShippingUnavailableException $exception, Request $request) {
+            if (! $request->is('api/*')) {
+                return null;
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Layanan ongkir sedang tidak tersedia. Silakan coba lagi.',
             ], 503);
         });
 

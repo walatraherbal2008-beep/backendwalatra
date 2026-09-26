@@ -5,6 +5,7 @@ namespace Tests\Feature\Api\V1;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
+use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 class AuthTest extends TestCase
@@ -46,6 +47,21 @@ class AuthTest extends TestCase
             'device_name' => 'test-device',
         ])->assertUnauthorized()
             ->assertJsonPath('success', false);
+    }
+
+    public function test_internal_admin_cannot_login_through_customer_api(): void
+    {
+        $admin = User::factory()->create([
+            'email' => 'admin@example.com',
+            'user_type' => 'admin',
+            'password' => Hash::make('password'),
+        ]);
+
+        $this->postJson('/api/v1/auth/login', [
+            'email' => $admin->email,
+            'password' => 'password',
+            'device_name' => 'test-device',
+        ])->assertUnauthorized();
     }
 
     public function test_invalid_customer_phone_returns_json_validation_error(): void
@@ -105,5 +121,13 @@ class AuthTest extends TestCase
         $this->postJson('/api/v1/auth/logout')
             ->assertOk()
             ->assertJsonPath('success', true);
+    }
+
+    public function test_customer_api_requires_customer_api_token_ability(): void
+    {
+        $user = User::factory()->create(['status' => 'active']);
+        Sanctum::actingAs($user, []);
+
+        $this->getJson('/api/v1/auth/me')->assertForbidden();
     }
 }

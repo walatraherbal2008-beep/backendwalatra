@@ -73,7 +73,7 @@ class CatalogBundleController extends Controller
                 'items.variant.product',
                 'storeListings' => fn ($query) => $query
                     ->where('status', 'active')
-                    ->whereHas('store', fn (Builder $storeQuery): Builder => $storeQuery->where('status', 'active'))
+                    ->whereHas('store', fn (Builder $storeQuery): Builder => $storeQuery->eligibleForMarketplace())
                     ->with(['store', 'media']),
             ])
             ->first();
@@ -90,7 +90,7 @@ class CatalogBundleController extends Controller
     {
         return StoreBundleListing::query()
             ->where('store_bundle_listings.status', 'active')
-            ->whereHas('store', fn (Builder $query): Builder => $query->where('status', 'active'))
+            ->whereHas('store', fn (Builder $query): Builder => $query->eligibleForMarketplace())
             ->whereHas('bundle', function (Builder $query): void {
                 $query
                     ->where('status', 'active')

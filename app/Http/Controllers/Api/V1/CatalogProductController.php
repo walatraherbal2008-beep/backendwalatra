@@ -87,7 +87,7 @@ class CatalogProductController extends Controller
                 'categories' => fn ($query) => $query->where('status', 'active')->orderBy('sort_order'),
                 'listings' => fn ($query) => $query
                     ->where('status', 'active')
-                    ->whereHas('store', fn (Builder $storeQuery): Builder => $storeQuery->where('status', 'active'))
+                    ->whereHas('store', fn (Builder $storeQuery): Builder => $storeQuery->eligibleForMarketplace())
                     ->with(['store', 'media']),
             ])
             ->first();
@@ -106,7 +106,7 @@ class CatalogProductController extends Controller
             ->where('store_product_listings.status', 'active')
             ->whereHas('product', fn (Builder $query): Builder => $query->where('status', 'active'))
             ->whereHas('product.variants', fn (Builder $query): Builder => $query->where('status', 'active'))
-            ->whereHas('store', fn (Builder $query): Builder => $query->where('status', 'active'))
+            ->whereHas('store', fn (Builder $query): Builder => $query->eligibleForMarketplace())
             ->with([
                 'product.variants' => fn ($query) => $query->where('status', 'active')->orderBy('id'),
                 'product.categories' => fn ($query) => $query->where('status', 'active')->orderBy('sort_order'),

@@ -66,7 +66,7 @@ class CatalogCategoryController extends Controller
             ->whereHas('listings', function (Builder $listingQuery): void {
                 $listingQuery
                     ->where('store_product_listings.status', 'active')
-                    ->whereHas('store', fn (Builder $storeQuery): Builder => $storeQuery->where('stores.status', 'active'));
+                    ->whereHas('store', fn (Builder $storeQuery): Builder => $storeQuery->eligibleForMarketplace());
             });
     }
 }

@@ -217,7 +217,7 @@ class StoreListingImageRequirementTest extends TestCase
     {
         Role::findOrCreate('store_admin', 'web');
         $admin = User::factory()->create([
-            'user_type' => 'admin',
+            'user_type' => 'customer',
             'status' => 'active',
             'email_verified_at' => now(),
         ]);
