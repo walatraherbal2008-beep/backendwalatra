@@ -17,6 +17,17 @@ class ProductBundleItem extends Model
         'quantity',
     ];
 
+    protected static function booted(): void
+    {
+        static::saving(function (ProductBundleItem $item): void {
+            if (! is_numeric($item->quantity) || (int) $item->quantity < 1) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'quantity' => 'Jumlah komponen bundle minimal 1.',
+                ]);
+            }
+        });
+    }
+
     public function bundle(): BelongsTo
     {
         return $this->belongsTo(ProductBundle::class, 'product_bundle_id');

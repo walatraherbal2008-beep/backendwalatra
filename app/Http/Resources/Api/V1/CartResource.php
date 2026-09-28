@@ -15,19 +15,27 @@ class CartResource extends JsonResource
             'id' => $this->id,
             'items' => $items->map(fn ($item): array => [
                 'id' => $item->id,
+                'type' => $item->item_type,
                 'listing_id' => $item->store_product_listing_id,
+                'bundle_listing_id' => $item->store_bundle_listing_id,
                 'variant_id' => $item->product_variant_id,
-                'product' => [
+                'product' => $item->isBundle() ? null : [
                     'id' => $item->variant->product->id,
                     'name' => $item->variant->product->name,
                     'slug' => $item->variant->product->slug,
                 ],
+                'bundle' => $item->isBundle() ? [
+                    'id' => $item->bundleListing->bundle->id,
+                    'name' => $item->bundleListing->bundle->name,
+                    'slug' => $item->bundleListing->bundle->slug,
+                    'items' => BundleItemsResource::collection($item->bundleListing->bundle->items),
+                ] : null,
                 'store' => [
-                    'id' => $item->listing->store->id,
-                    'name' => $item->listing->store->name,
-                    'slug' => $item->listing->store->slug,
+                    'id' => ($item->isBundle() ? $item->bundleListing : $item->listing)->store->id,
+                    'name' => ($item->isBundle() ? $item->bundleListing : $item->listing)->store->name,
+                    'slug' => ($item->isBundle() ? $item->bundleListing : $item->listing)->store->slug,
                 ],
-                'variant' => [
+                'variant' => $item->isBundle() ? null : [
                     'id' => $item->variant->id,
                     'name' => $item->variant->name,
                     'sku' => $item->variant->sku,

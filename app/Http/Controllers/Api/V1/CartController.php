@@ -9,6 +9,7 @@ use App\Http\Resources\Api\V1\CartResource;
 use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\ProductVariant;
+use App\Models\StoreBundleListing;
 use App\Models\StoreProductListing;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -25,6 +26,48 @@ class CartController extends Controller
     public function store(AddCartItemRequest $request): CartResource
     {
         $cart = $this->cart($request);
+        $type = $request->input('type', 'product');
+
+        if ($type === 'bundle') {
+            $bundleListing = StoreBundleListing::query()
+                ->whereKey($request->integer('bundle_listing_id'))
+                ->where('status', 'active')
+                ->whereHas('store', fn ($query) => $query->eligibleForMarketplace())
+                ->whereHas('bundle', fn ($query) => $query->where('status', 'active')->purchasable())
+                ->with('bundle.items.variant.product')
+                ->first();
+
+            if (! $bundleListing || ! $bundleListing->bundle->isPurchasable()) {
+                throw ValidationException::withMessages([
+                    'bundle_listing_id' => 'Bundle toko tidak tersedia.',
+                ]);
+            }
+
+            DB::transaction(function () use ($cart, $bundleListing, $request): void {
+                $item = CartItem::query()
+                    ->where('cart_id', $cart->id)
+                    ->where('store_bundle_listing_id', $bundleListing->id)
+                    ->lockForUpdate()
+                    ->first();
+
+                if ($item) {
+                    $item->update([
+                        'quantity' => min(99, $item->quantity + $request->integer('quantity')),
+                        'unit_price' => $bundleListing->bundle->price,
+                    ]);
+                } else {
+                    $cart->items()->create([
+                        'item_type' => 'bundle',
+                        'store_bundle_listing_id' => $bundleListing->id,
+                        'quantity' => $request->integer('quantity'),
+                        'unit_price' => $bundleListing->bundle->price,
+                    ]);
+                }
+            });
+
+            return new CartResource($cart->fresh()->load($this->cartRelations()));
+        }
+
         $listing = StoreProductListing::query()
             ->whereKey($request->integer('listing_id'))
             ->where('status', 'active')
@@ -58,6 +101,7 @@ class CartController extends Controller
         DB::transaction(function () use ($cart, $listing, $variant, $request): void {
             $item = CartItem::query()
                 ->where('cart_id', $cart->id)
+                ->where('item_type', 'product')
                 ->where('store_product_listing_id', $listing->id)
                 ->where('product_variant_id', $variant->id)
                 ->lockForUpdate()
@@ -70,6 +114,7 @@ class CartController extends Controller
                 ]);
             } else {
                 $cart->items()->create([
+                    'item_type' => 'product',
                     'store_product_listing_id' => $listing->id,
                     'product_variant_id' => $variant->id,
                     'quantity' => $request->integer('quantity'),
@@ -111,6 +156,11 @@ class CartController extends Controller
 
     private function cartRelations(): array
     {
-        return ['items.variant.product', 'items.listing.store'];
+        return [
+            'items.variant.product',
+            'items.listing.store',
+            'items.bundleListing.store',
+            'items.bundleListing.bundle.items.variant.product',
+        ];
     }
 }

@@ -11,6 +11,7 @@ use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\Address;
 use App\Models\Order;
+use Illuminate\Support\Collection;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -120,7 +121,12 @@ class OrderController extends Controller
 
         $cart = Cart::query()
             ->where('user_id', $request->user()->id)
-            ->with(['items.variant.product', 'items.listing.store'])
+            ->with([
+                'items.variant.product',
+                'items.listing.store',
+                'items.bundleListing.store',
+                'items.bundleListing.bundle.items.variant.product',
+            ])
             ->first();
 
         if (! $cart || $cart->items->isEmpty()) {
@@ -130,28 +136,14 @@ class OrderController extends Controller
             ], 422);
         }
 
-        $validItemCount = CartItem::query()
-            ->where('cart_id', $cart->id)
-            ->whereHas('listing', fn ($query) => $query
-                ->where('status', 'active')
-                ->whereHas('product', fn ($productQuery) => $productQuery->where('status', 'active')))
-            ->whereHas('variant', fn ($query) => $query
-                ->where('status', 'active')
-                ->whereHas('product', fn ($productQuery) => $productQuery->where('status', 'active')))
-            ->whereHas('listing.store', fn ($query) => $query->eligibleForMarketplace())
-            ->count();
-
-        if ($validItemCount !== $cart->items->count()) {
+        if ($cart->items->contains(fn (CartItem $item): bool => ! $this->cartItemIsAvailable($item))) {
             return response()->json([
                 'success' => false,
                 'message' => 'Sebagian item cart sudah tidak tersedia. Silakan perbarui cart.',
             ], 409);
         }
 
-        $stockItems = $cart->items->map(fn ($item): array => [
-            'sku' => $item->variant->sku,
-            'quantity' => $item->quantity,
-        ])->values()->all();
+        $stockItems = $this->stockItems($cart->items);
         $shippingQuote = $shipping->quote($shippingAddress, $stockItems);
         $availability = $warehouse->checkAvailability($stockItems);
 
@@ -169,7 +161,7 @@ class OrderController extends Controller
         try {
             $order = DB::transaction(function () use ($request, $cart, $idempotencyKey, $reservationId, $shippingAddress, $shippingQuote): Order {
                 $subtotal = (float) $cart->items->sum(
-                    fn ($item): float => (float) $item->variant->price * $item->quantity,
+                    fn ($item): float => (float) $item->unit_price * $item->quantity,
                 );
                 $shippingFee = (float) $shippingQuote['fee'];
 
@@ -189,8 +181,33 @@ class OrderController extends Controller
                 ]);
 
                 foreach ($cart->items as $item) {
-                    $unitPrice = $item->variant->price;
+                    if ($item->isBundle()) {
+                        $bundle = $item->bundleListing->bundle;
+                        $order->items()->create([
+                            'item_type' => 'bundle',
+                            'store_bundle_listing_id' => $item->store_bundle_listing_id,
+                            'sku' => 'BUNDLE-'.$bundle->code,
+                            'product_name' => $bundle->name,
+                            'variant_name' => 'Bundle',
+                            'store_name' => $item->bundleListing->store->name,
+                            'bundle_components' => $bundle->items->map(fn ($component): array => [
+                                'variant_id' => $component->variant->id,
+                                'sku' => $component->variant->sku,
+                                'product_name' => $component->variant->product->name,
+                                'variant_name' => $component->variant->name,
+                                'quantity' => $component->quantity,
+                            ])->values()->all(),
+                            'quantity' => $item->quantity,
+                            'unit_price' => $item->unit_price,
+                            'subtotal' => (float) $item->unit_price * $item->quantity,
+                        ]);
+
+                        continue;
+                    }
+
+                    $unitPrice = $item->unit_price;
                     $order->items()->create([
+                        'item_type' => 'product',
                         'store_product_listing_id' => $item->store_product_listing_id,
                         'product_variant_id' => $item->product_variant_id,
                         'sku' => $item->variant->sku,
@@ -218,5 +235,44 @@ class OrderController extends Controller
         }
 
         return new OrderResource($order->load('items'));
+    }
+
+    private function cartItemIsAvailable(CartItem $item): bool
+    {
+        if ($item->isBundle()) {
+            return $item->bundleListing?->status === 'active'
+                && $item->bundleListing->store?->isEligibleForMarketplace()
+                && $item->bundleListing->bundle?->status === 'active'
+                && $item->bundleListing->bundle->isPurchasable();
+        }
+
+        return $item->listing?->status === 'active'
+            && $item->listing->store?->isEligibleForMarketplace()
+            && $item->listing->product?->status === 'active'
+            && $item->variant?->status === 'active'
+            && $item->variant->product?->status === 'active';
+    }
+
+    /** @param Collection<int, CartItem> $items */
+    private function stockItems(Collection $items): array
+    {
+        return $items
+            ->flatMap(function (CartItem $item): Collection {
+                if (! $item->isBundle()) {
+                    return collect([['sku' => $item->variant->sku, 'quantity' => $item->quantity]]);
+                }
+
+                return $item->bundleListing->bundle->items->map(fn ($component): array => [
+                    'sku' => $component->variant->sku,
+                    'quantity' => $component->quantity * $item->quantity,
+                ]);
+            })
+            ->groupBy('sku')
+            ->map(fn (Collection $skuItems, string $sku): array => [
+                'sku' => $sku,
+                'quantity' => $skuItems->sum('quantity'),
+            ])
+            ->values()
+            ->all();
     }
 }

@@ -124,6 +124,20 @@ class Store extends Model implements HasMedia
         });
     }
 
+    public function isEligibleForMarketplace(): bool
+    {
+        if ($this->status !== 'active') {
+            return false;
+        }
+
+        return $this->owner_user_id === null || (
+            $this->owner?->user_type === 'customer'
+            && $this->owner->status === 'active'
+            && $this->owner->email_verified_at !== null
+            && $this->owner->hasRole('store_admin')
+        );
+    }
+
     public function listings(): HasMany
     {
         return $this->hasMany(StoreProductListing::class);

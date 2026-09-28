@@ -21,9 +21,11 @@ class OrderResource extends JsonResource
             'shipping_address' => $this->shipping_address,
             'items' => $this->whenLoaded('items', fn () => $this->items->map(fn ($item): array => [
                 'id' => $item->id,
+                'type' => $item->item_type,
                 'sku' => $item->sku,
                 'product_name' => $item->product_name,
                 'variant_name' => $item->variant_name,
+                'bundle_components' => $item->bundle_components,
                 'store_name' => $item->store_name,
                 'quantity' => $item->quantity,
                 'unit_price' => $item->unit_price,

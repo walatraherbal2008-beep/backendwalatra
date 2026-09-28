@@ -3,8 +3,11 @@
 namespace Tests\Feature\Api\V1;
 
 use App\Models\Product;
+use App\Models\ProductBundle;
+use App\Models\ProductBundleItem;
 use App\Models\ProductVariant;
 use App\Models\Store;
+use App\Models\StoreBundleListing;
 use App\Models\StoreProductListing;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -116,5 +119,39 @@ class CartTest extends TestCase
         $this->postJson('/api/v1/checkout/preview')
             ->assertStatus(409)
             ->assertJsonPath('success', false);
+    }
+
+    public function test_member_can_add_bundle_to_cart(): void
+    {
+        $user = User::factory()->create();
+        Sanctum::actingAs($user, ['customer-api']);
+
+        $product = Product::factory()->create(['status' => 'active']);
+        $variant = ProductVariant::factory()->create([
+            'product_id' => $product->id,
+            'status' => 'active',
+        ]);
+        $bundle = ProductBundle::factory()->create([
+            'status' => 'active',
+            'price' => 25000,
+        ]);
+        ProductBundleItem::factory()->create([
+            'product_bundle_id' => $bundle->id,
+            'product_variant_id' => $variant->id,
+            'quantity' => 2,
+        ]);
+        $listing = StoreBundleListing::factory()->create([
+            'product_bundle_id' => $bundle->id,
+            'status' => 'active',
+        ]);
+
+        $this->postJson('/api/v1/cart/items', [
+            'type' => 'bundle',
+            'bundle_listing_id' => $listing->id,
+            'quantity' => 2,
+        ])->assertOk()
+            ->assertJsonPath('data.items.0.type', 'bundle')
+            ->assertJsonPath('data.items.0.bundle.name', $bundle->name)
+            ->assertJsonPath('data.subtotal', '50000.00');
     }
 }

@@ -52,6 +52,7 @@ class ProductBundle extends Model
         'name',
         'slug',
         'code',
+        'description',
         'price',
         'status',
     ];
@@ -76,7 +77,9 @@ class ProductBundle extends Model
     public function isPurchasable(): bool
     {
         return $this->items->isNotEmpty()
-            && $this->items->every(fn (ProductBundleItem $item): bool => $item->variant?->status === 'active'
+            && (float) $this->price > 0
+            && $this->items->every(fn (ProductBundleItem $item): bool => $item->quantity >= 1
+                && $item->variant?->status === 'active'
                 && $item->variant->product?->status === 'active'
             );
     }
@@ -85,8 +88,10 @@ class ProductBundle extends Model
     {
         return $query
             ->whereHas('items')
+            ->where('price', '>', 0)
             ->whereDoesntHave('items', function (Builder $itemQuery): void {
                 $itemQuery
+                    ->where('quantity', '<', 1)
                     ->whereDoesntHave('variant')
                     ->orWhereHas('variant', function (Builder $variantQuery): void {
                         $variantQuery->where(function (Builder $query): void {

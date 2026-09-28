@@ -12,7 +12,9 @@ class CartItem extends Model
 
     protected $fillable = [
         'cart_id',
+        'item_type',
         'store_product_listing_id',
+        'store_bundle_listing_id',
         'product_variant_id',
         'quantity',
         'unit_price',
@@ -39,5 +41,15 @@ class CartItem extends Model
     public function variant(): BelongsTo
     {
         return $this->belongsTo(ProductVariant::class, 'product_variant_id');
+    }
+
+    public function bundleListing(): BelongsTo
+    {
+        return $this->belongsTo(StoreBundleListing::class, 'store_bundle_listing_id');
+    }
+
+    public function isBundle(): bool
+    {
+        return $this->item_type === 'bundle';
     }
 }

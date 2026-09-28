@@ -8,7 +8,10 @@ use App\Contracts\ShippingRateProvider;
 use App\Models\Order;
 use App\Models\Address;
 use App\Models\Product;
+use App\Models\ProductBundle;
+use App\Models\ProductBundleItem;
 use App\Models\ProductVariant;
+use App\Models\StoreBundleListing;
 use App\Models\StoreProductListing;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -218,6 +221,85 @@ class OrderTest extends TestCase
         $this->assertDatabaseHas('order_status_histories', [
             'order_id' => $order->id,
             'status' => 'paid',
+        ]);
+    }
+
+    public function test_order_reserves_bundle_components_and_snapshots_them(): void
+    {
+        $reservedItems = [];
+        $this->app->bind(WarehouseStockProvider::class, function () use (&$reservedItems): object {
+            return new class($reservedItems) implements WarehouseStockProvider
+            {
+                public function __construct(private array &$reservedItems) {}
+                public function checkAvailability(array $items): array
+                {
+                    return ['available' => true, 'items' => $items];
+                }
+                public function reserve(array $items, string $reference): string
+                {
+                    $this->reservedItems = $items;
+                    return 'bundle-reservation';
+                }
+                public function confirm(string $reservationId): void {}
+                public function release(string $reservationId): void {}
+            };
+        });
+        $this->app->bind(ShippingRateProvider::class, function (): object {
+            return new class implements ShippingRateProvider
+            {
+                public function quote(array $address, array $items): array
+                {
+                    return ['fee' => 0, 'service' => 'REG', 'eta_days' => 3];
+                }
+            };
+        });
+
+        $user = User::factory()->create();
+        Sanctum::actingAs($user, ['customer-api']);
+        $product = Product::factory()->create(['status' => 'active', 'name' => 'Produk Bundle']);
+        $variant = ProductVariant::factory()->create([
+            'product_id' => $product->id,
+            'sku' => 'SKU-BUNDLE-COMPONENT',
+            'status' => 'active',
+        ]);
+        $bundle = ProductBundle::factory()->create(['status' => 'active', 'price' => 30000]);
+        ProductBundleItem::factory()->create([
+            'product_bundle_id' => $bundle->id,
+            'product_variant_id' => $variant->id,
+            'quantity' => 2,
+        ]);
+        $listing = StoreBundleListing::factory()->create([
+            'product_bundle_id' => $bundle->id,
+            'status' => 'active',
+        ]);
+
+        $this->postJson('/api/v1/cart/items', [
+            'type' => 'bundle',
+            'bundle_listing_id' => $listing->id,
+            'quantity' => 3,
+        ])->assertOk();
+
+        $response = $this->postJson('/api/v1/orders', [
+            'shipping_address' => [
+                'name' => 'Member Walatra',
+                'phone' => '628123456789',
+                'address' => 'Jl. Herbal No. 1',
+                'city' => 'Bandung',
+                'province' => 'Jawa Barat',
+                'postal_code' => '40123',
+            ],
+        ], ['Idempotency-Key' => 'bundle-order-1'])
+            ->assertCreated()
+            ->assertJsonPath('data.items.0.type', 'bundle')
+            ->assertJsonPath('data.items.0.bundle_components.0.sku', 'SKU-BUNDLE-COMPONENT');
+
+        $this->assertSame([
+            ['sku' => 'SKU-BUNDLE-COMPONENT', 'quantity' => 6],
+        ], $reservedItems);
+        $this->assertDatabaseHas('order_items', [
+            'order_id' => $response->json('data.id'),
+            'item_type' => 'bundle',
+            'store_bundle_listing_id' => $listing->id,
         ]);
     }
 }
