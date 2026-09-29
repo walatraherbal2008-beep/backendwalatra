@@ -136,6 +136,7 @@ class StoreResource extends Resource
         return [
             Select::make('status')
                 ->options([
+                    'pending_owner' => 'Menunggu pemilik member',
                     'pending_approval' => 'Menunggu persetujuan',
                     'active' => 'Aktif',
                     'rejected' => 'Ditolak',
@@ -177,8 +178,9 @@ class StoreResource extends Resource
             ])
             ->filters([
                 SelectFilter::make('status')
-                    ->options([
-                        'pending_approval' => 'Menunggu persetujuan',
+                ->options([
+                    'pending_owner' => 'Menunggu pemilik member',
+                    'pending_approval' => 'Menunggu persetujuan',
                         'active' => 'Aktif',
                         'rejected' => 'Ditolak',
                         'suspended' => 'Ditangguhkan',

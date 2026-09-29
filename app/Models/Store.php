@@ -107,6 +107,11 @@ class Store extends Model implements HasMedia
         return $this->belongsTo(User::class, 'owner_user_id');
     }
 
+    public function ownerHistories(): HasMany
+    {
+        return $this->hasMany(StoreOwnerHistory::class);
+    }
+
     public function scopeEligibleForMarketplace(Builder $query): Builder
     {
         return $query->where('status', 'active')->where(function (Builder $storeQuery): void {
