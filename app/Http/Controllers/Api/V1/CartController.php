@@ -20,7 +20,10 @@ class CartController extends Controller
 {
     public function show(Request $request): CartResource
     {
-        return new CartResource($this->cart($request)->load($this->cartRelations()));
+        return (new CartResource($this->cart($request)->load($this->cartRelations())))->additional([
+            'success' => true,
+            'message' => 'Cart berhasil diambil.',
+        ]);
     }
 
     public function store(AddCartItemRequest $request): CartResource
@@ -65,7 +68,10 @@ class CartController extends Controller
                 }
             });
 
-            return new CartResource($cart->fresh()->load($this->cartRelations()));
+            return (new CartResource($cart->fresh()->load($this->cartRelations())))->additional([
+                'success' => true,
+                'message' => 'Bundle berhasil ditambahkan ke cart.',
+            ]);
         }
 
         $listing = StoreProductListing::query()
@@ -123,7 +129,10 @@ class CartController extends Controller
             }
         });
 
-        return new CartResource($cart->fresh()->load($this->cartRelations()));
+        return (new CartResource($cart->fresh()->load($this->cartRelations())))->additional([
+            'success' => true,
+            'message' => 'Produk berhasil ditambahkan ke cart.',
+        ]);
     }
 
     public function update(UpdateCartItemRequest $request, int $item): CartResource
@@ -132,21 +141,34 @@ class CartController extends Controller
         $cartItem = $cart->items()->whereKey($item)->firstOrFail();
         $cartItem->update(['quantity' => $request->integer('quantity')]);
 
-        return new CartResource($cart->fresh()->load($this->cartRelations()));
+        return (new CartResource($cart->fresh()->load($this->cartRelations())))->additional([
+            'success' => true,
+            'message' => 'Jumlah item cart berhasil diperbarui.',
+        ]);
     }
 
     public function destroy(Request $request, int $item): JsonResponse
     {
         $this->cart($request)->items()->whereKey($item)->delete();
 
-        return response()->json(['success' => true, 'message' => 'Item cart dihapus.']);
+        return response()->json([
+            'success' => true,
+            'message' => 'Item cart dihapus.',
+            'code' => 'CART_ITEM_DELETED',
+            'data' => null,
+        ]);
     }
 
     public function clear(Request $request): JsonResponse
     {
         $this->cart($request)->items()->delete();
 
-        return response()->json(['success' => true, 'message' => 'Cart dikosongkan.']);
+        return response()->json([
+            'success' => true,
+            'message' => 'Cart dikosongkan.',
+            'code' => 'CART_CLEARED',
+            'data' => null,
+        ]);
     }
 
     private function cart(Request $request): Cart

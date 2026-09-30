@@ -39,6 +39,7 @@ class PaymentController extends Controller
                 'payment_token' => $payment['payment_token'],
                 'payment_url' => $payment['payment_url'],
             ],
+            'code' => 'PAYMENT_CREATED',
         ]);
     }
 
@@ -110,7 +111,12 @@ class PaymentController extends Controller
             $this->transition($record, 'refunded', 'Pembayaran dikembalikan.');
         }
 
-        return response()->json(['success' => true, 'message' => 'Webhook diterima.']);
+        return response()->json([
+            'success' => true,
+            'message' => 'Webhook diterima.',
+            'code' => 'PAYMENT_WEBHOOK_ACCEPTED',
+            'data' => null,
+        ]);
     }
 
     private function transition(Order $order, string $status, string $note): void

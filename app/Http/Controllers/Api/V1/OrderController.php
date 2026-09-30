@@ -41,7 +41,10 @@ class OrderController extends Controller
             ->with('items')
             ->findOrFail($order);
 
-        return new OrderResource($record);
+        return (new OrderResource($record))->additional([
+            'success' => true,
+            'message' => 'Detail order berhasil diambil.',
+        ]);
     }
 
     public function cancel(
@@ -75,7 +78,10 @@ class OrderController extends Controller
             ]);
         });
 
-        return new OrderResource($record->fresh()->load('items'));
+        return (new OrderResource($record->fresh()->load('items')))->additional([
+            'success' => true,
+            'message' => 'Order berhasil dibatalkan.',
+        ]);
     }
 
     public function store(
@@ -99,7 +105,10 @@ class OrderController extends Controller
             ->first();
 
         if ($existing) {
-            return new OrderResource($existing);
+            return (new OrderResource($existing))->additional([
+                'success' => true,
+                'message' => 'Order sebelumnya berhasil diambil.',
+            ]);
         }
 
         $shippingAddress = $request->validated('shipping_address');
@@ -133,6 +142,8 @@ class OrderController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Cart masih kosong.',
+                'code' => 'CART_EMPTY',
+                'errors' => null,
             ], 422);
         }
 
@@ -140,6 +151,8 @@ class OrderController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Sebagian item cart sudah tidak tersedia. Silakan perbarui cart.',
+                'code' => 'STALE_CART',
+                'errors' => null,
             ], 409);
         }
 
@@ -151,6 +164,8 @@ class OrderController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Stok gudang belum dapat divalidasi.',
+                'code' => 'STOCK_UNAVAILABLE',
+                'errors' => null,
                 'data' => ['stock' => $availability['items']],
             ], 503);
         }
@@ -234,7 +249,10 @@ class OrderController extends Controller
             throw $exception;
         }
 
-        return new OrderResource($order->load('items'));
+        return (new OrderResource($order->load('items')))->additional([
+            'success' => true,
+            'message' => 'Order berhasil dibuat.',
+        ]);
     }
 
     private function cartItemIsAvailable(CartItem $item): bool

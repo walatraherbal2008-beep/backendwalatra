@@ -24,6 +24,7 @@ class CustomerAuthController extends Controller
 
         $response = [
             'success' => true,
+            'code' => 'OTP_REQUESTED',
             'message' => in_array($result['challenge']->delivery_status, ['pending', 'unknown'], true)
                 ? 'OTP sedang diproses. Silakan periksa WhatsApp Anda.'
                 : ($result['challenge']->delivery_status === 'failed'
@@ -56,6 +57,7 @@ class CustomerAuthController extends Controller
 
         return response()->json([
             'success' => true,
+            'code' => 'AUTHENTICATED',
             'message' => 'Login berhasil.',
             'data' => [
                 'user' => array_merge($result['user']->only([

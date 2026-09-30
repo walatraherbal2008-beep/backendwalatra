@@ -10,6 +10,7 @@ use App\Models\Address;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Support\ApiResponse;
 
 class AddressController extends Controller
 {
@@ -36,7 +37,10 @@ class AddressController extends Controller
             ]);
         });
 
-        return new AddressResource($address);
+        return (new AddressResource($address))->additional([
+            'success' => true,
+            'message' => 'Alamat berhasil ditambahkan.',
+        ]);
     }
 
     public function update(UpdateAddressRequest $request, int $address): AddressResource
@@ -51,7 +55,10 @@ class AddressController extends Controller
             $record->update($request->validated());
         });
 
-        return new AddressResource($record->fresh());
+        return (new AddressResource($record->fresh()))->additional([
+            'success' => true,
+            'message' => 'Alamat berhasil diperbarui.',
+        ]);
     }
 
     public function destroy(Request $request, int $address): JsonResponse
@@ -64,6 +71,6 @@ class AddressController extends Controller
             $request->user()->addresses()->latest()->first()?->update(['is_default' => true]);
         }
 
-        return response()->json(['success' => true, 'message' => 'Alamat berhasil dihapus.']);
+        return ApiResponse::success(message: 'Alamat berhasil dihapus.');
     }
 }

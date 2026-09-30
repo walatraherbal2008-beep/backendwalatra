@@ -9,6 +9,7 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use App\Support\ApiResponse;
 
 class AuthController extends Controller
 {
@@ -28,6 +29,8 @@ class AuthController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Email atau password tidak valid.',
+                'code' => 'INVALID_CREDENTIALS',
+                'errors' => null,
             ], 401);
         }
 
@@ -39,6 +42,7 @@ class AuthController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Login berhasil.',
+            'code' => 'AUTHENTICATED',
             'data' => [
                 'user' => $user->only(['id', 'name', 'email']),
                 'token' => $token->plainTextToken,
@@ -51,10 +55,7 @@ class AuthController extends Controller
     {
         $request->user()?->currentAccessToken()?->delete();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Logout berhasil.',
-        ]);
+        return ApiResponse::success(message: 'Logout berhasil.');
     }
 
     public function updateCustomerProfile(UpdateCustomerProfileRequest $request): JsonResponse
@@ -68,6 +69,7 @@ class AuthController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Profil berhasil dilengkapi.',
+            'code' => 'PROFILE_UPDATED',
             'data' => [
                 'user' => array_merge($user->only([
                     'id',
@@ -87,6 +89,7 @@ class AuthController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'User aktif.',
+            'code' => 'AUTHENTICATED',
             'data' => [
                 'user' => array_merge($request->user()->only([
                     'id',
