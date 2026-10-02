@@ -11,6 +11,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Support\ApiResponse;
+use App\Support\PhoneNumber;
 
 class AddressController extends Controller
 {
@@ -31,8 +32,11 @@ class AddressController extends Controller
                 $user->addresses()->update(['is_default' => false]);
             }
 
+            $data = $request->validated();
+            $data['phone'] = PhoneNumber::normalize($data['phone']);
+
             return $user->addresses()->create([
-                ...$request->validated(),
+                ...$data,
                 'is_default' => $isDefault,
             ]);
         });
@@ -52,7 +56,13 @@ class AddressController extends Controller
                 $request->user()->addresses()->update(['is_default' => false]);
             }
 
-            $record->update($request->validated());
+            $data = $request->validated();
+
+            if (array_key_exists('phone', $data)) {
+                $data['phone'] = PhoneNumber::normalize($data['phone']);
+            }
+
+            $record->update($data);
         });
 
         return (new AddressResource($record->fresh()))->additional([

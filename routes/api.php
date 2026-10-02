@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\V1\CheckoutController;
 use App\Http\Controllers\Api\V1\OrderController;
 use App\Http\Controllers\Api\V1\PaymentController;
 use App\Http\Controllers\Api\V1\AddressController;
+use App\Http\Controllers\Api\V1\ShippingLocationController;
 use App\Http\Middleware\EnsureUserIsActive;
 use Illuminate\Support\Facades\Route;
 
@@ -23,6 +24,11 @@ Route::prefix('v1')->group(function (): void {
         Route::get('/catalog/categories/{slug}', [CatalogCategoryController::class, 'show']);
         Route::get('/catalog/bundles', [CatalogBundleController::class, 'index']);
         Route::get('/catalog/bundles/{slug}', [CatalogBundleController::class, 'show']);
+        Route::get('/shipping/locations/provinces', [ShippingLocationController::class, 'provinces']);
+        Route::get('/shipping/locations/cities', [ShippingLocationController::class, 'cities']);
+        Route::get('/shipping/locations/districts', [ShippingLocationController::class, 'districts']);
+        Route::get('/shipping/locations/sub-districts', [ShippingLocationController::class, 'subDistricts']);
+        Route::post('/shipping/locations/resolve', [ShippingLocationController::class, 'resolve']);
     });
 
     Route::post('/auth/login', [AuthController::class, 'login'])

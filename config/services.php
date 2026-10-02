@@ -68,5 +68,20 @@ return [
         'timeout' => (int) env('SHIPPING_RATE_TIMEOUT', 10),
         'quote_path' => env('SHIPPING_RATE_QUOTE_PATH', '/shipping/quote'),
     ],
+    'everpro' => [
+        'enabled' => (bool) env('EVERPRO_ENABLED', false),
+        'base_url' => env('EVERPRO_BASE_URL', 'https://client-api-sandbox.everpro.id'),
+        'client_key' => env('EVERPRO_CLIENT_KEY'),
+        'client_secret' => env('EVERPRO_CLIENT_SECRET'),
+        'timeout' => (int) env('EVERPRO_TIMEOUT', 10),
+        'token_path' => env('EVERPRO_TOKEN_PATH', '/auth/v1/token'),
+        'paths' => [
+            'provinces' => env('EVERPRO_PROVINCES_PATH', '/location/v1/provinces'),
+            'cities' => env('EVERPRO_CITIES_PATH', '/location/v1/cities'),
+            'districts' => env('EVERPRO_DISTRICTS_PATH', '/location/v1/districts'),
+            'sub_districts' => env('EVERPRO_SUB_DISTRICTS_PATH', '/location/v1/sub-districts'),
+            'resolve' => env('EVERPRO_LOCATION_RESOLVE_PATH', '/location/v1/postalcode'),
+        ],
+    ],
 
 ];

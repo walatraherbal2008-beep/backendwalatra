@@ -4,6 +4,7 @@ use App\Exceptions\OtpDeliveryException;
 use App\Exceptions\WarehouseUnavailableException;
 use App\Exceptions\PaymentGatewayUnavailableException;
 use App\Exceptions\ShippingUnavailableException;
+use App\Exceptions\EverproUnavailableException;
 use App\Support\ApiResponse;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -114,6 +115,14 @@ return Application::configure(basePath: dirname(__DIR__))
             }
 
             return ApiResponse::error('Layanan ongkir sedang tidak tersedia. Silakan coba lagi.', 'SHIPPING_UNAVAILABLE', status: 503);
+        });
+
+        $exceptions->render(function (EverproUnavailableException $exception, Request $request) {
+            if (! $request->is('api/*')) {
+                return null;
+            }
+
+            return ApiResponse::error('Layanan lokasi Everpro sedang tidak tersedia. Silakan coba lagi.', 'EVERPRO_UNAVAILABLE', status: 503);
         });
 
         $exceptions->render(function (HttpExceptionInterface $exception, Request $request) {
