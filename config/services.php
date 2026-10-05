@@ -61,6 +61,12 @@ return [
             'release' => env('WAREHOUSE_STOCK_RELEASE_PATH', '/stock/release'),
         ],
     ],
+    'warehouse_directory' => [
+        'enabled' => (bool) env('WAREHOUSE_DIRECTORY_ENABLED', false),
+        'base_url' => env('WAREHOUSE_DIRECTORY_BASE_URL', 'https://originalwalatraherbal.com'),
+        'path' => env('WAREHOUSE_DIRECTORY_PATH', '/index.php?procs=gudang.list'),
+        'timeout' => (int) env('WAREHOUSE_DIRECTORY_TIMEOUT', 10),
+    ],
     'shipping' => [
         'enabled' => (bool) env('SHIPPING_RATE_ENABLED', false),
         'base_url' => env('SHIPPING_RATE_BASE_URL'),

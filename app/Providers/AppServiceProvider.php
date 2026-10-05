@@ -8,6 +8,7 @@ use App\Contracts\WarehouseStockProvider;
 use App\Contracts\PaymentGateway;
 use App\Contracts\ShippingRateProvider;
 use App\Contracts\ShippingLocationProvider;
+use App\Contracts\WarehouseDirectoryProvider;
 use App\Services\Payments\MidtransPaymentGateway;
 use App\Services\Payments\UnavailablePaymentGateway;
 use App\Services\Shipping\UnavailableShippingRateProvider;
@@ -15,6 +16,7 @@ use App\Services\Shipping\ShippingApiRateProvider;
 use App\Services\Shipping\EverproLocationProvider;
 use App\Services\Warehouse\UnavailableWarehouseStockProvider;
 use App\Services\Warehouse\WarehouseApiStockProvider;
+use App\Services\Warehouse\ExternalWarehouseDirectoryProvider;
 use App\Observers\ProductObserver;
 use App\Observers\ProductVariantObserver;
 use App\Support\PhoneNumber;
@@ -34,6 +36,10 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->app->singleton(ShippingLocationProvider::class, function ($app): ShippingLocationProvider {
             return $app->make(EverproLocationProvider::class);
+        });
+
+        $this->app->singleton(WarehouseDirectoryProvider::class, function ($app): WarehouseDirectoryProvider {
+            return $app->make(ExternalWarehouseDirectoryProvider::class);
         });
 
         $this->app->singleton(

@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\V1\OrderController;
 use App\Http\Controllers\Api\V1\PaymentController;
 use App\Http\Controllers\Api\V1\AddressController;
 use App\Http\Controllers\Api\V1\ShippingLocationController;
+use App\Http\Controllers\Api\V1\WarehouseController;
 use App\Http\Middleware\EnsureUserIsActive;
 use Illuminate\Support\Facades\Route;
 
@@ -29,6 +30,8 @@ Route::prefix('v1')->group(function (): void {
         Route::get('/shipping/locations/districts', [ShippingLocationController::class, 'districts']);
         Route::get('/shipping/locations/sub-districts', [ShippingLocationController::class, 'subDistricts']);
         Route::post('/shipping/locations/resolve', [ShippingLocationController::class, 'resolve']);
+        Route::get('/warehouses', [WarehouseController::class, 'index']);
+        Route::post('/warehouses/group', [WarehouseController::class, 'group']);
     });
 
     Route::post('/auth/login', [AuthController::class, 'login'])

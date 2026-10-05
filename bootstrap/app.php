@@ -2,6 +2,7 @@
 
 use App\Exceptions\OtpDeliveryException;
 use App\Exceptions\WarehouseUnavailableException;
+use App\Exceptions\WarehouseDirectoryUnavailableException;
 use App\Exceptions\PaymentGatewayUnavailableException;
 use App\Exceptions\ShippingUnavailableException;
 use App\Exceptions\EverproUnavailableException;
@@ -99,6 +100,14 @@ return Application::configure(basePath: dirname(__DIR__))
             }
 
             return ApiResponse::error('Layanan gudang sedang tidak tersedia. Silakan coba lagi.', 'WAREHOUSE_UNAVAILABLE', status: 503);
+        });
+
+        $exceptions->render(function (WarehouseDirectoryUnavailableException $exception, Request $request) {
+            if (! $request->is('api/*')) {
+                return null;
+            }
+
+            return ApiResponse::error('Layanan daftar gudang sedang tidak tersedia. Silakan coba lagi.', 'WAREHOUSE_DIRECTORY_UNAVAILABLE', status: 503);
         });
 
         $exceptions->render(function (PaymentGatewayUnavailableException $exception, Request $request) {

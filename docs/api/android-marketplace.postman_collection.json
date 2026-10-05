@@ -1,0 +1,85 @@
+{
+  "info": {
+    "name": "Backend Walatra - Android Marketplace API",
+    "description": "Collection untuk menguji endpoint marketplace, auth, customer, lokasi Everpro, dan daftar gudang eksternal.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://127.0.0.1:8000/api/v1" },
+    { "key": "token", "value": "" },
+    { "key": "email", "value": "member@example.com" },
+    { "key": "password", "value": "password" },
+    { "key": "phone", "value": "081234567890" },
+    { "key": "device_name", "value": "Postman Android Test" },
+    { "key": "challenge_id", "value": "1" },
+    { "key": "otp", "value": "123456" },
+    { "key": "product_slug", "value": "madu-hitam" },
+    { "key": "bundle_slug", "value": "paket-sehat-keluarga" },
+    { "key": "category_slug", "value": "minuman-herbal" },
+    { "key": "listing_id", "value": "1" },
+    { "key": "variant_id", "value": "1" },
+    { "key": "bundle_listing_id", "value": "1" },
+    { "key": "cart_item_id", "value": "1" },
+    { "key": "address_id", "value": "1" },
+    { "key": "order_id", "value": "1" }
+  ],
+  "item": [
+    {
+      "name": "1. Public API",
+      "item": [
+        { "name": "Catalog Gabungan", "request": { "method": "GET", "url": "{{base_url}}/catalog?per_page=15" } },
+        { "name": "List Produk", "request": { "method": "GET", "url": "{{base_url}}/catalog/products?q=herbal&per_page=15" } },
+        { "name": "Detail Produk", "request": { "method": "GET", "url": "{{base_url}}/catalog/products/{{product_slug}}" } },
+        { "name": "List Kategori", "request": { "method": "GET", "url": "{{base_url}}/catalog/categories" } },
+        { "name": "Detail Kategori", "request": { "method": "GET", "url": "{{base_url}}/catalog/categories/{{category_slug}}" } },
+        { "name": "List Bundle", "request": { "method": "GET", "url": "{{base_url}}/catalog/bundles?per_page=15" } },
+        { "name": "Detail Bundle", "request": { "method": "GET", "url": "{{base_url}}/catalog/bundles/{{bundle_slug}}" } },
+        { "name": "Provinsi", "request": { "method": "GET", "url": "{{base_url}}/shipping/locations/provinces?q=Jawa" } },
+        { "name": "Kota", "request": { "method": "GET", "url": "{{base_url}}/shipping/locations/cities?province_id=32" } },
+        { "name": "Kecamatan", "request": { "method": "GET", "url": "{{base_url}}/shipping/locations/districts?city_id=3273" } },
+        { "name": "Kelurahan", "request": { "method": "GET", "url": "{{base_url}}/shipping/locations/sub-districts?district_id=327301" } },
+        { "name": "Resolve Lokasi", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"postal_code\": \"40135\"\n}" }, "url": "{{base_url}}/shipping/locations/resolve" } },
+        { "name": "List Gudang Eksternal", "request": { "method": "GET", "url": "{{base_url}}/warehouses" } },
+        { "name": "List Gudang Berdasarkan Group", "request": { "method": "POST", "body": { "mode": "formdata", "formdata": [{ "key": "area_group", "value": "pulaujawa", "type": "text" }] }, "url": "{{base_url}}/warehouses/group" } }
+      ]
+    },
+    {
+      "name": "2. Authentication",
+      "item": [
+        { "name": "Login Email", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\",\n  \"device_name\": \"{{device_name}}\"\n}" }, "url": "{{base_url}}/auth/login" }, "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["if (pm.response.code === 200) pm.collectionVariables.set('token', pm.response.json().data.token);"] } }] },
+        { "name": "Request OTP", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"phone\": \"{{phone}}\"\n}" }, "url": "{{base_url}}/auth/customer/request-otp" } },
+        { "name": "Verify OTP", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"phone\": \"{{phone}}\",\n  \"challenge_id\": {{challenge_id}},\n  \"otp\": \"{{otp}}\",\n  \"device_name\": \"{{device_name}}\"\n}" }, "url": "{{base_url}}/auth/customer/verify-otp" }, "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["if (pm.response.code === 200) pm.collectionVariables.set('token', pm.response.json().data.token);"] } }] },
+        { "name": "Me", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": "{{base_url}}/auth/me" } },
+        { "name": "Update Profile", "request": { "method": "PATCH", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }, { "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"name\": \"Member Walatra\"\n}" }, "url": "{{base_url}}/auth/customer/profile" } },
+        { "name": "Logout", "request": { "method": "POST", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": "{{base_url}}/auth/logout" } }
+      ]
+    },
+    {
+      "name": "3. Customer Marketplace",
+      "item": [
+        { "name": "Get Cart", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": "{{base_url}}/cart" } },
+        { "name": "Add Product", "request": { "method": "POST", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }, { "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"type\": \"product\",\n  \"listing_id\": {{listing_id}},\n  \"variant_id\": {{variant_id}},\n  \"quantity\": 1\n}" }, "url": "{{base_url}}/cart/items" } },
+        { "name": "Add Bundle", "request": { "method": "POST", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }, { "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"type\": \"bundle\",\n  \"bundle_listing_id\": {{bundle_listing_id}},\n  \"quantity\": 1\n}" }, "url": "{{base_url}}/cart/items" } },
+        { "name": "Update Cart Item", "request": { "method": "PATCH", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }, { "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"quantity\": 2\n}" }, "url": "{{base_url}}/cart/items/{{cart_item_id}}" } },
+        { "name": "Delete Cart Item", "request": { "method": "DELETE", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": "{{base_url}}/cart/items/{{cart_item_id}}" } },
+        { "name": "Clear Cart", "request": { "method": "DELETE", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": "{{base_url}}/cart" } },
+        { "name": "List Addresses", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": "{{base_url}}/addresses" } },
+        { "name": "Create Address", "request": { "method": "POST", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }, { "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"label\": \"Rumah\",\n  \"name\": \"Member Walatra\",\n  \"phone\": \"{{phone}}\",\n  \"province\": \"Jawa Barat\",\n  \"province_id\": \"32\",\n  \"province_name\": \"Jawa Barat\",\n  \"city\": \"Kota Bandung\",\n  \"city_id\": \"3273\",\n  \"city_name\": \"Kota Bandung\",\n  \"district\": \"Coblong\",\n  \"district_id\": \"327301\",\n  \"district_name\": \"Coblong\",\n  \"sub_district_id\": \"3273011001\",\n  \"sub_district_name\": \"Dago\",\n  \"postal_code\": \"40135\",\n  \"address\": \"Jl. Contoh No. 1\",\n  \"is_default\": true\n}" }, "url": "{{base_url}}/addresses" } },
+        { "name": "Update Address", "request": { "method": "PATCH", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }, { "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"label\": \"Rumah Utama\"\n}" }, "url": "{{base_url}}/addresses/{{address_id}}" } },
+        { "name": "Delete Address", "request": { "method": "DELETE", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": "{{base_url}}/addresses/{{address_id}}" } },
+        { "name": "Checkout Preview", "request": { "method": "POST", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": "{{base_url}}/checkout/preview" } },
+        { "name": "List Orders", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": "{{base_url}}/orders" } },
+        { "name": "Create Order", "request": { "method": "POST", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }, { "key": "Content-Type", "value": "application/json" }, { "key": "Idempotency-Key", "value": "android-postman-checkout-001" }], "body": { "mode": "raw", "raw": "{\n  \"address_id\": {{address_id}}\n}" }, "url": "{{base_url}}/orders" } },
+        { "name": "Order Detail", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": "{{base_url}}/orders/{{order_id}}" } },
+        { "name": "Cancel Order", "request": { "method": "POST", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": "{{base_url}}/orders/{{order_id}}/cancel" } },
+        { "name": "Create Payment", "request": { "method": "POST", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": "{{base_url}}/orders/{{order_id}}/payment" } }
+      ]
+    },
+    {
+      "name": "4. Server Only",
+      "item": [
+        { "name": "Midtrans Webhook Template", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"order_id\": \"WAL-ABC123\",\n  \"status_code\": \"200\",\n  \"gross_amount\": \"100000.00\",\n  \"signature_key\": \"GENERATE_SHA512_SIGNATURE\",\n  \"transaction_status\": \"settlement\",\n  \"fraud_status\": \"accept\"\n}" }, "url": "{{base_url}}/payments/midtrans/webhook" } }
+      ]
+    }
+  ]
+}
