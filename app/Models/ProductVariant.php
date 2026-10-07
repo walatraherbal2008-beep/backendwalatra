@@ -106,4 +106,9 @@ class ProductVariant extends Model
     {
         return $this->hasMany(ProductBundleItem::class);
     }
+
+    public function warehouseAssignments(): HasMany
+    {
+        return $this->hasMany(WarehouseProductVariant::class);
+    }
 }
