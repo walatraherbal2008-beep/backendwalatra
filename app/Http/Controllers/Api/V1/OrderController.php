@@ -118,13 +118,25 @@ class OrderController extends Controller
                 ->where('user_id', $request->user()->id)
                 ->findOrFail($request->integer('address_id'))
                 ->only([
+                    'label',
                     'name',
                     'phone',
                     'province',
+                    'province_id',
+                    'province_name',
                     'city',
+                    'city_id',
+                    'city_name',
                     'district',
+                    'district_id',
+                    'district_name',
+                    'sub_district_id',
+                    'sub_district_name',
                     'postal_code',
                     'address',
+                    'address_note',
+                    'latitude',
+                    'longitude',
                 ]);
         }
 

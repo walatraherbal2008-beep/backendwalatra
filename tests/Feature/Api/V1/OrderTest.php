@@ -166,6 +166,71 @@ class OrderTest extends TestCase
         ]);
     }
 
+    public function test_order_snapshots_saved_address_location_codes(): void
+    {
+        $this->app->bind(WarehouseStockProvider::class, function (): object {
+            return new class implements WarehouseStockProvider
+            {
+                public function checkAvailability(array $items): array { return ['available' => true, 'items' => $items]; }
+                public function reserve(array $items, string $reference): string { return 'reservation-location'; }
+                public function confirm(string $reservationId): void {}
+                public function release(string $reservationId): void {}
+            };
+        });
+        $this->app->bind(ShippingRateProvider::class, function (): object {
+            return new class implements ShippingRateProvider
+            {
+                public function quote(array $address, array $items): array
+                {
+                    return ['fee' => 0, 'service' => 'FREE', 'eta_days' => null];
+                }
+            };
+        });
+
+        $user = User::factory()->create();
+        Sanctum::actingAs($user, ['customer-api']);
+        $product = Product::factory()->create();
+        $variant = ProductVariant::factory()->create(['product_id' => $product->id]);
+        $listing = StoreProductListing::factory()->create(['product_id' => $product->id]);
+
+        $this->postJson('/api/v1/cart/items', [
+            'listing_id' => $listing->id,
+            'variant_id' => $variant->id,
+            'quantity' => 1,
+        ])->assertOk();
+
+        $address = Address::query()->create([
+            'user_id' => $user->id,
+            'label' => 'Rumah',
+            'name' => 'Member Walatra',
+            'phone' => '628123456789',
+            'province' => 'Jawa Barat',
+            'province_id' => '32',
+            'province_name' => 'Jawa Barat',
+            'city' => 'Kota Bandung',
+            'city_id' => '3273',
+            'city_name' => 'Kota Bandung',
+            'district' => 'Coblong',
+            'district_id' => '327301',
+            'district_name' => 'Coblong',
+            'sub_district_id' => '3273011001',
+            'sub_district_name' => 'Dago',
+            'postal_code' => '40135',
+            'address' => 'Jl. Herbal No. 1',
+            'address_note' => 'Pagar hitam',
+            'is_default' => true,
+        ]);
+
+        $this->postJson('/api/v1/orders', ['address_id' => $address->id], [
+            'Idempotency-Key' => 'order-location-snapshot-1',
+        ])->assertCreated()
+            ->assertJsonPath('data.shipping_address.province_id', '32')
+            ->assertJsonPath('data.shipping_address.city_id', '3273')
+            ->assertJsonPath('data.shipping_address.district_id', '327301')
+            ->assertJsonPath('data.shipping_address.sub_district_id', '3273011001')
+            ->assertJsonPath('data.shipping_address.sub_district_name', 'Dago');
+    }
+
     public function test_midtrans_webhook_verifies_signature_and_marks_order_paid(): void
     {
         config(['services.midtrans.server_key' => 'server-key-test']);
