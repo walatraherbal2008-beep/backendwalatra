@@ -6,6 +6,7 @@ use App\Filament\Admin\Resources\StoreProductListings\Pages\CreateStoreProductLi
 use App\Filament\Admin\Resources\StoreProductListings\Pages\EditStoreProductListing;
 use App\Filament\Admin\Resources\StoreProductListings\Pages\ListStoreProductListings;
 use App\Models\StoreProductListing;
+use App\Services\Warehouse\StoreListingWarehouseAssignmentService;
 use BackedEnum;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
@@ -92,9 +93,33 @@ class StoreProductListingResource extends Resource
                 )
                 ->searchable()
                 ->preload()
+                ->live()
                 ->required()
                 ->disabledOn('edit')
                 ->helperText('Produk master dikunci setelah listing dibuat. Untuk mengganti produk, hapus listing ini dan buat baru.'),
+            Select::make('warehouse_codes')
+                ->label('Gudang penyedia produk')
+                ->multiple()
+                ->searchable()
+                ->preload()
+                ->options(function (Get $get): array {
+                    $productId = (int) $get('product_id');
+
+                    if ($productId < 1) {
+                        return [];
+                    }
+
+                    try {
+                        return app(StoreListingWarehouseAssignmentService::class)
+                            ->availableOptions($productId);
+                    } catch (\Throwable) {
+                        return [];
+                    }
+                })
+                ->default(fn (?StoreProductListing $record): array => $record?->warehouseAssignments()
+                    ->pluck('warehouse_code')
+                    ->all() ?? [])
+                ->helperText('Pilih gudang yang sudah ditetapkan untuk seluruh varian produk oleh admin pusat. Kosongkan jika ketersediaan gudang belum dikonfigurasi.'),
             RichEditor::make('description')
                 ->label('Deskripsi produk di toko')
                 ->toolbarButtons([
