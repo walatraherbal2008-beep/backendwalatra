@@ -51,7 +51,7 @@ class StoreBundleListingResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        $storeId = auth()->user()?->store?->getKey();
+        $storeId = auth()->user()?->activeManagedStore()?->getKey();
 
         return parent::getEloquentQuery()
             ->when($storeId, fn (Builder $query): Builder => $query->where('store_id', $storeId))
@@ -68,7 +68,7 @@ class StoreBundleListingResource extends Resource
                     name: 'bundle',
                     titleAttribute: 'name',
                     modifyQueryUsing: function (Builder $query, Select $component): Builder {
-                        $storeId = auth()->user()?->store?->getKey();
+                        $storeId = auth()->user()?->activeManagedStore()?->getKey();
                         $record = $component->getRecord();
 
                         return $query
@@ -206,7 +206,7 @@ class StoreBundleListingResource extends Resource
                     // milik toko+bundle yang sudah bergambar — halaman create akan
                     // me-restore-annya, jadi gambar etalase lama tetap terpakai.
                     return ! StoreBundleListing::withTrashed()
-                        ->where('store_id', auth()->user()?->store?->getKey())
+                        ->where('store_id', auth()->user()?->activeManagedStore()?->getKey())
                         ->where('product_bundle_id', $get('product_bundle_id'))
                         ->whereNotNull('deleted_at')
                         ->whereHas('media', fn (Builder $query): Builder => $query

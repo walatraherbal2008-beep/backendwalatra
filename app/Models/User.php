@@ -9,6 +9,7 @@ use Filament\Panel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -63,6 +64,22 @@ class User extends Authenticatable implements FilamentUser
         return $this->hasOne(Store::class, 'owner_user_id');
     }
 
+    public function managedStores(): BelongsToMany
+    {
+        return $this->belongsToMany(Store::class, 'store_memberships')
+            ->withPivot(['role', 'status', 'invited_by'])
+            ->withTimestamps();
+    }
+
+    public function activeManagedStore(): ?Store
+    {
+        return $this->store()->where('status', 'active')->first()
+            ?? $this->managedStores()
+                ->where('stores.status', 'active')
+                ->wherePivot('status', 'active')
+                ->first();
+    }
+
     public function carts(): HasMany
     {
         return $this->hasMany(Cart::class);
@@ -93,7 +110,7 @@ class User extends Authenticatable implements FilamentUser
             'superadmin' => $this->hasRole('super_admin'),
             'admin' => $this->hasRole('store_admin')
                 && $this->email_verified_at !== null
-                && $this->store()->where('status', 'active')->exists(),
+                && $this->activeManagedStore() !== null,
             default => false,
         };
     }

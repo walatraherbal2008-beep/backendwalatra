@@ -48,7 +48,7 @@ class StoreProductListingResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        $storeId = auth()->user()?->store?->getKey();
+        $storeId = auth()->user()?->activeManagedStore()?->getKey();
 
         return parent::getEloquentQuery()
             ->when($storeId, fn (Builder $query): Builder => $query->where('store_id', $storeId))
@@ -65,7 +65,7 @@ class StoreProductListingResource extends Resource
                     name: 'product',
                     titleAttribute: 'name',
                     modifyQueryUsing: function (Builder $query, Select $component): Builder {
-                        $storeId = auth()->user()?->store?->getKey();
+                        $storeId = auth()->user()?->activeManagedStore()?->getKey();
                         $record = $component->getRecord();
 
                         return $query
@@ -174,7 +174,7 @@ class StoreProductListingResource extends Resource
                     // milik toko+produk yang sudah bergambar — halaman create akan
                     // me-restore-annya, jadi gambar etalase lama tetap terpakai.
                     return ! StoreProductListing::withTrashed()
-                        ->where('store_id', auth()->user()?->store?->getKey())
+                        ->where('store_id', auth()->user()?->activeManagedStore()?->getKey())
                         ->where('product_id', $get('product_id'))
                         ->whereNotNull('deleted_at')
                         ->whereHas('media', fn (Builder $query): Builder => $query

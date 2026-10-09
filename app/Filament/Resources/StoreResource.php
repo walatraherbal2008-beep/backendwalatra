@@ -77,6 +77,13 @@ class StoreResource extends Resource
                             if ($record instanceof Store) {
                                 $storeQuery->whereKeyNot($record->getKey());
                             }
+                        })
+                        ->whereDoesntHave('managedStores', function (Builder $storeQuery) use ($record): void {
+                            $storeQuery->wherePivot('status', 'active');
+
+                            if ($record instanceof Store) {
+                                $storeQuery->whereKeyNot($record->getKey());
+                            }
                         });
                 },
             )

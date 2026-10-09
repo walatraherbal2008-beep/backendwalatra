@@ -338,3 +338,66 @@ Endpoint server-to-server Midtrans, bukan dipanggil oleh Android. Backend memval
 | 503 | Layanan eksternal belum tersedia |
 
 API cek ongkir, stok per gudang, shipment, AWB, dan tracking belum tersedia pada versi ini.
+
+## Onboarding toko mandiri
+
+Endpoint ini menggunakan token Sanctum dengan ability `customer-api`. User harus
+lebih dulu login melalui OTP atau login customer biasa.
+
+### POST `/store-onboarding`
+
+Mendaftarkan toko mandiri. Pengaturan ini dapat dibuka atau ditutup Superadmin
+melalui menu `Superadmin > Pengaturan > Pendaftaran toko mandiri`.
+
+```json
+{
+  "name": "Toko Herbal Bandung",
+  "email": "admin-toko@example.com",
+  "password": "PasswordMinimal12",
+  "city": "Bandung",
+  "address": "Jl. Contoh No. 1"
+}
+```
+
+Toko dibuat dengan status `pending_approval`. Email harus diverifikasi dan toko
+harus disetujui Superadmin sebelum dapat mengakses panel admin toko.
+
+### GET `/store-onboarding/verify-email/{user}/{hash}`
+
+Tautan bertanda tangan yang dikirim ke email. Tautan berlaku 24 jam dan hanya
+dapat digunakan untuk email user yang sesuai.
+
+## Undangan admin toko
+
+### POST `/store/admin-invitations`
+
+Membuat undangan admin tambahan. Hanya admin dari toko aktif yang dapat memakai
+endpoint ini. Pengaturan dapat dikontrol Superadmin melalui menu Pengaturan.
+
+```json
+{
+  "email": "admin-kedua@example.com"
+}
+```
+
+### GET `/store/admin-invitations/accept/{token}`
+
+Memeriksa token undangan dan mengembalikan informasi toko tujuan. Token berasal
+dari tautan email dan memiliki masa berlaku 24 jam.
+
+### POST `/store/admin-invitations/accept`
+
+Menerima undangan. User harus sudah terautentikasi menggunakan token
+`customer-api`, lalu mengirim:
+
+```json
+{
+  "token": "token-dari-email",
+  "email": "admin-kedua@example.com",
+  "name": "Admin Kedua",
+  "password": "PasswordMinimal12"
+}
+```
+
+Token undangan hanya dapat digunakan satu kali. Admin tambahan hanya mendapat
+akses ke toko yang mengundangnya dan tidak dapat menjadi Superadmin.

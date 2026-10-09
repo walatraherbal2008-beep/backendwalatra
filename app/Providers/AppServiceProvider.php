@@ -138,5 +138,21 @@ class AppServiceProvider extends ServiceProvider
             ];
         });
 
+        RateLimiter::for('store-onboarding', function (Request $request) use ($throttledResponse): Limit {
+            $key = $request->user()?->getAuthIdentifier() ?? $request->ip();
+
+            return Limit::perHour(5)
+                ->by('store-onboarding:'.$key)
+                ->response($throttledResponse);
+        });
+
+        RateLimiter::for('store-admin-invitation', function (Request $request) use ($throttledResponse): Limit {
+            $key = $request->user()?->getAuthIdentifier() ?? $request->ip();
+
+            return Limit::perHour(20)
+                ->by('store-admin-invitation:'.$key)
+                ->response($throttledResponse);
+        });
+
     }
 }

@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\V1\PaymentController;
 use App\Http\Controllers\Api\V1\AddressController;
 use App\Http\Controllers\Api\V1\ShippingLocationController;
 use App\Http\Controllers\Api\V1\WarehouseController;
+use App\Http\Controllers\Api\V1\StoreOnboardingController;
 use App\Http\Middleware\EnsureUserIsActive;
 use Illuminate\Support\Facades\Route;
 
@@ -69,4 +70,19 @@ Route::prefix('v1')->group(function (): void {
         '/auth/customer/verify-otp',
         [CustomerAuthController::class, 'verifyOtp'],
     )->middleware('throttle:otp-verify');
+
+    Route::get('/store-onboarding/verify-email/{user}/{hash}', [StoreOnboardingController::class, 'verifyEmail'])
+        ->middleware('signed')
+        ->name('store-onboarding.verify-email');
+    Route::get('/store/admin-invitations/accept/{token}', [StoreOnboardingController::class, 'showInvitation'])
+        ->name('store-admin-invitations.accept');
+
+    Route::middleware(['auth:sanctum', 'abilities:customer-api', EnsureUserIsActive::class])->group(function (): void {
+        Route::post('/store-onboarding', [StoreOnboardingController::class, 'registerStore'])
+            ->middleware('throttle:store-onboarding');
+        Route::post('/store/admin-invitations', [StoreOnboardingController::class, 'inviteAdmin'])
+            ->middleware('throttle:store-admin-invitation');
+        Route::post('/store/admin-invitations/accept', [StoreOnboardingController::class, 'acceptInvitation'])
+            ->middleware('throttle:store-admin-invitation');
+    });
 });

@@ -21,7 +21,7 @@ class CreateStoreProductListing extends CreateRecord
     {
         $this->warehouseCodes = array_values(array_filter((array) ($data['warehouse_codes'] ?? [])));
         unset($data['warehouse_codes']);
-        $data['store_id'] = auth()->user()->store->getKey();
+        $data['store_id'] = auth()->user()->activeManagedStore()->getKey();
         $data['published_at'] = ($data['status'] ?? null) === 'active' ? now() : null;
 
         return $data;

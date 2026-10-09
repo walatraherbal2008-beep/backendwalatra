@@ -12,12 +12,15 @@ class StoreOwnerAssignmentService
 {
     public function assign(Store $store, User $owner, ?User $changedBy = null, ?string $reason = null): Store
     {
-        if (! $owner->isWalatraMember()
-            || $owner->email_verified_at === null
-            || ! $owner->hasRole('store_admin')
-        ) {
+        if (! $owner->isWalatraMember() || ! $owner->hasRole('store_admin')) {
             throw ValidationException::withMessages([
-                'owner_user_id' => 'Pemilik toko harus member Walatra aktif, terverifikasi, dan memiliki role store_admin.',
+                'owner_user_id' => 'Pemilik toko harus member Walatra aktif dan memiliki role store_admin.',
+            ]);
+        }
+
+        if ($store->status === 'active' && $owner->email_verified_at === null) {
+            throw ValidationException::withMessages([
+                'owner_user_id' => 'Toko aktif hanya dapat dimiliki oleh seller dengan email terverifikasi.',
             ]);
         }
 
@@ -26,7 +29,12 @@ class StoreOwnerAssignmentService
             ->whereKeyNot($store->id)
             ->exists();
 
-        if ($alreadyOwnsAnotherStore) {
+        $alreadyManagesAnotherStore = $owner->managedStores()
+            ->wherePivot('status', 'active')
+            ->whereKeyNot($store->id)
+            ->exists();
+
+        if ($alreadyOwnsAnotherStore || $alreadyManagesAnotherStore) {
             throw ValidationException::withMessages([
                 'owner_user_id' => 'Member tersebut sudah memiliki toko lain.',
             ]);
@@ -38,6 +46,14 @@ class StoreOwnerAssignmentService
             $store->update([
                 'owner_user_id' => $owner->id,
                 'status' => $store->status === 'pending_owner' ? 'pending_approval' : $store->status,
+            ]);
+
+            $store->admins()->syncWithoutDetaching([
+                $owner->id => [
+                    'role' => 'owner',
+                    'status' => 'active',
+                    'invited_by' => $changedBy?->id,
+                ],
             ]);
 
             if ($previousOwnerId !== $owner->id) {

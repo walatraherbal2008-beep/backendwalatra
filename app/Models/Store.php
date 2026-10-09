@@ -37,14 +37,15 @@ class Store extends Model implements HasMedia
 
             $owner = $store->owner()->first();
 
-            if (
-                ! $owner
-                || ! $owner->isWalatraMember()
-                || ! $owner->hasRole('store_admin')
-                || $owner->email_verified_at === null
-            ) {
+            if (! $owner || ! $owner->isWalatraMember() || ! $owner->hasRole('store_admin')) {
                 throw ValidationException::withMessages([
-                    'owner_user_id' => 'Pemilik toko harus merupakan member Walatra aktif yang telah diverifikasi dan memiliki akses seller.',
+                    'owner_user_id' => 'Pemilik toko harus merupakan member Walatra aktif dan memiliki akses seller.',
+                ]);
+            }
+
+            if ($store->status === 'active' && $owner->email_verified_at === null) {
+                throw ValidationException::withMessages([
+                    'owner_user_id' => 'Toko aktif hanya dapat dimiliki oleh seller dengan email terverifikasi.',
                 ]);
             }
         });
@@ -105,6 +106,13 @@ class Store extends Model implements HasMedia
     public function owner(): BelongsTo
     {
         return $this->belongsTo(User::class, 'owner_user_id');
+    }
+
+    public function admins(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'store_memberships')
+            ->withPivot(['role', 'status', 'invited_by'])
+            ->withTimestamps();
     }
 
     public function ownerHistories(): HasMany

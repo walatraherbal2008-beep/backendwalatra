@@ -45,7 +45,7 @@ class StoreBundleListingPolicy
     private function ownsListing(User $user, StoreBundleListing $listing): bool
     {
         return $this->hasActiveStore($user)
-            && (int) $user->store()->value('id') === (int) $listing->store_id;
+            && (int) $user->activeManagedStore()?->getKey() === (int) $listing->store_id;
     }
 
     private function hasActiveStore(User $user): bool
@@ -53,6 +53,6 @@ class StoreBundleListingPolicy
         return $user->status === 'active'
             && $user->hasRole('store_admin')
             && $user->email_verified_at !== null
-            && $user->store()->where('status', 'active')->exists();
+            && $user->activeManagedStore() !== null;
     }
 }

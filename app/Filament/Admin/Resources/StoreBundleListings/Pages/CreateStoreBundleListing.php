@@ -15,7 +15,7 @@ class CreateStoreBundleListing extends CreateRecord
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
-        $data['store_id'] = auth()->user()->store->getKey();
+        $data['store_id'] = auth()->user()->activeManagedStore()->getKey();
         $data['published_at'] = ($data['status'] ?? null) === 'active' ? now() : null;
 
         return $data;
