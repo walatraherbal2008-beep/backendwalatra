@@ -18,6 +18,8 @@ class Order extends Model
         'status',
         'currency',
         'subtotal',
+        'shipping_gross_fee',
+        'shipping_subsidy',
         'shipping_fee',
         'shipping_service',
         'total',
@@ -31,6 +33,8 @@ class Order extends Model
     {
         return [
             'subtotal' => 'decimal:2',
+            'shipping_gross_fee' => 'decimal:2',
+            'shipping_subsidy' => 'decimal:2',
             'shipping_fee' => 'decimal:2',
             'total' => 'decimal:2',
             'shipping_address' => 'array',

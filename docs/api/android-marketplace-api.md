@@ -1,5 +1,9 @@
 # API Marketplace Walatra — Android Developer
 
+Dokumen ini juga menjadi referensi kontrak API untuk website marketplace. Android
+dan website menggunakan endpoint yang sama; perbedaannya hanya pada cara
+menyimpan token, state cart, dan cara menampilkan response.
+
 Base URL lokal:
 
 ```text
@@ -29,6 +33,12 @@ Catalog publik → Login/OTP → Alamat → Cart → Checkout preview → Order 
 
 ## Catalog publik — tanpa login
 
+Endpoint catalog dapat dipanggil sebelum login. Login hanya diperlukan ketika
+member mulai menggunakan fitur personal seperti cart, alamat, checkout, order,
+atau pembayaran. Data catalog hanya memuat listing aktif dari toko yang eligible
+untuk marketplace. Produk master yang belum memiliki listing aktif tidak akan
+tampil.
+
 | Method | Endpoint | Keterangan |
 |---|---|---|
 | GET | `/catalog` | Katalog gabungan produk dan bundle |
@@ -39,7 +49,7 @@ Catalog publik → Login/OTP → Alamat → Cart → Checkout preview → Order 
 | GET | `/catalog/bundles` | Daftar bundle aktif |
 | GET | `/catalog/bundles/{slug}` | Detail bundle |
 
-Parameter katalog yang tersedia: `q`, `type`, `store`, `category`, `min_price`, `max_price`, `sort`, `page`, `per_page`. Nilai `sort`: `relevance`, `latest`, `name_asc`, `name_desc`, `price_asc`, `price_desc`.
+Parameter katalog yang tersedia: `q`, `type`, `store`, `category`, `min_price`, `max_price`, `sort`, `page`, `per_page`. Nilai `type`: `product` atau `bundle`. Nilai `sort`: `relevance`, `latest`, `name_asc`, `name_desc`, `price_asc`, `price_desc`.
 
 Contoh:
 
@@ -47,7 +57,18 @@ Contoh:
 GET /api/v1/catalog/products?q=madu&sort=price_asc&page=1&per_page=15
 GET /api/v1/catalog/products/madu-hitam
 GET /api/v1/catalog/bundles/paket-sehat-keluarga
+GET /api/v1/catalog/products?store=nama-slug-toko&per_page=50
+GET /api/v1/catalog/bundles?store=nama-slug-toko&per_page=50
 ```
+
+Response list produk menyediakan `listing_id`, data `product`, `store`,
+`variants`, `images`, dan `published_at`. Gunakan `listing_id` dan `variant_id`
+ketika menambahkan produk ke cart. Untuk bundle gunakan `listing_id` pada data
+bundle sebagai `bundle_listing_id`.
+
+Website dan Android wajib mengambil URL gambar dari field `images[].url` atau
+`image_url`; jangan membentuk URL storage sendiri. Jika toko belum mengunggah
+gambar etalase, backend menggunakan fallback gambar produk pusat.
 
 ## Lokasi Everpro — tanpa login
 
@@ -148,18 +169,6 @@ Response:
 
 ## Authentication
 
-### POST `/auth/login`
-
-```json
-{
-  "email": "member@example.com",
-  "password": "password",
-  "device_name": "Android Samsung A55"
-}
-```
-
-Simpan `data.token` sebagai Bearer token.
-
 ### POST `/auth/customer/request-otp`
 
 ```json
@@ -180,6 +189,14 @@ Response memberikan `challenge_id` dan `expires_at`.
 ```
 
 Simpan `data.token`. Periksa `requires_profile_completion`.
+
+Autentikasi customer hanya menggunakan OTP nomor telepon. Nomor baru dibuat
+sebagai akun customer setelah OTP valid; nomor lama hanya membuat token baru
+untuk akun yang sudah ada. `is_new_user` membedakan kedua kondisi tersebut.
+
+Endpoint legacy `POST /auth/login` tidak lagi menerima email/password dan
+mengembalikan HTTP `410` dengan code `OTP_ONLY_AUTHENTICATION`. Login panel
+Superadmin/Admin toko tetap terpisah dari Customer API.
 
 ### GET `/auth/me`
 
@@ -268,7 +285,17 @@ Jika mengirim salah satu ID lokasi, seluruh hierarchy ID wajib dikirim.
 
 ### POST `/checkout/preview`
 
-Tidak membutuhkan body. Memvalidasi isi cart dan ketersediaan stok. Status `503` berarti API stok belum tersedia/gagal dihubungi.
+Memvalidasi isi cart dan ketersediaan stok. Untuk menghitung ongkir, kirim
+address_id atau shipping_address. Tanpa alamat, field shipping dan total
+bernilai null.
+
+```json
+{ "address_id": 12 }
+```
+
+Response shipping berisi gross_fee (tarif provider), subsidy (subsidi gratis
+ongkir), dan fee (yang dibayar member). Subsidi tidak pernah melebihi tarif
+provider. Status 503 berarti API stok atau provider ongkir belum tersedia.
 
 ### GET `/orders`
 
@@ -337,7 +364,10 @@ Endpoint server-to-server Midtrans, bukan dipanggil oleh Android. Backend memval
 | 429 | Terlalu banyak request |
 | 503 | Layanan eksternal belum tersedia |
 
-API cek ongkir, stok per gudang, shipment, AWB, dan tracking belum tersedia pada versi ini.
+Provider ongkir sudah diintegrasikan ke alur preview checkout dan pembuatan
+order. Besaran subsidi dikelola Superadmin berdasarkan wilayah, minimal
+belanja, batas berat, periode, dan prioritas aturan. API stok per gudang,
+shipment, AWB, dan tracking masih menunggu provider masing-masing.
 
 ## Onboarding toko mandiri
 
@@ -359,8 +389,24 @@ melalui menu `Superadmin > Pengaturan > Pendaftaran toko mandiri`.
 }
 ```
 
+`password` pada endpoint onboarding adalah kredensial panel admin toko, bukan
+metode login customer marketplace. Login customer Android/website tetap wajib
+menggunakan OTP. User yang mendaftar toko harus sudah terautentikasi sebagai
+member melalui OTP.
+
 Toko dibuat dengan status `pending_approval`. Email harus diverifikasi dan toko
 harus disetujui Superadmin sebelum dapat mengakses panel admin toko.
+
+Alur aplikasi:
+
+```text
+OTP customer → POST store-onboarding → verifikasi signed URL
+→ persetujuan Superadmin → login panel /admin
+```
+
+Jika pengaturan pendaftaran mandiri ditutup, endpoint mengembalikan HTTP `403`
+dengan code `SELF_SERVICE_STORE_REGISTRATION_DISABLED`. Pendaftaran hanya dapat
+dilakukan oleh member Walatra aktif.
 
 ### GET `/store-onboarding/verify-email/{user}/{hash}`
 
@@ -401,3 +447,15 @@ Menerima undangan. User harus sudah terautentikasi menggunakan token
 
 Token undangan hanya dapat digunakan satu kali. Admin tambahan hanya mendapat
 akses ke toko yang mengundangnya dan tidak dapat menjadi Superadmin.
+
+## Catatan implementasi Android dan website
+
+- Catalog, kategori, lokasi Everpro, dan gudang adalah endpoint publik.
+- Cart disimpan server-side sehingga Android dan website dapat melanjutkan cart
+  setelah login pada perangkat berbeda.
+- Jangan menyimpan Bearer token di local storage website; gunakan mekanisme cookie
+  HttpOnly/Secure pada backend website atau penyimpanan token aman pada Android.
+- Jangan menampilkan produk hanya berdasarkan data master. Gunakan response
+  listing karena status, toko, gambar, dan harga berasal dari listing toko.
+- Untuk publikasi toko, status toko harus `active`, email owner harus terverifikasi,
+  owner harus memiliki role `store_admin`, dan listing harus `active`.

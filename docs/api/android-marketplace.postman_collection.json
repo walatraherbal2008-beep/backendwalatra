@@ -46,7 +46,6 @@
     {
       "name": "2. Authentication",
       "item": [
-        { "name": "Login Email", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\",\n  \"device_name\": \"{{device_name}}\"\n}" }, "url": "{{base_url}}/auth/login" }, "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["if (pm.response.code === 200) pm.collectionVariables.set('token', pm.response.json().data.token);"] } }] },
         { "name": "Request OTP", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"phone\": \"{{phone}}\"\n}" }, "url": "{{base_url}}/auth/customer/request-otp" } },
         { "name": "Verify OTP", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"phone\": \"{{phone}}\",\n  \"challenge_id\": {{challenge_id}},\n  \"otp\": \"{{otp}}\",\n  \"device_name\": \"{{device_name}}\"\n}" }, "url": "{{base_url}}/auth/customer/verify-otp" }, "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["if (pm.response.code === 200) pm.collectionVariables.set('token', pm.response.json().data.token);"] } }] },
         { "name": "Me", "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }], "url": "{{base_url}}/auth/me" } },

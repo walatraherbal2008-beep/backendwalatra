@@ -124,7 +124,6 @@ class CustomerOtpAuthTest extends TestCase
             'letters inside phone' => ['customer/request-otp', ['phone' => '08abc123456789'], 'phone'],
             'verify phone array' => ['customer/verify-otp', ['phone' => ['08123456789']], 'phone'],
             'verify challenge array' => ['customer/verify-otp', ['challenge_id' => [1]], 'challenge_id'],
-            'login email array' => ['login', ['email' => ['test@example.com']], 'email'],
         ];
     }
 
@@ -560,30 +559,15 @@ class CustomerOtpAuthTest extends TestCase
         $this->assertDatabaseCount('personal_access_tokens', 0);
     }
 
-    public function test_email_login_throttle_returns_json_with_retry_after_in_seconds(): void
+    public function test_email_login_is_not_an_authentication_path(): void
     {
-        $this->freezeSecond();
-        $payload = [
+        $this->postJson('/api/v1/auth/login', [
             'email' => 'missing@example.com',
             'password' => 'wrong-password',
             'device_name' => 'postman',
-        ];
+        ])->assertStatus(410)
+            ->assertJsonPath('code', 'OTP_ONLY_AUTHENTICATION');
 
-        for ($attempt = 0; $attempt < 5; $attempt++) {
-            $this->postJson('/api/v1/auth/login', $payload)->assertUnauthorized();
-        }
-
-        $this->postJson('/api/v1/auth/login', $payload)
-            ->assertTooManyRequests()
-            ->assertHeader('Retry-After', '60')
-            ->assertExactJson([
-                'success' => false,
-                'message' => 'Terlalu banyak percobaan. Silakan tunggu sebelum mencoba lagi.',
-                'retry_after' => 60,
-            ]);
-
-        $this->travel(61)->seconds();
-        $this->postJson('/api/v1/auth/login', $payload)->assertUnauthorized();
         $this->assertDatabaseCount('personal_access_tokens', 0);
     }
 

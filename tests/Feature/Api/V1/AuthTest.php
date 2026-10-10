@@ -5,63 +5,25 @@ namespace Tests\Feature\Api\V1;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
-use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 class AuthTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_user_can_login_and_receive_a_token(): void
+    public function test_customer_password_login_is_disabled(): void
     {
-        $user = User::factory()->create([
-            'email' => 'customer@example.com',
-            'password' => 'password',
-        ]);
-
         $response = $this->postJson('/api/v1/auth/login', [
-            'email' => $user->email,
-            'password' => 'password',
-            'device_name' => 'test-device',
-        ]);
-
-        $response->assertOk()
-            ->assertJsonPath('success', true)
-            ->assertJsonPath('data.user.email', $user->email)
-            ->assertJsonPath('data.token_type', 'Bearer')
-            ->assertJsonStructure(['data' => ['token']]);
-
-        $this->assertDatabaseHas('personal_access_tokens', [
-            'tokenable_id' => $user->id,
-            'name' => 'test-device',
-        ]);
-    }
-
-    public function test_invalid_credentials_are_rejected(): void
-    {
-        User::factory()->create(['email' => 'customer@example.com']);
-
-        $this->postJson('/api/v1/auth/login', [
             'email' => 'customer@example.com',
-            'password' => 'wrong-password',
-            'device_name' => 'test-device',
-        ])->assertUnauthorized()
-            ->assertJsonPath('success', false);
-    }
-
-    public function test_internal_admin_cannot_login_through_customer_api(): void
-    {
-        $admin = User::factory()->create([
-            'email' => 'admin@example.com',
-            'user_type' => 'admin',
-            'password' => Hash::make('password'),
-        ]);
-
-        $this->postJson('/api/v1/auth/login', [
-            'email' => $admin->email,
             'password' => 'password',
             'device_name' => 'test-device',
-        ])->assertUnauthorized();
+        ]);
+
+        $response->assertStatus(410)
+            ->assertJsonPath('success', false)
+            ->assertJsonPath('code', 'OTP_ONLY_AUTHENTICATION');
+
+        $this->assertDatabaseCount('personal_access_tokens', 0);
     }
 
     public function test_invalid_customer_phone_returns_json_validation_error(): void

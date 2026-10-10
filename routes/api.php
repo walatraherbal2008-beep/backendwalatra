@@ -35,7 +35,7 @@ Route::prefix('v1')->group(function (): void {
         Route::post('/warehouses/group', [WarehouseController::class, 'group']);
     });
 
-    Route::post('/auth/login', [AuthController::class, 'login'])
+    Route::post('/auth/login', [AuthController::class, 'passwordLoginDisabled'])
         ->middleware('throttle:login');
 
     Route::middleware(['auth:sanctum', 'abilities:customer-api'])->group(function (): void {

@@ -11,6 +11,7 @@ use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\Address;
 use App\Models\Order;
+use App\Services\Shipping\ShippingCostCalculator;
 use Illuminate\Support\Collection;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -88,6 +89,7 @@ class OrderController extends Controller
         CreateOrderRequest $request,
         WarehouseStockProvider $warehouse,
         ShippingRateProvider $shipping,
+        ShippingCostCalculator $shippingCosts,
     ): OrderResource|JsonResponse {
         $idempotencyKey = trim((string) $request->header('Idempotency-Key'));
 
@@ -170,6 +172,15 @@ class OrderController extends Controller
 
         $stockItems = $this->stockItems($cart->items);
         $shippingQuote = $shipping->quote($shippingAddress, $stockItems);
+        $subtotal = (float) $cart->items->sum(
+            fn ($item): float => (float) $item->unit_price * $item->quantity,
+        );
+        $shippingCost = $shippingCosts->calculate(
+            $shippingQuote,
+            $shippingAddress,
+            $subtotal,
+            $this->weightGrams($cart->items),
+        );
         $availability = $warehouse->checkAvailability($stockItems);
 
         if (! $availability['available']) {
@@ -186,11 +197,8 @@ class OrderController extends Controller
         $reservationId = $warehouse->reserve($stockItems, $reference);
 
         try {
-            $order = DB::transaction(function () use ($request, $cart, $idempotencyKey, $reservationId, $shippingAddress, $shippingQuote): Order {
-                $subtotal = (float) $cart->items->sum(
-                    fn ($item): float => (float) $item->unit_price * $item->quantity,
-                );
-                $shippingFee = (float) $shippingQuote['fee'];
+            $order = DB::transaction(function () use ($request, $cart, $idempotencyKey, $reservationId, $shippingAddress, $shippingQuote, $shippingCost, $subtotal): Order {
+                $shippingFee = (float) $shippingCost['fee'];
 
                 $order = Order::query()->create([
                     'user_id' => $request->user()->id,
@@ -199,6 +207,8 @@ class OrderController extends Controller
                     'status' => 'pending_payment',
                     'currency' => 'IDR',
                     'subtotal' => $subtotal,
+                    'shipping_gross_fee' => $shippingCost['gross_fee'],
+                    'shipping_subsidy' => $shippingCost['subsidy'],
                     'shipping_fee' => $shippingFee,
                     'shipping_service' => $shippingQuote['service'],
                     'total' => $subtotal + $shippingFee,
@@ -304,5 +314,18 @@ class OrderController extends Controller
             ])
             ->values()
             ->all();
+    }
+
+    private function weightGrams(Collection $items): int
+    {
+        return (int) $items->sum(function (CartItem $item): int {
+            if ($item->isBundle()) {
+                return (int) $item->bundleListing->bundle->items->sum(
+                    fn ($component): int => (int) $component->variant->weight_grams * $component->quantity * $item->quantity,
+                );
+            }
+
+            return (int) $item->variant->weight_grams * $item->quantity;
+        });
     }
 }
