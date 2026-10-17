@@ -48,6 +48,7 @@ tampil.
 | GET | `/catalog/categories/{slug}` | Detail kategori |
 | GET | `/catalog/bundles` | Daftar bundle aktif |
 | GET | `/catalog/bundles/{slug}` | Detail bundle |
+| GET | `/banners` | Daftar banner iklan yang sedang aktif |
 
 Parameter katalog yang tersedia: `q`, `type`, `store`, `category`, `min_price`, `max_price`, `sort`, `page`, `per_page`. Nilai `type`: `product` atau `bundle`. Nilai `sort`: `relevance`, `latest`, `name_asc`, `name_desc`, `price_asc`, `price_desc`.
 
@@ -69,6 +70,19 @@ bundle sebagai `bundle_listing_id`.
 Website dan Android wajib mengambil URL gambar dari field `images[].url` atau
 `image_url`; jangan membentuk URL storage sendiri. Jika toko belum mengunggah
 gambar etalase, backend menggunakan fallback gambar produk pusat.
+
+### Banner iklan publik
+
+Banner tidak membutuhkan login. Backend hanya mengembalikan banner dengan status
+`active` yang berada dalam rentang `starts_at` dan `ends_at`. Banner yang belum
+mulai atau sudah berakhir tidak dikembalikan.
+
+```http
+GET /api/v1/banners
+```
+
+Gunakan `sort_order` untuk urutan tampilan. Angka lebih kecil tampil lebih dahulu.
+Ketika banner dipilih, Android atau website dapat membuka `cta_url`.
 
 ## Lokasi Everpro — tanpa login
 

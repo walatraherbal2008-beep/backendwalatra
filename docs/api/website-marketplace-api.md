@@ -53,6 +53,7 @@ Endpoint yang tersedia:
 | GET | `/catalog/bundles/{slug}` | Detail bundle dan komponen |
 | GET | `/catalog/categories` | Kategori aktif |
 | GET | `/catalog/categories/{slug}` | Detail kategori |
+| GET | `/banners` | Banner iklan yang sedang aktif |
 
 Filter utama:
 
@@ -69,6 +70,23 @@ GET /api/v1/catalog/bundles?store=admin-toko-tes-vibium-admin-toko&per_page=50
 
 Gunakan `images[].url`, `image_url`, atau `image.url` untuk gambar. Gunakan
 `listing_id` sebagai identitas listing toko; jangan menggantinya dengan `product.id`.
+
+### Banner iklan
+
+Banner dapat diambil tanpa login:
+
+```javascript
+const response = await fetch(API_BASE_URL + '/banners', {
+  headers: { Accept: 'application/json' },
+});
+
+const result = await response.json();
+```
+
+API hanya mengembalikan banner dengan status `active` yang sedang berada dalam
+jadwal tampil. Urutan menggunakan `sort_order` dari angka terkecil. Gunakan
+`image_url` atau `image_preview_url` untuk gambar dan buka `cta_url` ketika
+banner dipilih.
 
 ## Login customer dengan OTP
 
