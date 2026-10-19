@@ -6,6 +6,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;
+use Filament\Schemas\Components\Utilities\Get;
 
 class ProductForm
 {
@@ -49,6 +50,7 @@ class ProductForm
                     ->multiple()
                     ->searchable()
                     ->preload()
+                    ->required(fn (Get $get): bool => $get('status') === 'active')
                     ->helperText('Pilih satu atau beberapa kategori untuk produk ini.')
                     ->columnSpanFull(),
                 Select::make('status')
@@ -61,6 +63,7 @@ class ProductForm
                             'inactive' => 'Tidak aktif',
                         ])
                     ->default('draft')
+                    ->live()
                     ->required(),
             ]);
     }

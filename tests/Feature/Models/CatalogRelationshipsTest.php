@@ -89,6 +89,27 @@ class CatalogRelationshipsTest extends TestCase
         $this->assertTrue($immunity->fresh()->products->contains($product));
     }
 
+    public function test_category_cannot_be_its_own_parent(): void
+    {
+        $category = Category::factory()->create();
+
+        $category->parent_id = $category->id;
+
+        $this->expectException(ValidationException::class);
+        $category->save();
+    }
+
+    public function test_category_cannot_create_a_parent_cycle(): void
+    {
+        $first = Category::factory()->create();
+        $second = Category::factory()->create(['parent_id' => $first->id]);
+
+        $first->parent_id = $second->id;
+
+        $this->expectException(ValidationException::class);
+        $first->save();
+    }
+
     public function test_variant_sku_is_generated_automatically(): void
     {
         $product = Product::factory()->create([
@@ -144,14 +165,62 @@ class CatalogRelationshipsTest extends TestCase
     public function test_product_can_be_activated_after_an_active_variant_is_added(): void
     {
         $product = Product::factory()->create(['status' => 'draft']);
+        $category = Category::factory()->create(['status' => 'active']);
+        ProductVariant::factory()->create([
+            'product_id' => $product->id,
+            'status' => 'active',
+        ]);
+        $product->categories()->attach($category);
+
+        $product->update(['status' => 'active']);
+
+        $this->assertSame('active', $product->fresh()->status);
+    }
+
+    public function test_product_cannot_be_activated_without_an_active_category(): void
+    {
+        $product = Product::factory()->create(['status' => 'draft']);
         ProductVariant::factory()->create([
             'product_id' => $product->id,
             'status' => 'active',
         ]);
 
+        $this->expectException(ValidationException::class);
         $product->update(['status' => 'active']);
+    }
 
-        $this->assertSame('active', $product->fresh()->status);
+    public function test_product_cannot_be_activated_with_only_an_inactive_category(): void
+    {
+        $product = Product::factory()->create(['status' => 'draft']);
+        $category = Category::factory()->create(['status' => 'inactive']);
+        ProductVariant::factory()->create([
+            'product_id' => $product->id,
+            'status' => 'active',
+        ]);
+        $product->categories()->attach($category);
+
+        $this->expectException(ValidationException::class);
+        $product->update(['status' => 'active']);
+    }
+
+    public function test_category_cannot_be_deactivated_when_used_by_an_active_product(): void
+    {
+        $category = Category::factory()->create(['status' => 'active']);
+        $product = Product::factory()->create(['status' => 'active']);
+        $product->categories()->attach($category);
+
+        $this->expectException(ValidationException::class);
+        $category->update(['status' => 'inactive']);
+    }
+
+    public function test_category_cannot_be_deleted_when_used_by_an_active_product(): void
+    {
+        $category = Category::factory()->create(['status' => 'active']);
+        $product = Product::factory()->create(['status' => 'active']);
+        $product->categories()->attach($category);
+
+        $this->expectException(ValidationException::class);
+        $category->delete();
     }
 
     public function test_store_bundle_listing_supports_multiple_store_images(): void

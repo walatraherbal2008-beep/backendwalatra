@@ -40,11 +40,18 @@ class Product extends Model implements HasMedia
             if (
                 $product->isDirty('status')
                 && $product->status === 'active'
-                && ! $product->variants()->where('status', 'active')->exists()
             ) {
-                throw ValidationException::withMessages([
-                    'status' => 'Produk belum dapat diaktifkan. Tambahkan minimal satu varian aktif terlebih dahulu.',
-                ]);
+                if (! $product->variants()->where('status', 'active')->exists()) {
+                    throw ValidationException::withMessages([
+                        'status' => 'Produk belum dapat diaktifkan. Tambahkan minimal satu varian aktif terlebih dahulu.',
+                    ]);
+                }
+
+                if (! $product->categories()->where('categories.status', 'active')->exists()) {
+                    throw ValidationException::withMessages([
+                        'status' => 'Produk belum dapat diaktifkan. Pilih minimal satu kategori aktif terlebih dahulu.',
+                    ]);
+                }
             }
         });
     }
