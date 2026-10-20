@@ -2,6 +2,10 @@
 
 return [
 
+    'company' => [
+        'whatsapp_url' => env('COMPANY_WHATSAPP_URL'),
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Third Party Services
