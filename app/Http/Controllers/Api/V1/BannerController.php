@@ -14,9 +14,11 @@ class BannerController extends Controller
         return BannerResource::collection(
             Banner::query()
                 ->currentlyVisible()
+                ->whereHas('media', fn ($query) => $query->where('collection_name', 'image'))
                 ->with('media')
                 ->orderBy('sort_order')
                 ->orderByDesc('created_at')
+                ->orderByDesc('id')
                 ->get(),
         )->additional([
             'success' => true,

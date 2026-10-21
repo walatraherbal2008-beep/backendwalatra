@@ -29,6 +29,26 @@ class BannerTest extends TestCase
         $visible->addMedia(UploadedFile::fake()->image('banner.png', 1200, 420))
             ->toMediaCollection('image');
 
+        $visibleLatest = Banner::query()->create([
+            'name' => 'Banner terbaru',
+            'cta_url' => 'https://example.com/latest',
+            'status' => 'active',
+            'starts_at' => now()->subHour(),
+            'ends_at' => now()->addHour(),
+            'sort_order' => 1,
+        ]);
+        $visibleLatest->addMedia(UploadedFile::fake()->image('banner-latest.png', 1200, 420))
+            ->toMediaCollection('image');
+
+        Banner::query()->create([
+            'name' => 'Aktif tanpa gambar',
+            'cta_url' => 'https://example.com/no-image',
+            'status' => 'active',
+            'starts_at' => now()->subHour(),
+            'ends_at' => now()->addHour(),
+            'sort_order' => 0,
+        ]);
+
         Banner::query()->create([
             'name' => 'Belum mulai',
             'cta_url' => 'https://example.com/future',
@@ -53,12 +73,35 @@ class BannerTest extends TestCase
         $this->getJson('/api/v1/banners')
             ->assertOk()
             ->assertJsonPath('success', true)
-            ->assertJsonCount(1, 'data')
-            ->assertJsonPath('data.0.id', $visible->id)
-            ->assertJsonPath('data.0.name', 'Banner tampil')
-            ->assertJsonPath('data.0.cta_url', 'https://example.com/promo')
+            ->assertJsonCount(2, 'data')
+            ->assertJsonPath('data.0.id', $visibleLatest->id)
+            ->assertJsonPath('data.0.name', 'Banner terbaru')
+            ->assertJsonPath('data.0.cta_url', 'https://example.com/latest')
             ->assertJsonPath('data.0.sort_order', 1)
-            ->assertJsonPath('data.0.image_url', fn ($value): bool => is_string($value) && $value !== '');
+            ->assertJsonPath('data.0.image_url', fn ($value): bool => is_string($value) && $value !== '')
+            ->assertJsonPath('data.1.id', $visible->id)
+            ->assertJsonPath('data.1.name', 'Banner tampil')
+            ->assertJsonPath('data.1.cta_url', 'https://example.com/promo')
+            ->assertJsonPath('data.1.sort_order', 1)
+            ->assertJsonMissing(['name' => 'Aktif tanpa gambar'])
+            ->assertJsonMissing(['name' => 'Belum mulai'])
+            ->assertJsonMissing(['name' => 'Sudah berakhir'])
+            ->assertJsonMissing(['name' => 'Nonaktif']);
+    }
+
+    public function test_public_banner_endpoint_returns_empty_data_when_no_banner_is_visible(): void
+    {
+        Banner::query()->create([
+            'name' => 'Banner draft',
+            'cta_url' => 'https://example.com/draft',
+            'status' => 'draft',
+        ]);
+
+        $this->getJson('/api/v1/banners')
+            ->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('message', 'Daftar banner berhasil diambil.')
+            ->assertJsonCount(0, 'data');
     }
 
     public function test_banner_rejects_unsafe_cta_and_invalid_schedule(): void

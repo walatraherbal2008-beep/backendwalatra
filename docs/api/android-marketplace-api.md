@@ -75,14 +75,41 @@ gambar etalase, backend menggunakan fallback gambar produk pusat.
 
 Banner tidak membutuhkan login. Backend hanya mengembalikan banner dengan status
 `active` yang berada dalam rentang `starts_at` dan `ends_at`. Banner yang belum
-mulai atau sudah berakhir tidak dikembalikan.
+mulai, sudah berakhir, atau belum memiliki gambar tidak dikembalikan. Jika tidak
+ada banner yang sedang tampil, nilai `data` berupa array kosong.
 
 ```http
 GET /api/v1/banners
 ```
 
 Gunakan `sort_order` untuk urutan tampilan. Angka lebih kecil tampil lebih dahulu.
-Ketika banner dipilih, Android atau website dapat membuka `cta_url`.
+Jika memiliki nilai `sort_order` yang sama, banner yang dibuat paling baru tampil
+lebih dahulu. Ketika banner dipilih, Android atau website dapat membuka `cta_url`.
+
+Field `status`, `created_by`, dan `updated_by` tidak dikirimkan oleh API. Gunakan
+`image_url` sebagai gambar utama. `image_preview_url` boleh digunakan sebagai
+versi preview dan dapat bernilai `null` ketika proses konversi gambar belum selesai.
+
+Contoh response:
+
+```json
+{
+  "data": [
+    {
+      "id": 1,
+      "name": "Promo Herbal Oktober",
+      "image_url": "https://domain.com/storage/...",
+      "image_preview_url": "https://domain.com/storage/...",
+      "cta_url": "https://domain.com/promo",
+      "starts_at": "2026-10-21T00:00:00+07:00",
+      "ends_at": "2026-10-31T23:59:59+07:00",
+      "sort_order": 1
+    }
+  ],
+  "success": true,
+  "message": "Daftar banner berhasil diambil."
+}
+```
 
 ## Lokasi Everpro — tanpa login
 

@@ -84,9 +84,15 @@ const result = await response.json();
 ```
 
 API hanya mengembalikan banner dengan status `active` yang sedang berada dalam
-jadwal tampil. Urutan menggunakan `sort_order` dari angka terkecil. Gunakan
-`image_url` atau `image_preview_url` untuk gambar dan buka `cta_url` ketika
-banner dipilih.
+jadwal tampil dan sudah memiliki gambar. Banner draft, nonaktif, belum mulai,
+sudah berakhir, atau tanpa gambar tidak dikembalikan. Jika tidak ada banner
+aktif, `data` berupa array kosong.
+
+Urutan menggunakan `sort_order` dari angka terkecil. Jika nilainya sama, banner
+yang dibuat paling baru tampil lebih dahulu. Gunakan `image_url` atau
+`image_preview_url` untuk gambar dan buka `cta_url` ketika banner dipilih.
+`image_preview_url` dapat bernilai `null`, sehingga website harus menggunakan
+`image_url` sebagai fallback.
 
 ## Login customer dengan OTP
 
