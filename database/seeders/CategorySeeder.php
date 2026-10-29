@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Category;
 use App\Models\Product;
+use App\Support\WalatraProductCategoryMap;
 use Illuminate\Database\Seeder;
 
 class CategorySeeder extends Seeder
@@ -33,24 +34,7 @@ class CategorySeeder extends Seeder
             return [$data['slug'] => $category];
         });
 
-        $productCategories = [
-            'kapsul-sehat-lambungku' => ['pencernaan'],
-            'propolis-sm' => ['pernapasan-dan-tenggorokan', 'daya-tahan-tubuh'],
-            'qnc-jelly-gamat' => ['daya-tahan-tubuh', 'sendi-dan-otot'],
-            'bio-squalene' => ['daya-tahan-tubuh', 'nutrisi-dan-kebugaran'],
-            'garlic' => ['daya-tahan-tubuh'],
-            'sendifit' => ['sendi-dan-otot'],
-            'kapsul-oil-fit' => ['sendi-dan-otot'],
-            'sehat-wanita' => ['kesehatan-wanita'],
-            'etaku-goat-milk' => ['nutrisi-dan-kebugaran'],
-            'proskin' => ['kesehatan-kulit'],
-            'keloreena' => ['vitalitas-pria', 'nutrisi-dan-kebugaran'],
-            'hexabumin' => ['nutrisi-dan-kebugaran'],
-            'albucare' => ['nutrisi-dan-kebugaran'],
-            'kurmaqu-gmj' => ['nutrisi-dan-kebugaran'],
-            'radimax' => ['nutrisi-dan-kebugaran'],
-            'kapsul-gamat-emas' => ['daya-tahan-tubuh', 'sendi-dan-otot'],
-        ];
+        $productCategories = WalatraProductCategoryMap::map();
 
         foreach ($productCategories as $productSlug => $categorySlugs) {
             $product = Product::query()->where('slug', $productSlug)->first();

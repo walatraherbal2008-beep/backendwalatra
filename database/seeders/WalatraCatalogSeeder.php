@@ -6,8 +6,10 @@ use App\Models\Product;
 use App\Models\ProductBundle;
 use App\Models\ProductBundleItem;
 use App\Models\ProductVariant;
+use App\Models\Category;
 use App\Models\StoreBundleListing;
 use App\Models\StoreProductListing;
+use App\Support\WalatraProductCategoryMap;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -48,6 +50,19 @@ class WalatraCatalogSeeder extends Seeder
 
                     $variants[$variantData['sku']] = $variant;
                 }
+
+                $categoryIds = Category::query()
+                    ->whereIn('slug', WalatraProductCategoryMap::map()[$productData['slug']] ?? [])
+                    ->where('status', 'active')
+                    ->pluck('id');
+
+                if ($categoryIds->isEmpty()) {
+                    throw new \RuntimeException(
+                        "Kategori aktif untuk produk '{$productData['name']}' belum tersedia. Jalankan CategorySeeder terlebih dahulu.",
+                    );
+                }
+
+                $product->categories()->sync($categoryIds->all());
 
                 $product->forceFill(['status' => 'active'])->save();
             }
