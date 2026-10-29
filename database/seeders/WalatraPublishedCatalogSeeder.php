@@ -4,8 +4,10 @@ namespace Database\Seeders;
 
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\ProductBundle;
 use App\Models\ProductVariant;
 use App\Models\Store;
+use App\Models\StoreBundleListing;
 use App\Models\StoreProductListing;
 use App\Models\User;
 use App\Services\Marketplace\StoreOwnerAssignmentService;
@@ -44,10 +46,13 @@ class WalatraPublishedCatalogSeeder extends Seeder
                     sortOrder: $sortOrder + 1,
                 );
             }
+
+            $this->publishBundles($store);
         });
 
         $this->command?->newLine();
         $this->command?->info('Katalog PDF Walatra berhasil diimpor dan dipublikasikan.');
+        $this->command?->info('Tiga paket bundle berhasil dibuat dan dipublikasikan.');
         $this->command?->line('Toko: Toko Herbal Abadi');
         $this->command?->line('Email admin toko: '.self::STORE_EMAIL);
         $this->command?->warn('Password demo: '.self::STORE_PASSWORD);
@@ -248,6 +253,128 @@ class WalatraPublishedCatalogSeeder extends Seeder
             'sort_order' => $sortOrder,
             'published_at' => $listing->published_at ?? now(),
         ])->save();
+    }
+
+    private function publishBundles(Store $store): void
+    {
+        foreach ($this->bundles() as $sortOrder => $bundleData) {
+            $bundle = ProductBundle::withTrashed()
+                ->where('slug', $bundleData['slug'])
+                ->first();
+
+            if (! $bundle) {
+                $bundle = new ProductBundle;
+            } elseif ($bundle->trashed()) {
+                $bundle->restore();
+            }
+
+            $bundle->forceFill([
+                'name' => $bundleData['name'],
+                'slug' => $bundleData['slug'],
+                'code' => $bundleData['code'],
+                'description' => $bundleData['description'],
+                'price' => $bundleData['price'],
+                'status' => 'active',
+            ])->save();
+
+            $bundle->items()->withTrashed()->forceDelete();
+
+            foreach ($bundleData['items'] as $itemData) {
+                $product = Product::query()
+                    ->where('slug', $itemData['product_slug'])
+                    ->where('status', 'active')
+                    ->firstOrFail();
+
+                $variant = ProductVariant::query()
+                    ->where('product_id', $product->id)
+                    ->whereRaw('LOWER(name) = LOWER(?)', [$itemData['variant_name']])
+                    ->where('status', 'active')
+                    ->firstOrFail();
+
+                $bundle->items()->create([
+                    'product_variant_id' => $variant->id,
+                    'quantity' => $itemData['quantity'],
+                ]);
+            }
+
+            $listing = StoreBundleListing::withTrashed()
+                ->where('store_id', $store->id)
+                ->where('product_bundle_id', $bundle->id)
+                ->first();
+
+            if (! $listing) {
+                $listing = new StoreBundleListing;
+                $listing->forceFill([
+                    'store_id' => $store->id,
+                    'product_bundle_id' => $bundle->id,
+                ]);
+            } elseif ($listing->trashed()) {
+                $listing->restore();
+            }
+
+            $listing->forceFill([
+                'description' => $bundleData['description'],
+                'status' => 'active',
+                'sort_order' => $sortOrder + 1,
+                'published_at' => $listing->published_at ?? now(),
+            ])->save();
+        }
+    }
+
+    /**
+     * Paket bundle memakai definisi bundle proyek yang sudah ada. Komponen
+     * Kapsul Sehat Lambungku pada paket keluarga diganti Madu Herbal Lambung
+     * Sehat karena hanya produk tersebut yang tersedia pada PDF sumber.
+     *
+     * @return list<array{
+     *     name: string,
+     *     slug: string,
+     *     code: string,
+     *     description: string,
+     *     price: int,
+     *     items: list<array{product_slug: string, variant_name: string, quantity: int}>
+     * }>
+     */
+    private function bundles(): array
+    {
+        return [
+            [
+                'name' => 'Paket Herbal Keluarga',
+                'slug' => 'paket-herbal-keluarga',
+                'code' => 'BND-WAL-KELUARGA',
+                'description' => 'Paket produk Walatra untuk kebutuhan keluarga.',
+                'price' => 350000,
+                'items' => [
+                    ['product_slug' => 'sehat-wanita', 'variant_name' => '50 Kapsul', 'quantity' => 1],
+                    ['product_slug' => 'madu-herbal-lambung-sehat', 'variant_name' => '250 gram', 'quantity' => 1],
+                    ['product_slug' => 'propolis-sm', 'variant_name' => '1 Box (7 Botol @ 6 ml)', 'quantity' => 1],
+                ],
+            ],
+            [
+                'name' => 'Paket Herbal Sendi dan Otot',
+                'slug' => 'paket-herbal-sendi-dan-otot',
+                'code' => 'BND-WAL-SENDI-OTOT',
+                'description' => 'Paket produk Walatra untuk perawatan sendi dan otot.',
+                'price' => 300000,
+                'items' => [
+                    ['product_slug' => 'sendifit', 'variant_name' => '50 Kapsul', 'quantity' => 1],
+                    ['product_slug' => 'kapsul-oil-fit', 'variant_name' => '50 Kapsul', 'quantity' => 1],
+                    ['product_slug' => 'keloreena', 'variant_name' => '50 Kapsul', 'quantity' => 1],
+                ],
+            ],
+            [
+                'name' => 'Paket Herbal Daya Tahan',
+                'slug' => 'paket-herbal-daya-tahan',
+                'code' => 'BND-WAL-DAYA-TAHAN',
+                'description' => 'Paket produk Walatra untuk mendukung daya tahan tubuh.',
+                'price' => 390000,
+                'items' => [
+                    ['product_slug' => 'qnc-jelly-gamat', 'variant_name' => '300 ml', 'quantity' => 1],
+                    ['product_slug' => 'bio-squalene', 'variant_name' => '30 Softgel', 'quantity' => 1],
+                    ['product_slug' => 'hexabumin', 'variant_name' => '130 ml', 'quantity' => 1],
+                ],
+            ],
+        ];
     }
 
     /**
