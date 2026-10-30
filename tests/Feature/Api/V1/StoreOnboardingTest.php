@@ -36,6 +36,7 @@ class StoreOnboardingTest extends TestCase
 
         $response = $this->postJson('/api/v1/store-onboarding', [
             'name' => 'Toko Mandiri Walatra',
+            'store_name' => 'Herbal Sehat Mandiri',
             'email' => 'mandiri@example.com',
             'password' => 'PasswordMandiri123!',
             'city' => 'Bandung',
@@ -48,6 +49,7 @@ class StoreOnboardingTest extends TestCase
         $this->assertDatabaseHas('stores', [
             'id' => $storeId,
             'owner_user_id' => $member->id,
+            'name' => 'Herbal Sehat Mandiri',
             'status' => 'pending_approval',
         ]);
         $this->assertDatabaseHas('store_memberships', [

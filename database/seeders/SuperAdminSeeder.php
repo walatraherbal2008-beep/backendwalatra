@@ -27,9 +27,9 @@ class SuperAdminSeeder extends Seeder
             );
         }
 
-        if ($password === '' || strlen($password) < 4) {
+        if ($password === '' || strlen($password) < 6) {
             throw new InvalidArgumentException(
-                'SUPERADMIN_PASSWORD wajib diisi dan minimal 12 karakter.',
+                'SUPERADMIN_PASSWORD wajib diisi dan minimal 6 karakter.',
             );
         }
 

@@ -16,11 +16,12 @@ class CreateSelfServiceStoreRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'],
+            'store_name' => ['nullable', 'string', 'max:255'],
             'email' => [
                 'required', 'email', 'max:255',
                 Rule::unique('users', 'email')->ignore($this->user()?->getKey()),
             ],
-            'password' => ['required', 'string', 'min:12'],
+            'password' => ['required', 'string', 'min:6'],
             'description' => ['nullable', 'string', 'max:5000'],
             'contact_phone' => ['nullable', 'string', 'max:20'],
             'contact_email' => ['nullable', 'email', 'max:255'],

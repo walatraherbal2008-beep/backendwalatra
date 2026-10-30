@@ -11,6 +11,7 @@ use App\Models\StoreAdminInvitation;
 use App\Models\User;
 use App\Notifications\StoreAdminInvitationNotification;
 use App\Notifications\VerifyStoreAdminEmailNotification;
+use App\Services\Marketplace\StoreRegistrationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -22,7 +23,10 @@ use Spatie\Permission\Models\Role;
 
 class StoreOnboardingController
 {
-    public function registerStore(CreateSelfServiceStoreRequest $request): JsonResponse
+    public function registerStore(
+        CreateSelfServiceStoreRequest $request,
+        StoreRegistrationService $registrationService,
+    ): JsonResponse
     {
         if (! MarketplaceSetting::enabled('self_service_store_registration_enabled')) {
             return response()->json([
@@ -35,64 +39,13 @@ class StoreOnboardingController
         /** @var User $user */
         $user = $request->user();
 
-        if (! $user->isWalatraMember()) {
-            throw ValidationException::withMessages([
-                'user' => 'Hanya member Walatra aktif yang dapat mendaftarkan toko.',
-            ]);
-        }
-
-        if ($user->store()->exists() || $user->managedStores()->exists()) {
-            throw ValidationException::withMessages([
-                'store' => 'Akun ini sudah memiliki atau terhubung dengan toko.',
-            ]);
-        }
-
         $data = $request->validated();
-        if (filled($user->email) && strtolower((string) $user->email) !== strtolower($data['email'])) {
-            throw ValidationException::withMessages([
-                'email' => 'Email akun yang sudah digunakan tidak dapat diganti melalui pendaftaran toko.',
-            ]);
-        }
-        $tokenUrl = null;
-
-        $store = DB::transaction(function () use ($data, $user, &$tokenUrl): Store {
-            $user->forceFill([
-                'name' => $data['name'],
-                'email' => strtolower($data['email']),
-                'password' => $data['password'],
-            ])->save();
-
-            Role::findOrCreate('store_admin', 'web');
-            $user->assignRole('store_admin');
-
-            $store = Store::query()->create([
-                'owner_user_id' => $user->id,
-                'name' => $data['name'],
-                'description' => $data['description'] ?? null,
-                'contact_phone' => $data['contact_phone'] ?? $user->phone,
-                'contact_email' => $data['contact_email'] ?? $data['email'],
-                'province' => $data['province'] ?? null,
-                'city' => $data['city'] ?? null,
-                'district' => $data['district'] ?? null,
-                'postal_code' => $data['postal_code'] ?? null,
-                'address' => $data['address'] ?? null,
-                'latitude' => $data['latitude'] ?? null,
-                'longitude' => $data['longitude'] ?? null,
-                'status' => 'pending_approval',
-            ]);
-
-            $store->admins()->syncWithoutDetaching([
-                $user->id => ['role' => 'owner', 'status' => 'active'],
-            ]);
-
-            $tokenUrl = URL::temporarySignedRoute(
-                'store-onboarding.verify-email',
-                now()->addDay(),
-                ['user' => $user->id, 'hash' => sha1((string) $user->email)],
-            );
-
-            return $store;
-        });
+        $store = $registrationService->register($user, $data);
+        $tokenUrl = URL::temporarySignedRoute(
+            'store-onboarding.verify-email',
+            now()->addDay(),
+            ['user' => $user->id, 'hash' => sha1((string) $user->email)],
+        );
 
         Notification::route('mail', $user->email)
             ->notify(new VerifyStoreAdminEmailNotification($tokenUrl));

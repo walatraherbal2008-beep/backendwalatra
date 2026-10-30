@@ -21,7 +21,7 @@ class AcceptStoreAdminInvitationRequest extends FormRequest
                 Rule::unique('users', 'email')->ignore($this->user()?->getKey()),
             ],
             'name' => ['required', 'string', 'max:255'],
-            'password' => ['required', 'string', 'min:12'],
+            'password' => ['required', 'string', 'min:6'],
         ];
     }
 }

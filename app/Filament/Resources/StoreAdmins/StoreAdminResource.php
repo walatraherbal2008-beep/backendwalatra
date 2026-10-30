@@ -69,7 +69,7 @@ class StoreAdminResource extends Resource
                     ->label('Password')
                     ->password()
                     ->revealable()
-                    ->minLength(12)
+                    ->minLength(6)
                     ->required(fn (string $operation): bool => $operation === 'create')
                     ->dehydrated(fn (?string $state): bool => filled($state)),
                 Select::make('status')
@@ -95,6 +95,10 @@ class StoreAdminResource extends Resource
                     ->searchable(),
                 TextColumn::make('phone')
                     ->label('WhatsApp')
+                    ->searchable(),
+                TextColumn::make('store.name')
+                    ->label('Toko')
+                    ->placeholder('Belum memiliki toko')
                     ->searchable(),
                 TextColumn::make('email_verified_at')
                     ->label('Verifikasi email')
