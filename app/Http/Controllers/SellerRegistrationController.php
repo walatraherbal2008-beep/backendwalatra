@@ -60,6 +60,8 @@ class SellerRegistrationController extends Controller
             challengeId: $challengeId,
             otp: $request->string('otp')->toString(),
             deviceName: 'seller-web',
+            ip: $request->ip(),
+            userAgent: $request->userAgent(),
         );
 
         Auth::login($result['user']);

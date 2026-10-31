@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -33,6 +34,12 @@ class User extends Authenticatable implements FilamentUser
         'user_type',
         'status',
         'profile_completed_at',
+        'status_changed_at',
+        'status_reason',
+        'status_changed_by',
+        'last_login_at',
+        'last_login_ip',
+        'last_login_user_agent',
     ];
 
     /**
@@ -56,6 +63,8 @@ class User extends Authenticatable implements FilamentUser
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'profile_completed_at' => 'datetime',
+            'status_changed_at' => 'datetime',
+            'last_login_at' => 'datetime',
         ];
     }
 
@@ -93,6 +102,21 @@ class User extends Authenticatable implements FilamentUser
     public function addresses(): HasMany
     {
         return $this->hasMany(Address::class);
+    }
+
+    public function statusChangedBy(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'status_changed_by');
+    }
+
+    public function statusHistories(): HasMany
+    {
+        return $this->hasMany(UserStatusHistory::class);
+    }
+
+    public function loginHistories(): HasMany
+    {
+        return $this->hasMany(UserLoginHistory::class);
     }
 
     public function isWalatraMember(): bool

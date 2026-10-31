@@ -73,6 +73,8 @@ class OtpService
         int $challengeId,
         string $otp,
         string $deviceName,
+        ?string $ip = null,
+        ?string $userAgent = null,
     ): array {
         $phone = PhoneNumber::normalize($phone);
 
@@ -81,6 +83,8 @@ class OtpService
             $challengeId,
             $otp,
             $deviceName,
+            $ip,
+            $userAgent,
         ): ?array {
             $challenge = OtpChallenge::query()
                 ->whereKey($challengeId)
@@ -151,6 +155,19 @@ class OtpService
                 $deviceName,
                 ['customer-api'],
             );
+
+            $loggedInAt = now();
+            $user->forceFill([
+                'last_login_at' => $loggedInAt,
+                'last_login_ip' => $ip,
+                'last_login_user_agent' => $userAgent,
+            ])->save();
+            $user->loginHistories()->create([
+                'device_name' => $deviceName,
+                'ip_address' => $ip,
+                'user_agent' => $userAgent,
+                'logged_in_at' => $loggedInAt,
+            ]);
 
             return [
                 'user' => $user,

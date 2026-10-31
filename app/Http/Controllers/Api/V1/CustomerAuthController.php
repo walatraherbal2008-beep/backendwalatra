@@ -53,6 +53,8 @@ class CustomerAuthController extends Controller
             challengeId: $request->integer('challenge_id'),
             otp: $request->string('otp')->toString(),
             deviceName: $request->string('device_name')->toString(),
+            ip: $request->ip(),
+            userAgent: $request->userAgent(),
         );
 
         return response()->json([

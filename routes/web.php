@@ -2,10 +2,15 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\SellerRegistrationController;
+use App\Http\Controllers\Superadmin\CustomerExportController;
 
 Route::get('/', function () {
     return view('welcome');
 });
+
+Route::get('/superadmin/customers/export', CustomerExportController::class)
+    ->middleware('auth')
+    ->name('superadmin.customers.export');
 
 Route::prefix('seller')->name('seller.')->group(function (): void {
     Route::get('/login', [SellerRegistrationController::class, 'login'])->name('login');

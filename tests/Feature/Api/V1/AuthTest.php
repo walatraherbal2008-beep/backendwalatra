@@ -69,6 +69,11 @@ class AuthTest extends TestCase
         $this->assertDatabaseHas('otp_challenges', [
             'id' => $data['challenge_id'],
         ]);
+        $this->assertDatabaseHas('user_login_histories', [
+            'user_id' => $user->id,
+            'device_name' => 'test-device',
+        ]);
+        $this->assertNotNull($user->fresh()->last_login_at);
     }
 
     public function test_authenticated_user_can_view_profile_and_logout(): void
