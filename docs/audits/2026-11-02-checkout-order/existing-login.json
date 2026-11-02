@@ -1,0 +1,7 @@
+{
+  "status": 200,
+  "user_id": 8,
+  "is_new_user": false,
+  "requires_profile_completion": false,
+  "logout_status": 200
+}

@@ -1,0 +1,18 @@
+PHPUnit 11.5.56 by Sebastian Bergmann and contributors.
+
+Runtime:       PHP 8.4.27
+Configuration: /home/popes/Project/backendwalatra-remote/phpunit.xml
+
+Time: 00:10.518, Memory: 99.00 MB
+
+There was 1 failure:
+
+1) Tests\Feature\Api\V1\CatalogQueryPerformanceTest::test_product_search_is_consistent_with_unified_catalog
+Failed asserting that null is identical to 'Herbal Lambung 100ml'.
+
+/home/popes/Project/backendwalatra-remote/vendor/laravel/framework/src/Illuminate/Testing/AssertableJsonString.php:243
+/home/popes/Project/backendwalatra-remote/vendor/laravel/framework/src/Illuminate/Testing/TestResponse.php:880
+/home/popes/Project/backendwalatra-remote/tests/Feature/Api/V1/CatalogQueryPerformanceTest.php:43
+
+FAILURES!
+Tests: 178, Assertions: 793, Failures: 1.

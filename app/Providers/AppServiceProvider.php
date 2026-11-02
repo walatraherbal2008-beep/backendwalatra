@@ -2,23 +2,26 @@
 
 namespace App\Providers;
 
+use App\Contracts\PaymentGateway;
+use App\Contracts\ShippingLocationProvider;
+use App\Contracts\ShippingRateProvider;
+use App\Contracts\WarehouseDirectoryProvider;
+use App\Contracts\WarehouseStockProvider;
 use App\Models\Product;
 use App\Models\ProductVariant;
-use App\Contracts\WarehouseStockProvider;
-use App\Contracts\PaymentGateway;
-use App\Contracts\ShippingRateProvider;
-use App\Contracts\ShippingLocationProvider;
-use App\Contracts\WarehouseDirectoryProvider;
-use App\Services\Payments\MidtransPaymentGateway;
-use App\Services\Payments\UnavailablePaymentGateway;
-use App\Services\Shipping\UnavailableShippingRateProvider;
-use App\Services\Shipping\ShippingApiRateProvider;
-use App\Services\Shipping\EverproLocationProvider;
-use App\Services\Warehouse\UnavailableWarehouseStockProvider;
-use App\Services\Warehouse\WarehouseApiStockProvider;
-use App\Services\Warehouse\ExternalWarehouseDirectoryProvider;
 use App\Observers\ProductObserver;
 use App\Observers\ProductVariantObserver;
+use App\Services\Payments\MidtransPaymentGateway;
+use App\Services\Payments\UnavailablePaymentGateway;
+use App\Services\Shipping\EverproLocationProvider;
+use App\Services\Shipping\ShippingApiRateProvider;
+use App\Services\Shipping\SimulatedShippingRateProvider;
+use App\Services\Shipping\UnavailableShippingRateProvider;
+use App\Services\Warehouse\ExternalWarehouseDirectoryProvider;
+use App\Services\Warehouse\SimulatedWarehouseStockProvider;
+use App\Services\Warehouse\UnavailableWarehouseStockProvider;
+use App\Services\Warehouse\WarehouseApiStockProvider;
+use App\Support\CheckoutSimulation;
 use App\Support\PhoneNumber;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\JsonResponse;
@@ -45,6 +48,10 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(
             WarehouseStockProvider::class,
             function ($app): WarehouseStockProvider {
+                if (CheckoutSimulation::enabled()) {
+                    return $app->make(SimulatedWarehouseStockProvider::class);
+                }
+
                 return config('services.warehouse.enabled')
                     && filled(config('services.warehouse.base_url'))
                     && filled(config('services.warehouse.token'))
@@ -58,6 +65,10 @@ class AppServiceProvider extends ServiceProvider
                 : $app->make(UnavailablePaymentGateway::class);
         });
         $this->app->singleton(ShippingRateProvider::class, function ($app): ShippingRateProvider {
+            if (CheckoutSimulation::enabled()) {
+                return $app->make(SimulatedShippingRateProvider::class);
+            }
+
             return config('services.shipping.enabled')
                 && filled(config('services.shipping.base_url'))
                 && filled(config('services.shipping.token'))

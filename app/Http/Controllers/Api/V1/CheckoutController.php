@@ -2,13 +2,14 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\Contracts\WarehouseStockProvider;
 use App\Contracts\ShippingRateProvider;
+use App\Contracts\WarehouseStockProvider;
 use App\Http\Controllers\Controller;
+use App\Models\Address;
 use App\Models\Cart;
 use App\Models\CartItem;
-use App\Models\Address;
 use App\Services\Shipping\ShippingCostCalculator;
+use App\Support\CheckoutSimulation;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -19,8 +20,7 @@ class CheckoutController extends Controller
         WarehouseStockProvider $warehouse,
         ShippingRateProvider $shipping,
         ShippingCostCalculator $shippingCosts,
-    ): JsonResponse
-    {
+    ): JsonResponse {
         $cart = Cart::query()
             ->where('user_id', $request->user()->id)
             ->with([
@@ -78,6 +78,8 @@ class CheckoutController extends Controller
                 ? 'Ketersediaan stok berhasil divalidasi.'
                 : 'Stok gudang belum dapat divalidasi.',
             'data' => [
+                'simulation' => CheckoutSimulation::enabled(),
+                'payment_required' => ! CheckoutSimulation::enabled(),
                 'checkout_available' => $availability['available'],
                 'items' => $cart->items->map(fn ($item): array => [
                     'cart_item_id' => $item->id,

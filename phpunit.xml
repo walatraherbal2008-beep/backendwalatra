@@ -30,6 +30,7 @@
         <env name="MAXCHAT_ENABLED" value="false"/>
         <env name="MAXCHAT_API_TOKEN" value=""/>
         <env name="QUEUE_CONNECTION" value="sync"/>
+        <env name="ORDER_SIMULATION_ENABLED" value="false"/>
         <env name="SESSION_DRIVER" value="array"/>
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>

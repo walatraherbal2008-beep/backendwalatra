@@ -1,0 +1,322 @@
+[
+  {
+    "step": "unauthenticated cart",
+    "method": "GET",
+    "path": "/cart",
+    "status": 401,
+    "response": {
+      "success": false,
+      "message": "Unauthenticated.",
+      "code": "UNAUTHENTICATED",
+      "errors": null
+    }
+  },
+  {
+    "step": "request OTP",
+    "method": "POST",
+    "path": "/auth/customer/request-otp",
+    "status": 200,
+    "response": {
+      "success": true,
+      "code": "OTP_REQUESTED",
+      "message": "Jika nomor dapat menerima WhatsApp, OTP akan dikirim.",
+      "data": {
+        "challenge_id": 48,
+        "expires_at": "2026-11-02T13:29:44+07:00",
+        "delivery_status": "skipped",
+        "otp": "[REDACTED]"
+      }
+    }
+  },
+  {
+    "step": "verify OTP and register",
+    "method": "POST",
+    "path": "/auth/customer/verify-otp",
+    "status": 200,
+    "response": {
+      "success": true,
+      "code": "AUTHENTICATED",
+      "message": "Login berhasil.",
+      "data": {
+        "user": {
+          "id": 8,
+          "name": null,
+          "phone": "6289990001102",
+          "profile_completed_at": null
+        },
+        "token": "[REDACTED]",
+        "token_type": "Bearer",
+        "is_new_user": true,
+        "requires_profile_completion": true
+      }
+    }
+  },
+  {
+    "step": "reject reused OTP",
+    "method": "POST",
+    "path": "/auth/customer/verify-otp",
+    "status": 422,
+    "response": {
+      "success": false,
+      "message": "OTP tidak valid atau sudah tidak dapat digunakan.",
+      "code": "VALIDATION_ERROR",
+      "errors": {
+        "otp": "[REDACTED]"
+      }
+    }
+  },
+  {
+    "step": "current user",
+    "method": "GET",
+    "path": "/auth/me",
+    "status": 200,
+    "response": {
+      "success": true,
+      "message": "User aktif.",
+      "code": "AUTHENTICATED",
+      "data": {
+        "user": {
+          "id": 8,
+          "name": null,
+          "email": null,
+          "phone": "6289990001102",
+          "profile_completed_at": null
+        },
+        "requires_profile_completion": true
+      }
+    }
+  },
+  {
+    "step": "complete profile",
+    "method": "PATCH",
+    "path": "/auth/customer/profile",
+    "status": 200,
+    "response": {
+      "success": true,
+      "message": "Profil berhasil dilengkapi.",
+      "code": "PROFILE_UPDATED",
+      "data": {
+        "user": {
+          "id": 8,
+          "name": "Audit Checkout 2026-11-02",
+          "email": null,
+          "phone": "6289990001102",
+          "profile_completed_at": "2026-11-02T13:24:44+07:00"
+        },
+        "requires_profile_completion": false
+      }
+    }
+  },
+  {
+    "step": "product catalog",
+    "method": "GET",
+    "path": "/catalog/products",
+    "status": 200,
+    "response": {
+      "data": [],
+      "links": {
+        "first": "http://127.0.0.1:8000/api/v1/catalog/products?page=1",
+        "last": "http://127.0.0.1:8000/api/v1/catalog/products?page=1",
+        "prev": null,
+        "next": null
+      },
+      "meta": {
+        "current_page": 1,
+        "from": null,
+        "last_page": 1,
+        "links": [
+          {
+            "url": null,
+            "label": "pagination.previous",
+            "page": null,
+            "active": false
+          },
+          {
+            "url": "http://127.0.0.1:8000/api/v1/catalog/products?page=1",
+            "label": "1",
+            "page": 1,
+            "active": true
+          },
+          {
+            "url": null,
+            "label": "pagination.next",
+            "page": null,
+            "active": false
+          }
+        ],
+        "path": "http://127.0.0.1:8000/api/v1/catalog/products",
+        "per_page": 15,
+        "to": null,
+        "total": 0
+      },
+      "success": true,
+      "message": "Katalog produk berhasil diambil."
+    }
+  },
+  {
+    "step": "combined catalog",
+    "method": "GET",
+    "path": "/catalog",
+    "status": 200,
+    "response": {
+      "data": [],
+      "links": {
+        "first": "http://127.0.0.1:8000/api/v1/catalog?page=1",
+        "last": "http://127.0.0.1:8000/api/v1/catalog?page=1",
+        "prev": null,
+        "next": null
+      },
+      "meta": {
+        "current_page": 1,
+        "from": null,
+        "last_page": 1,
+        "links": [
+          {
+            "url": null,
+            "label": "pagination.previous",
+            "page": null,
+            "active": false
+          },
+          {
+            "url": "http://127.0.0.1:8000/api/v1/catalog?page=1",
+            "label": "1",
+            "page": 1,
+            "active": true
+          },
+          {
+            "url": null,
+            "label": "pagination.next",
+            "page": null,
+            "active": false
+          }
+        ],
+        "path": "http://127.0.0.1:8000/api/v1/catalog",
+        "per_page": 15,
+        "to": null,
+        "total": 0
+      },
+      "success": true,
+      "message": "Katalog gabungan berhasil diambil."
+    }
+  },
+  {
+    "step": "view cart",
+    "method": "GET",
+    "path": "/cart",
+    "status": 201,
+    "response": {
+      "data": {
+        "id": 2,
+        "items": [],
+        "total_items": 0,
+        "subtotal": "0.00"
+      },
+      "success": true,
+      "message": "Cart berhasil diambil."
+    }
+  },
+  {
+    "step": "save address",
+    "method": "POST",
+    "path": "/addresses",
+    "status": 201,
+    "response": {
+      "data": {
+        "id": 4,
+        "label": "Alamat audit",
+        "name": "Audit Checkout",
+        "phone": "6289990001102",
+        "province": "Jawa Barat",
+        "province_id": null,
+        "province_name": null,
+        "city": "Bandung",
+        "city_id": null,
+        "city_name": null,
+        "district": null,
+        "district_id": null,
+        "district_name": null,
+        "sub_district_id": null,
+        "sub_district_name": null,
+        "postal_code": "40135",
+        "address": "Alamat simulasi audit lokal",
+        "address_note": null,
+        "latitude": null,
+        "longitude": null,
+        "is_default": true
+      },
+      "success": true,
+      "message": "Alamat berhasil ditambahkan."
+    }
+  },
+  {
+    "step": "empty checkout preview",
+    "method": "POST",
+    "path": "/checkout/preview",
+    "status": 422,
+    "response": {
+      "success": false,
+      "message": "Cart masih kosong."
+    }
+  },
+  {
+    "step": "reject missing idempotency key",
+    "method": "POST",
+    "path": "/orders",
+    "status": 422,
+    "response": {
+      "success": false,
+      "message": "Header Idempotency-Key wajib diisi dan maksimal 100 karakter."
+    }
+  },
+  {
+    "step": "order empty cart",
+    "method": "POST",
+    "path": "/orders",
+    "status": 422,
+    "response": {
+      "success": false,
+      "message": "Cart masih kosong.",
+      "code": "CART_EMPTY",
+      "errors": null
+    }
+  },
+  {
+    "step": "reject nonexistent listing",
+    "method": "POST",
+    "path": "/cart/items",
+    "status": 422,
+    "response": {
+      "success": false,
+      "message": "Produk toko tidak tersedia.",
+      "code": "VALIDATION_ERROR",
+      "errors": {
+        "listing_id": [
+          "Produk toko tidak tersedia."
+        ]
+      }
+    }
+  },
+  {
+    "step": "logout",
+    "method": "POST",
+    "path": "/auth/logout",
+    "status": 200,
+    "response": {
+      "success": true,
+      "message": "Logout berhasil.",
+      "data": null
+    }
+  },
+  {
+    "step": "reject revoked token",
+    "method": "GET",
+    "path": "/auth/me",
+    "status": 401,
+    "response": {
+      "success": false,
+      "message": "Unauthenticated.",
+      "code": "UNAUTHENTICATED",
+      "errors": null
+    }
+  }
+]

@@ -2,19 +2,20 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\Contracts\WarehouseStockProvider;
 use App\Contracts\ShippingRateProvider;
+use App\Contracts\WarehouseStockProvider;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\CreateOrderRequest;
 use App\Http\Resources\Api\V1\OrderResource;
+use App\Models\Address;
 use App\Models\Cart;
 use App\Models\CartItem;
-use App\Models\Address;
 use App\Models\Order;
 use App\Services\Shipping\ShippingCostCalculator;
-use Illuminate\Support\Collection;
+use App\Support\CheckoutSimulation;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -199,12 +200,15 @@ class OrderController extends Controller
         try {
             $order = DB::transaction(function () use ($request, $cart, $idempotencyKey, $reservationId, $shippingAddress, $shippingQuote, $shippingCost, $subtotal): Order {
                 $shippingFee = (float) $shippingCost['fee'];
+                $simulated = CheckoutSimulation::enabled();
 
                 $order = Order::query()->create([
                     'user_id' => $request->user()->id,
                     'order_number' => 'WAL-'.Str::upper(Str::random(12)),
                     'idempotency_key' => $idempotencyKey,
-                    'status' => 'pending_payment',
+                    'status' => $simulated ? 'paid' : 'pending_payment',
+                    'payment_provider' => $simulated ? 'simulation' : 'midtrans',
+                    'payment_reference' => $simulated ? 'SIM-PAY-'.Str::uuid() : null,
                     'currency' => 'IDR',
                     'subtotal' => $subtotal,
                     'shipping_gross_fee' => $shippingCost['gross_fee'],
@@ -213,7 +217,7 @@ class OrderController extends Controller
                     'shipping_service' => $shippingQuote['service'],
                     'total' => $subtotal + $shippingFee,
                     'shipping_address' => $shippingAddress,
-                    'stock_reservation_id' => $reservationId,
+                    'stock_reservation_id' => $simulated ? null : $reservationId,
                     'placed_at' => now(),
                 ]);
 
@@ -258,8 +262,10 @@ class OrderController extends Controller
                 }
 
                 $order->statusHistories()->create([
-                    'status' => 'pending_payment',
-                    'note' => 'Order dibuat dan menunggu pembayaran.',
+                    'status' => $order->status,
+                    'note' => $simulated
+                        ? 'Order simulasi dibuat dan dianggap sudah dibayar. Stok serta ongkir menggunakan simulasi.'
+                        : 'Order dibuat dan menunggu pembayaran.',
                 ]);
 
                 $cart->items()->delete();

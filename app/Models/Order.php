@@ -26,6 +26,7 @@ class Order extends Model
         'shipping_address',
         'stock_reservation_id',
         'payment_reference',
+        'payment_provider',
         'placed_at',
     ];
 

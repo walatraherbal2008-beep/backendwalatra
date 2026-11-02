@@ -20,9 +20,26 @@ class PaymentController extends Controller
     ): JsonResponse {
         $record = Order::query()
             ->where('user_id', $request->user()->id)
-            ->where('status', 'pending_payment')
             ->with('items')
             ->findOrFail($order);
+
+        if ($record->payment_provider === 'simulation' && $record->status === 'paid') {
+            return response()->json([
+                'success' => true,
+                'message' => 'Order simulasi sudah dianggap dibayar.',
+                'code' => 'PAYMENT_SIMULATED',
+                'data' => [
+                    'order_id' => $record->id,
+                    'order_number' => $record->order_number,
+                    'simulation' => true,
+                    'payment_required' => false,
+                    'payment_token' => null,
+                    'payment_url' => null,
+                ],
+            ]);
+        }
+
+        abort_unless($record->status === 'pending_payment' && $record->payment_provider === 'midtrans', 404);
 
         $payment = $gateway->createPayment($record);
 
@@ -72,6 +89,7 @@ class PaymentController extends Controller
 
         $record = Order::query()
             ->where('order_number', $validated['order_id'])
+            ->where('payment_provider', 'midtrans')
             ->lockForUpdate()
             ->firstOrFail();
         $transactionStatus = $validated['transaction_status'];
