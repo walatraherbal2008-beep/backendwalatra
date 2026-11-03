@@ -186,11 +186,8 @@ class CatalogController extends Controller
             ->where(function (EloquentBuilder $storeQuery): void {
                 $this->applyEligibleStoreOwnerFilter($storeQuery);
             })
-            ->whereExists(fn (Builder $variant): Builder => $variant
-                ->selectRaw('1')
-                ->from('product_variants')
-                ->whereColumn('product_variants.product_id', 'products.id')
-                ->where('product_variants.status', 'active'));
+            ->whereHas('product', fn (EloquentBuilder $product): EloquentBuilder => $product
+                ->whereHas('variants', fn (EloquentBuilder $variant): EloquentBuilder => $variant->where('status', 'active')));
 
         $this->applyCommonFilters($query, $request, 'products', 'stores');
 
@@ -201,7 +198,8 @@ class CatalogController extends Controller
                 ->join('categories', 'categories.id', '=', 'category_product.category_id')
                 ->whereColumn('category_product.product_id', 'products.id')
                 ->where('categories.slug', $request->string('category')->toString())
-                ->where('categories.status', 'active'));
+                ->where('categories.status', 'active')
+                ->whereNull('categories.deleted_at'));
         }
 
         return $query->select([
@@ -211,8 +209,8 @@ class CatalogController extends Controller
             'products.name',
             'products.slug',
             'products.product_code as code',
-            DB::raw('(select min(price) from product_variants where product_id = products.id and status = \'active\') as price_min'),
-            DB::raw('(select max(price) from product_variants where product_id = products.id and status = \'active\') as price_max'),
+            DB::raw('(select min(price) from product_variants where product_id = products.id and status = \'active\' and deleted_at is null) as price_min'),
+            DB::raw('(select max(price) from product_variants where product_id = products.id and status = \'active\' and deleted_at is null) as price_max'),
             'stores.id as store_id',
             'stores.name as store_name',
             'stores.slug as store_slug',
@@ -235,27 +233,7 @@ class CatalogController extends Controller
             ->where(function (EloquentBuilder $storeQuery): void {
                 $this->applyEligibleStoreOwnerFilter($storeQuery);
             })
-            ->whereExists(fn (Builder $item): Builder => $item
-                ->selectRaw('1')
-                ->from('product_bundle_items')
-                ->join('product_variants', 'product_variants.id', '=', 'product_bundle_items.product_variant_id')
-                ->join('products as bundle_products', 'bundle_products.id', '=', 'product_variants.product_id')
-                ->whereColumn('product_bundle_items.product_bundle_id', 'product_bundles.id')
-                ->where('product_variants.status', 'active')
-                ->where('bundle_products.status', 'active'))
-            ->whereNotExists(fn (Builder $item): Builder => $item
-                ->selectRaw('1')
-                ->from('product_bundle_items')
-                ->leftJoin('product_variants', 'product_variants.id', '=', 'product_bundle_items.product_variant_id')
-                ->leftJoin('products as bundle_products', 'bundle_products.id', '=', 'product_variants.product_id')
-                ->whereColumn('product_bundle_items.product_bundle_id', 'product_bundles.id')
-                ->where(function (Builder $invalid): void {
-                    $invalid
-                        ->whereNull('product_variants.id')
-                        ->orWhere('product_variants.status', '!=', 'active')
-                        ->orWhereNull('bundle_products.id')
-                        ->orWhere('bundle_products.status', '!=', 'active');
-                }));
+            ->whereHas('bundle', fn (EloquentBuilder $bundle): EloquentBuilder => $bundle->purchasable());
 
         $this->applyCommonFilters($query, $request, 'product_bundles', 'stores');
 
@@ -268,8 +246,11 @@ class CatalogController extends Controller
                 ->join('category_product', 'category_product.product_id', '=', 'category_variants.product_id')
                 ->join('categories', 'categories.id', '=', 'category_product.category_id')
                 ->whereColumn('category_items.product_bundle_id', 'product_bundles.id')
+                ->whereNull('category_items.deleted_at')
+                ->whereNull('category_variants.deleted_at')
                 ->where('categories.slug', $category)
-                ->where('categories.status', 'active'));
+                ->where('categories.status', 'active')
+                ->whereNull('categories.deleted_at'));
         }
 
         return $query->select([
@@ -318,6 +299,7 @@ class CatalogController extends Controller
             "WHEN products.product_code LIKE {$contains} THEN 30 ELSE 0 END".
             ' + CASE WHEN EXISTS (SELECT 1 FROM product_variants search_variants'.
             ' WHERE search_variants.product_id = products.id'.
+            ' AND search_variants.deleted_at IS NULL'.
             " AND (search_variants.sku = {$exact} OR search_variants.sku LIKE {$contains})) THEN 20 ELSE 0 END".
             " + CASE WHEN stores.name LIKE {$contains} THEN 10 ELSE 0 END".
             ' + CASE WHEN COALESCE(store_product_listings.description, \'\') <> \'\' THEN 8 ELSE 0 END'.
@@ -351,6 +333,7 @@ class CatalogController extends Controller
             ' JOIN product_variants search_variants ON search_variants.id = search_items.product_variant_id'.
             ' JOIN products search_products ON search_products.id = search_variants.product_id'.
             ' WHERE search_items.product_bundle_id = product_bundles.id'.
+            ' AND search_items.deleted_at IS NULL AND search_variants.deleted_at IS NULL AND search_products.deleted_at IS NULL'.
             " AND (search_variants.sku LIKE {$contains} OR search_products.name LIKE {$contains})) THEN 20 ELSE 0 END".
             " + CASE WHEN stores.name LIKE {$contains} THEN 10 ELSE 0 END".
             ' + CASE WHEN COALESCE(store_bundle_listings.description, \'\') <> \'\' THEN 8 ELSE 0 END'.
@@ -389,12 +372,14 @@ class CatalogController extends Controller
                         ->orWhereExists(fn (Builder $variantQuery): Builder => $variantQuery
                             ->selectRaw('1')
                             ->from('product_variants as search_token_variants')
+                            ->whereNull('search_token_variants.deleted_at')
                             ->when(
                                 $itemTable === 'products',
                                 fn (Builder $variantLink): Builder => $variantLink->whereColumn('search_token_variants.product_id', 'products.id'),
                                 fn (Builder $variantLink): Builder => $variantLink
                                     ->join('product_bundle_items as search_token_items', 'search_token_items.product_variant_id', '=', 'search_token_variants.id')
-                                    ->whereColumn('search_token_items.product_bundle_id', 'product_bundles.id'),
+                                    ->whereColumn('search_token_items.product_bundle_id', 'product_bundles.id')
+                                    ->whereNull('search_token_items.deleted_at'),
                             )
                             ->where(function (Builder $variantMatch) use ($search): void {
                                 $variantMatch
@@ -411,9 +396,12 @@ class CatalogController extends Controller
                                 fn (Builder $categoryLink): Builder => $categoryLink
                                     ->join('product_variants as search_token_cv', 'search_token_cv.product_id', '=', 'search_token_cp.product_id')
                                     ->join('product_bundle_items as search_token_ci', 'search_token_ci.product_variant_id', '=', 'search_token_cv.id')
-                                    ->whereColumn('search_token_ci.product_bundle_id', 'product_bundles.id'),
+                                    ->whereColumn('search_token_ci.product_bundle_id', 'product_bundles.id')
+                                    ->whereNull('search_token_ci.deleted_at')
+                                    ->whereNull('search_token_cv.deleted_at'),
                             )
                             ->where('search_token_categories.status', 'active')
+                            ->whereNull('search_token_categories.deleted_at')
                             ->whereLike('search_token_categories.name', $search));
 
                     // Nama produk komponen bundle ikut dalam grup OR token yang
@@ -425,6 +413,9 @@ class CatalogController extends Controller
                             ->join('product_variants as search_variants', 'search_variants.id', '=', 'search_items.product_variant_id')
                             ->join('products as search_products', 'search_products.id', '=', 'search_variants.product_id')
                             ->whereColumn('search_items.product_bundle_id', 'product_bundles.id')
+                            ->whereNull('search_items.deleted_at')
+                            ->whereNull('search_variants.deleted_at')
+                            ->whereNull('search_products.deleted_at')
                             ->whereLike('search_products.name', $search));
                     }
                 });
@@ -441,6 +432,7 @@ class CatalogController extends Controller
                     ->selectRaw('1')->from('product_variants')
                     ->whereColumn('product_variants.product_id', 'products.id')
                     ->where('product_variants.status', 'active')
+                    ->whereNull('product_variants.deleted_at')
                     ->when($request->filled('min_price'), fn (Builder $q): Builder => $q->where('price', '>=', $request->input('min_price')))
                     ->when($request->filled('max_price'), fn (Builder $q): Builder => $q->where('price', '<=', $request->input('max_price'))));
             } else {

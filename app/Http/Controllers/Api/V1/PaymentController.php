@@ -23,6 +23,25 @@ class PaymentController extends Controller
             ->with('items')
             ->findOrFail($order);
 
+        if ($record->payment_provider === 'manual') {
+            abort_unless(in_array($record->status, ['pending_payment', 'paid'], true), 404);
+
+            return response()->json([
+                'success' => true,
+                'message' => $record->status === 'paid' ? 'Pembayaran sudah dikonfirmasi admin.' : 'Pembayaran menunggu verifikasi admin.',
+                'code' => $record->status === 'paid' ? 'MANUAL_PAYMENT_CONFIRMED' : 'MANUAL_PAYMENT_REQUIRED',
+                'data' => [
+                    'order_id' => $record->id,
+                    'order_number' => $record->order_number,
+                    'payment_provider' => 'manual',
+                    'payment_required' => $record->status === 'pending_payment',
+                    'instructions' => $record->status === 'pending_payment' ? config('checkout.manual.payment_instructions') : null,
+                    'payment_token' => null,
+                    'payment_url' => null,
+                ],
+            ]);
+        }
+
         if ($record->payment_provider === 'simulation' && $record->status === 'paid') {
             return response()->json([
                 'success' => true,

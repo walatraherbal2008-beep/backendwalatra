@@ -16,6 +16,9 @@ class OrderResource extends JsonResource
             'payment_provider' => $this->payment_provider,
             'simulation' => $this->payment_provider === 'simulation',
             'payment_required' => $this->status === 'pending_payment',
+            'payment_instructions' => $this->payment_provider === 'manual' && $this->status === 'pending_payment'
+                ? config('checkout.manual.payment_instructions') : null,
+            'paid_at' => $this->paid_at?->toIso8601String(),
             'currency' => $this->currency,
             'subtotal' => $this->subtotal,
             'shipping_gross_fee' => $this->shipping_gross_fee,

@@ -28,6 +28,7 @@ class Order extends Model
         'payment_reference',
         'payment_provider',
         'placed_at',
+        'paid_at',
     ];
 
     protected function casts(): array
@@ -40,6 +41,7 @@ class Order extends Model
             'total' => 'decimal:2',
             'shipping_address' => 'array',
             'placed_at' => 'datetime',
+            'paid_at' => 'datetime',
         ];
     }
 

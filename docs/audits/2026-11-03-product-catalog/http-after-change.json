@@ -1,0 +1,506 @@
+[
+  {
+    "step": "/api/v1/catalog/products?per_page=50",
+    "path": "/api/v1/catalog/products?per_page=50",
+    "status": 200,
+    "expected": 200,
+    "elapsed_ms": 65.4,
+    "success": true,
+    "count": 16
+  },
+  {
+    "step": "/api/v1/catalog/bundles?per_page=50",
+    "path": "/api/v1/catalog/bundles?per_page=50",
+    "status": 200,
+    "expected": 200,
+    "elapsed_ms": 39.5,
+    "success": true,
+    "count": 3
+  },
+  {
+    "step": "/api/v1/catalog?per_page=50",
+    "path": "/api/v1/catalog?per_page=50",
+    "status": 200,
+    "expected": 200,
+    "elapsed_ms": 47.6,
+    "success": true,
+    "count": 19
+  },
+  {
+    "step": "/api/v1/catalog/categories",
+    "path": "/api/v1/catalog/categories",
+    "status": 200,
+    "expected": 200,
+    "elapsed_ms": 56.0,
+    "success": true,
+    "count": 11
+  },
+  {
+    "step": "product detail radimax",
+    "path": "/api/v1/catalog/products/radimax",
+    "status": 200,
+    "expected": 200,
+    "elapsed_ms": 37.6,
+    "success": true
+  },
+  {
+    "step": "product detail etaku-goat-milk",
+    "path": "/api/v1/catalog/products/etaku-goat-milk",
+    "status": 200,
+    "expected": 200,
+    "elapsed_ms": 34.8,
+    "success": true
+  },
+  {
+    "step": "product detail garlic",
+    "path": "/api/v1/catalog/products/garlic",
+    "status": 200,
+    "expected": 200,
+    "elapsed_ms": 33.1,
+    "success": true
+  },
+  {
+    "step": "product detail kapsul-oil-fit",
+    "path": "/api/v1/catalog/products/kapsul-oil-fit",
+    "status": 200,
+    "expected": 200,
+    "elapsed_ms": 33.8,
+    "success": true
+  },
+  {
+    "step": "product detail sendifit",
+    "path": "/api/v1/catalog/products/sendifit",
+    "status": 200,
+    "expected": 200,
+    "elapsed_ms": 34.1,
+    "success": true
+  },
+  {
+    "step": "product detail proskin",
+    "path": "/api/v1/catalog/products/proskin",
+    "status": 200,
+    "expected": 200,
+    "elapsed_ms": 34.4,
+    "success": true
+  },
+  {
+    "step": "product detail albucare",
+    "path": "/api/v1/catalog/products/albucare",
+    "status": 200,
+    "expected": 200,
+    "elapsed_ms": 49.1,
+    "success": true
+  },
+  {
+    "step": "product detail sehat-wanita",
+    "path": "/api/v1/catalog/products/sehat-wanita",
+    "status": 200,
+    "expected": 200,
+    "elapsed_ms": 34.0,
+    "success": true
+  },
+  {
+    "step": "product detail kapsul-gamat-emas",
+    "path": "/api/v1/catalog/products/kapsul-gamat-emas",
+    "status": 200,
+    "expected": 200,
+    "elapsed_ms": 33.4,
+    "success": true
+  },
+  {
+    "step": "product detail propolis-sm",
+    "path": "/api/v1/catalog/products/propolis-sm",
+    "status": 200,
+    "expected": 200,
+    "elapsed_ms": 33.1,
+    "success": true
+  },
+  {
+    "step": "product detail keloreena",
+    "path": "/api/v1/catalog/products/keloreena",
+    "status": 200,
+    "expected": 200,
+    "elapsed_ms": 34.6,
+    "success": true
+  },
+  {
+    "step": "product detail kapsul-sehat-lambungku",
+    "path": "/api/v1/catalog/products/kapsul-sehat-lambungku",
+    "status": 200,
+    "expected": 200,
+    "elapsed_ms": 33.9,
+    "success": true
+  },
+  {
+    "step": "product detail qnc-jelly-gamat",
+    "path": "/api/v1/catalog/products/qnc-jelly-gamat",
+    "status": 200,
+    "expected": 200,
+    "elapsed_ms": 33.7,
+    "success": true
+  },
+  {
+    "step": "product detail hexabumin",
+    "path": "/api/v1/catalog/products/hexabumin",
+    "status": 200,
+    "expected": 200,
+    "elapsed_ms": 34.1,
+    "success": true
+  },
+  {
+    "step": "product detail kurmaqu-gmj",
+    "path": "/api/v1/catalog/products/kurmaqu-gmj",
+    "status": 200,
+    "expected": 200,
+    "elapsed_ms": 34.0,
+    "success": true
+  },
+  {
+    "step": "product detail bio-squalene",
+    "path": "/api/v1/catalog/products/bio-squalene",
+    "status": 200,
+    "expected": 200,
+    "elapsed_ms": 34.2,
+    "success": true
+  },
+  {
+    "step": "bundle detail paket-herbal-keluarga",
+    "path": "/api/v1/catalog/bundles/paket-herbal-keluarga",
+    "status": 200,
+    "expected": 200,
+    "elapsed_ms": 33.3,
+    "success": true
+  },
+  {
+    "step": "bundle detail paket-herbal-sendi-dan-otot",
+    "path": "/api/v1/catalog/bundles/paket-herbal-sendi-dan-otot",
+    "status": 200,
+    "expected": 200,
+    "elapsed_ms": 33.5,
+    "success": true
+  },
+  {
+    "step": "bundle detail paket-herbal-daya-tahan",
+    "path": "/api/v1/catalog/bundles/paket-herbal-daya-tahan",
+    "status": 200,
+    "expected": 200,
+    "elapsed_ms": 34.1,
+    "success": true
+  },
+  {
+    "step": "category detail pencernaan",
+    "path": "/api/v1/catalog/categories/pencernaan",
+    "status": 200,
+    "expected": 200,
+    "elapsed_ms": 33.3,
+    "success": true
+  },
+  {
+    "step": "category detail pernapasan",
+    "path": "/api/v1/catalog/categories/pernapasan",
+    "status": 200,
+    "expected": 200,
+    "elapsed_ms": 33.5,
+    "success": true
+  },
+  {
+    "step": "category detail pernapasan-dan-tenggorokan",
+    "path": "/api/v1/catalog/categories/pernapasan-dan-tenggorokan",
+    "status": 200,
+    "expected": 200,
+    "elapsed_ms": 34.0,
+    "success": true
+  },
+  {
+    "step": "category detail daya-tahan-tubuh",
+    "path": "/api/v1/catalog/categories/daya-tahan-tubuh",
+    "status": 200,
+    "expected": 200,
+    "elapsed_ms": 33.9,
+    "success": true
+  },
+  {
+    "step": "category detail sendi-dan-otot",
+    "path": "/api/v1/catalog/categories/sendi-dan-otot",
+    "status": 200,
+    "expected": 200,
+    "elapsed_ms": 33.8,
+    "success": true
+  },
+  {
+    "step": "category detail kesehatan-wanita",
+    "path": "/api/v1/catalog/categories/kesehatan-wanita",
+    "status": 200,
+    "expected": 200,
+    "elapsed_ms": 33.7,
+    "success": true
+  },
+  {
+    "step": "category detail nutrisi-dan-kebugaran",
+    "path": "/api/v1/catalog/categories/nutrisi-dan-kebugaran",
+    "status": 200,
+    "expected": 200,
+    "elapsed_ms": 33.3,
+    "success": true
+  },
+  {
+    "step": "category detail kesehatan-kulit",
+    "path": "/api/v1/catalog/categories/kesehatan-kulit",
+    "status": 200,
+    "expected": 200,
+    "elapsed_ms": 34.2,
+    "success": true
+  },
+  {
+    "step": "category detail kesehatan-mata",
+    "path": "/api/v1/catalog/categories/kesehatan-mata",
+    "status": 200,
+    "expected": 200,
+    "elapsed_ms": 33.5,
+    "success": true
+  },
+  {
+    "step": "category detail vitalitas-pria",
+    "path": "/api/v1/catalog/categories/vitalitas-pria",
+    "status": 200,
+    "expected": 200,
+    "elapsed_ms": 32.0,
+    "success": true
+  },
+  {
+    "step": "category detail kategori-tes-vibium-superadmin",
+    "path": "/api/v1/catalog/categories/kategori-tes-vibium-superadmin",
+    "status": 200,
+    "expected": 200,
+    "elapsed_ms": 34.1,
+    "success": true
+  },
+  {
+    "step": "/api/v1/catalog/products?q=a",
+    "path": "/api/v1/catalog/products?q=a",
+    "status": 200,
+    "expected": 200,
+    "elapsed_ms": 82.1,
+    "success": true,
+    "count": 15
+  },
+  {
+    "step": "/api/v1/catalog/products?sort=price_asc",
+    "path": "/api/v1/catalog/products?sort=price_asc",
+    "status": 200,
+    "expected": 200,
+    "elapsed_ms": 48.9,
+    "success": true,
+    "count": 15
+  },
+  {
+    "step": "/api/v1/catalog/products?max_price=200000",
+    "path": "/api/v1/catalog/products?max_price=200000",
+    "status": 200,
+    "expected": 200,
+    "elapsed_ms": 58.0,
+    "success": true,
+    "count": 15
+  },
+  {
+    "step": "/api/v1/catalog/products?per_page=2&page=2",
+    "path": "/api/v1/catalog/products?per_page=2&page=2",
+    "status": 200,
+    "expected": 200,
+    "elapsed_ms": 42.7,
+    "success": true,
+    "count": 2
+  },
+  {
+    "step": "/api/v1/catalog/products?q%5B%5D=test",
+    "path": "/api/v1/catalog/products?q%5B%5D=test",
+    "status": 422,
+    "expected": 422,
+    "elapsed_ms": 17.1,
+    "success": false,
+    "code": "VALIDATION_ERROR",
+    "message": "Kata pencarian harus berupa teks."
+  },
+  {
+    "step": "/api/v1/catalog/products?per_page=51",
+    "path": "/api/v1/catalog/products?per_page=51",
+    "status": 422,
+    "expected": 422,
+    "elapsed_ms": 15.8,
+    "success": false,
+    "code": "VALIDATION_ERROR",
+    "message": "Jumlah data per halaman maksimal 50."
+  },
+  {
+    "step": "/api/v1/catalog/products?sort=invalid",
+    "path": "/api/v1/catalog/products?sort=invalid",
+    "status": 422,
+    "expected": 422,
+    "elapsed_ms": 16.4,
+    "success": false,
+    "code": "VALIDATION_ERROR",
+    "message": "Urutan produk tidak valid."
+  },
+  {
+    "step": "/api/v1/catalog?q=a",
+    "path": "/api/v1/catalog?q=a",
+    "status": 200,
+    "expected": 200,
+    "elapsed_ms": 47.9,
+    "success": true,
+    "count": 15
+  },
+  {
+    "step": "/api/v1/catalog?sort=price_asc",
+    "path": "/api/v1/catalog?sort=price_asc",
+    "status": 200,
+    "expected": 200,
+    "elapsed_ms": 42.8,
+    "success": true,
+    "count": 15
+  },
+  {
+    "step": "/api/v1/catalog?max_price=200000",
+    "path": "/api/v1/catalog?max_price=200000",
+    "status": 200,
+    "expected": 200,
+    "elapsed_ms": 43.2,
+    "success": true,
+    "count": 15
+  },
+  {
+    "step": "/api/v1/catalog?per_page=2&page=2",
+    "path": "/api/v1/catalog?per_page=2&page=2",
+    "status": 200,
+    "expected": 200,
+    "elapsed_ms": 39.6,
+    "success": true,
+    "count": 2
+  },
+  {
+    "step": "/api/v1/catalog?q%5B%5D=test",
+    "path": "/api/v1/catalog?q%5B%5D=test",
+    "status": 422,
+    "expected": 422,
+    "elapsed_ms": 17.1,
+    "success": false,
+    "code": "VALIDATION_ERROR",
+    "message": "Kata pencarian harus berupa teks."
+  },
+  {
+    "step": "/api/v1/catalog?per_page=51",
+    "path": "/api/v1/catalog?per_page=51",
+    "status": 422,
+    "expected": 422,
+    "elapsed_ms": 16.8,
+    "success": false,
+    "code": "VALIDATION_ERROR",
+    "message": "Jumlah data per halaman maksimal 50."
+  },
+  {
+    "step": "/api/v1/catalog?sort=invalid",
+    "path": "/api/v1/catalog?sort=invalid",
+    "status": 422,
+    "expected": 422,
+    "elapsed_ms": 15.8,
+    "success": false,
+    "code": "VALIDATION_ERROR",
+    "message": "Urutan katalog tidak valid."
+  },
+  {
+    "step": "/api/v1/catalog/bundles?q=a",
+    "path": "/api/v1/catalog/bundles?q=a",
+    "status": 200,
+    "expected": 200,
+    "elapsed_ms": 41.7,
+    "success": true,
+    "count": 3
+  },
+  {
+    "step": "/api/v1/catalog/bundles?sort=price_asc",
+    "path": "/api/v1/catalog/bundles?sort=price_asc",
+    "status": 200,
+    "expected": 200,
+    "elapsed_ms": 39.5,
+    "success": true,
+    "count": 3
+  },
+  {
+    "step": "/api/v1/catalog/bundles?max_price=200000",
+    "path": "/api/v1/catalog/bundles?max_price=200000",
+    "status": 200,
+    "expected": 200,
+    "elapsed_ms": 38.0,
+    "success": true,
+    "count": 3
+  },
+  {
+    "step": "/api/v1/catalog/bundles?per_page=2&page=2",
+    "path": "/api/v1/catalog/bundles?per_page=2&page=2",
+    "status": 200,
+    "expected": 200,
+    "elapsed_ms": 37.2,
+    "success": true,
+    "count": 1
+  },
+  {
+    "step": "/api/v1/catalog/bundles?q%5B%5D=test",
+    "path": "/api/v1/catalog/bundles?q%5B%5D=test",
+    "status": 422,
+    "expected": 422,
+    "elapsed_ms": 17.4,
+    "success": false,
+    "code": "VALIDATION_ERROR",
+    "message": "Kata pencarian bundle harus berupa teks."
+  },
+  {
+    "step": "/api/v1/catalog/bundles?per_page=51",
+    "path": "/api/v1/catalog/bundles?per_page=51",
+    "status": 422,
+    "expected": 422,
+    "elapsed_ms": 16.5,
+    "success": false,
+    "code": "VALIDATION_ERROR",
+    "message": "Jumlah data per halaman maksimal 50."
+  },
+  {
+    "step": "/api/v1/catalog/bundles?sort=invalid",
+    "path": "/api/v1/catalog/bundles?sort=invalid",
+    "status": 422,
+    "expected": 422,
+    "elapsed_ms": 16.0,
+    "success": false,
+    "code": "VALIDATION_ERROR",
+    "message": "Urutan bundle tidak valid."
+  },
+  {
+    "step": "/api/v1/catalog/products/audit-missing-slug",
+    "path": "/api/v1/catalog/products/audit-missing-slug",
+    "status": 404,
+    "expected": 404,
+    "elapsed_ms": 26.3,
+    "success": false,
+    "code": "NOT_FOUND",
+    "message": "Produk tidak ditemukan."
+  },
+  {
+    "step": "/api/v1/catalog/bundles/audit-missing-slug",
+    "path": "/api/v1/catalog/bundles/audit-missing-slug",
+    "status": 404,
+    "expected": 404,
+    "elapsed_ms": 25.3,
+    "success": false,
+    "code": "NOT_FOUND",
+    "message": "Bundle tidak ditemukan."
+  },
+  {
+    "step": "/api/v1/catalog/categories/audit-missing-slug",
+    "path": "/api/v1/catalog/categories/audit-missing-slug",
+    "status": 404,
+    "expected": 404,
+    "elapsed_ms": 29.7,
+    "success": false,
+    "code": "NOT_FOUND",
+    "message": "Kategori tidak ditemukan."
+  }
+]

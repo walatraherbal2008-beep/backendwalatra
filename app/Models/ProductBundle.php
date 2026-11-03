@@ -92,7 +92,7 @@ class ProductBundle extends Model
             ->whereDoesntHave('items', function (Builder $itemQuery): void {
                 $itemQuery
                     ->where('quantity', '<', 1)
-                    ->whereDoesntHave('variant')
+                    ->orWhereDoesntHave('variant')
                     ->orWhereHas('variant', function (Builder $variantQuery): void {
                         $variantQuery->where(function (Builder $query): void {
                             $query

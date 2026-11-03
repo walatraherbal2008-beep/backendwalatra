@@ -1,0 +1,411 @@
+{
+  "before": [
+    {
+      "test": "test_catalog_routes_are_public_and_active_data_can_be_read",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "test": "test_product_search_with_one_character_does_not_return_server_error",
+      "status": "FAIL",
+      "detail": "Tests\\Audit\\CatalogAccessAuditTest::test_product_search_with_one_character_does_not_return_server_error\nExpected response status code [200] but received 500.\nFailed asserting that 500 is identical to 200.\n\nThe following exception occurred d"
+    },
+    {
+      "test": "test_postgres_product_search_finds_category_matches",
+      "status": "FAIL",
+      "detail": "Tests\\Audit\\CatalogAccessAuditTest::test_postgres_product_search_finds_category_matches\nFailed asserting that null is identical to 3.\n\n/home/popes/Project/backendwalatra-remote/vendor/laravel/framework/src/Illuminate/Testing/AssertableJsonS"
+    },
+    {
+      "test": "test_postgres_product_search_finds_tokens_across_name_and_description",
+      "status": "FAIL",
+      "detail": "Tests\\Audit\\CatalogAccessAuditTest::test_postgres_product_search_finds_tokens_across_name_and_description\nFailed asserting that null is identical to 4.\n\n/home/popes/Project/backendwalatra-remote/vendor/laravel/framework/src/Illuminate/Testi"
+    },
+    {
+      "test": "test_maximum_price_can_be_used_without_minimum_price with data set #0",
+      "status": "FAIL",
+      "detail": "Tests\\Audit\\CatalogAccessAuditTest::test_maximum_price_can_be_used_without_minimum_price with data set #0\nExpected response status code [200] but received 422.\nFailed asserting that 422 is identical to 200.\n\nThe following errors occurred du"
+    },
+    {
+      "test": "test_maximum_price_can_be_used_without_minimum_price with data set #1",
+      "status": "FAIL",
+      "detail": "Tests\\Audit\\CatalogAccessAuditTest::test_maximum_price_can_be_used_without_minimum_price with data set #1\nExpected response status code [200] but received 422.\nFailed asserting that 422 is identical to 200.\n\nThe following errors occurred du"
+    },
+    {
+      "test": "test_soft_deleted_bundle_is_hidden_in_unified_catalog",
+      "status": "FAIL",
+      "detail": "Tests\\Audit\\CatalogAccessAuditTest::test_soft_deleted_bundle_is_hidden_in_unified_catalog\nFailed to assert that the response count matched the expected 0\nFailed asserting that actual size 1 matches expected size 0.\n\n/home/popes/Project/back"
+    },
+    {
+      "test": "test_unified_product_price_ignores_soft_deleted_variant",
+      "status": "FAIL",
+      "detail": "Tests\\Audit\\CatalogAccessAuditTest::test_unified_product_price_ignores_soft_deleted_variant\nFailed asserting that 10000.0 matches expected 40000.\n\n/home/popes/Project/backendwalatra-remote/docs/audits/2026-11-03-product-catalog/CatalogAcces"
+    },
+    {
+      "test": "test_bundle_without_remaining_components_is_hidden_in_unified_catalog",
+      "status": "FAIL",
+      "detail": "Tests\\Audit\\CatalogAccessAuditTest::test_bundle_without_remaining_components_is_hidden_in_unified_catalog\nFailed to assert that the response count matched the expected 0\nFailed asserting that actual size 1 matches expected size 0.\n\n/home/po"
+    },
+    {
+      "test": "test_zero_price_bundle_is_not_advertised_as_purchasable",
+      "status": "FAIL",
+      "detail": "Tests\\Audit\\CatalogAccessAuditTest::test_zero_price_bundle_is_not_advertised_as_purchasable\nFailed to assert that the response count matched the expected 0\nFailed asserting that actual size 1 matches expected size 0.\n\n/home/popes/Project/ba"
+    },
+    {
+      "test": "test_inactive_products_remain_hidden_in_public_catalogs",
+      "status": "PASS",
+      "detail": null
+    }
+  ],
+  "after": [
+    {
+      "test": "test_catalog_routes_are_public_and_active_data_can_be_read",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "test": "test_product_search_with_one_character_does_not_return_server_error",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "test": "test_postgres_product_search_finds_category_matches",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "test": "test_postgres_product_search_finds_tokens_across_name_and_description",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "test": "test_maximum_price_can_be_used_without_minimum_price with data set #0",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "test": "test_maximum_price_can_be_used_without_minimum_price with data set #1",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "test": "test_soft_deleted_bundle_is_hidden_in_unified_catalog",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "test": "test_unified_product_price_ignores_soft_deleted_variant",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "test": "test_bundle_without_remaining_components_is_hidden_in_unified_catalog",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "test": "test_deleted_variant_sku_does_not_match_public_product_search",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "test": "test_zero_price_bundle_is_not_advertised_as_purchasable",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "test": "test_inactive_products_remain_hidden_in_public_catalogs",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "test": "test_catalog_bundle_list_returns_active_bundle_listing_with_items",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "test": "test_catalog_bundle_detail_returns_bundle_and_store_offers",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "test": "test_catalog_bundle_filter_and_validation_work",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "test": "test_inactive_bundle_is_not_visible_in_catalog",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "test": "test_bundle_with_inactive_component_is_not_visible_in_catalog",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "test": "test_catalog_categories_returns_active_categories_and_product_count",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "test": "test_catalog_category_detail_returns_not_found_for_inactive_category",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "test": "test_catalog_category_detail_returns_category_by_slug",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "test": "test_product_listing_without_images_falls_back_to_master_product_image",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "test": "test_product_listing_with_own_images_takes_precedence_over_master",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "test": "test_product_list_stores_offer_gallery_falls_back_to_master_image",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "test": "test_product_detail_stores_offer_gallery_falls_back_to_master_image",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "test": "test_bundle_falls_back_to_first_component_product_image",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "test": "test_images_stay_null_when_neither_listing_nor_master_has_media",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "test": "test_catalog_only_returns_active_product_listings_from_active_stores",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "test": "test_catalog_product_detail_returns_active_store_listings",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "test": "test_catalog_hides_store_when_owner_is_no_longer_an_active_member",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "test": "test_catalog_price_range_matches_one_variant",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "test": "test_catalog_filter_validation_returns_indonesian_errors",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "test": "test_catalog_search_can_be_combined_with_sort_and_price_filter",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "test": "test_catalog_accepts_relevance_sort_as_default_marketplace_sort",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "test": "test_catalog_rejects_unknown_marketplace_sort",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "test": "test_catalog_can_filter_by_master_category",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "test": "test_soft_deleted_product_is_not_visible_in_catalog",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "test": "test_product_search_is_consistent_with_unified_catalog",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "test": "test_category_product_count_ignores_products_without_active_variant",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "test": "test_catalog_endpoints_stay_within_query_budget",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "test": "test_unified_catalog_returns_product_and_bundle",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "test": "test_unified_catalog_type_filter_and_visibility_rules_work",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "test": "test_unified_catalog_validation_uses_indonesian_messages",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "test": "test_unified_catalog_supports_relevance_sort_with_exact_match_first",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "test": "test_unified_catalog_defaults_to_relevance_when_searching",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "test": "test_unified_catalog_search_finds_sku_and_store_description",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "test": "test_unified_catalog_search_finds_bundle_component_name",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "test": "test_unified_catalog_token_order_does_not_matter",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "test": "test_unified_catalog_search_finds_variant_name_and_category",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "test": "test_unified_catalog_returns_matched_in_hint",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "test": "test_unified_catalog_pagination_uses_explicit_page",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "test": "test_unified_catalog_avoids_n_plus_one_queries",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "test": "test_prepare_command_can_run_twice_without_resetting_catalog",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "test": "test_store_listing_product_variant_and_bundle_relationships_work",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "test": "test_store_product_listing_supports_multiple_store_images",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "test": "test_product_can_have_multiple_master_categories",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "test": "test_category_cannot_be_its_own_parent",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "test": "test_category_cannot_create_a_parent_cycle",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "test": "test_variant_sku_is_generated_automatically",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "test": "test_product_code_is_generated_automatically_and_immutable_when_name_changes",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "test": "test_product_code_from_soft_deleted_product_is_not_reused",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "test": "test_product_cannot_be_activated_without_an_active_variant",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "test": "test_product_can_be_activated_after_an_active_variant_is_added",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "test": "test_product_cannot_be_activated_without_an_active_category",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "test": "test_product_cannot_be_activated_with_only_an_inactive_category",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "test": "test_category_cannot_be_deactivated_when_used_by_an_active_product",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "test": "test_category_cannot_be_deleted_when_used_by_an_active_product",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "test": "test_store_bundle_listing_supports_multiple_store_images",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "test": "test_deleted_product_listing_is_restored_instead_of_duplicated",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "test": "test_deleted_bundle_listing_is_restored_instead_of_duplicated",
+      "status": "PASS",
+      "detail": null
+    },
+    {
+      "test": "test_it_seeds_a_store_owner_and_published_pdf_catalog_without_duplicates",
+      "status": "PASS",
+      "detail": null
+    }
+  ]
+}

@@ -11,8 +11,10 @@ use App\Models\Address;
 use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\Order;
+use App\Models\User;
 use App\Services\Shipping\ShippingCostCalculator;
 use App\Support\CheckoutSimulation;
+use App\Support\ManualCheckout;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -54,22 +56,23 @@ class OrderController extends Controller
         int $order,
         WarehouseStockProvider $warehouse,
     ): OrderResource|JsonResponse {
-        $record = Order::query()
-            ->where('user_id', $request->user()->id)
-            ->with('items')
-            ->findOrFail($order);
+        $record = DB::transaction(function () use ($request, $order, $warehouse): Order {
+            $record = Order::query()
+                ->where('user_id', $request->user()->id)
+                ->with('items')
+                ->lockForUpdate()
+                ->findOrFail($order);
 
-        if ($record->status !== 'pending_payment') {
-            throw ValidationException::withMessages([
-                'status' => 'Order ini tidak dapat dibatalkan pada status sekarang.',
-            ]);
-        }
+            if ($record->status !== 'pending_payment') {
+                throw ValidationException::withMessages([
+                    'status' => 'Order ini tidak dapat dibatalkan pada status sekarang.',
+                ]);
+            }
 
-        if ($record->stock_reservation_id !== null) {
-            $warehouse->release($record->stock_reservation_id);
-        }
+            if ($record->stock_reservation_id !== null) {
+                $warehouse->release($record->stock_reservation_id);
+            }
 
-        DB::transaction(function () use ($record): void {
             $record->update([
                 'status' => 'cancelled',
                 'stock_reservation_id' => null,
@@ -77,7 +80,10 @@ class OrderController extends Controller
             $record->statusHistories()->create([
                 'status' => 'cancelled',
                 'note' => 'Order dibatalkan oleh member.',
+                'created_by' => $request->user()->id,
             ]);
+
+            return $record;
         });
 
         return (new OrderResource($record->fresh()->load('items')))->additional([
@@ -101,6 +107,20 @@ class OrderController extends Controller
             ], 422);
         }
 
+        return DB::transaction(function () use ($request, $warehouse, $shipping, $shippingCosts, $idempotencyKey) {
+            User::query()->whereKey($request->user()->id)->lockForUpdate()->firstOrFail();
+
+            return $this->createFromCart($request, $warehouse, $shipping, $shippingCosts, $idempotencyKey);
+        });
+    }
+
+    private function createFromCart(
+        CreateOrderRequest $request,
+        WarehouseStockProvider $warehouse,
+        ShippingRateProvider $shipping,
+        ShippingCostCalculator $shippingCosts,
+        string $idempotencyKey,
+    ): OrderResource|JsonResponse {
         $existing = Order::query()
             ->where('user_id', $request->user()->id)
             ->where('idempotency_key', $idempotencyKey)
@@ -172,7 +192,8 @@ class OrderController extends Controller
         }
 
         $stockItems = $this->stockItems($cart->items);
-        $shippingQuote = $shipping->quote($shippingAddress, $stockItems);
+        $manual = ManualCheckout::enabled();
+        $shippingQuote = $manual ? ManualCheckout::shippingQuote() : $shipping->quote($shippingAddress, $stockItems);
         $subtotal = (float) $cart->items->sum(
             fn ($item): float => (float) $item->unit_price * $item->quantity,
         );
@@ -182,7 +203,7 @@ class OrderController extends Controller
             $subtotal,
             $this->weightGrams($cart->items),
         );
-        $availability = $warehouse->checkAvailability($stockItems);
+        $availability = $manual ? ['available' => true, 'items' => []] : $warehouse->checkAvailability($stockItems);
 
         if (! $availability['available']) {
             return response()->json([
@@ -195,10 +216,10 @@ class OrderController extends Controller
         }
 
         $reference = (string) Str::uuid();
-        $reservationId = $warehouse->reserve($stockItems, $reference);
+        $reservationId = $manual ? null : $warehouse->reserve($stockItems, $reference);
 
         try {
-            $order = DB::transaction(function () use ($request, $cart, $idempotencyKey, $reservationId, $shippingAddress, $shippingQuote, $shippingCost, $subtotal): Order {
+            $order = DB::transaction(function () use ($request, $cart, $idempotencyKey, $reservationId, $shippingAddress, $shippingQuote, $shippingCost, $subtotal, $manual): Order {
                 $shippingFee = (float) $shippingCost['fee'];
                 $simulated = CheckoutSimulation::enabled();
 
@@ -207,7 +228,7 @@ class OrderController extends Controller
                     'order_number' => 'WAL-'.Str::upper(Str::random(12)),
                     'idempotency_key' => $idempotencyKey,
                     'status' => $simulated ? 'paid' : 'pending_payment',
-                    'payment_provider' => $simulated ? 'simulation' : 'midtrans',
+                    'payment_provider' => $manual ? 'manual' : ($simulated ? 'simulation' : 'midtrans'),
                     'payment_reference' => $simulated ? 'SIM-PAY-'.Str::uuid() : null,
                     'currency' => 'IDR',
                     'subtotal' => $subtotal,
@@ -265,15 +286,18 @@ class OrderController extends Controller
                     'status' => $order->status,
                     'note' => $simulated
                         ? 'Order simulasi dibuat dan dianggap sudah dibayar. Stok serta ongkir menggunakan simulasi.'
-                        : 'Order dibuat dan menunggu pembayaran.',
+                        : ($manual ? 'Order dibuat. Stok dan pembayaran menunggu verifikasi manual admin.' : 'Order dibuat dan menunggu pembayaran.'),
+                    'created_by' => $request->user()->id,
                 ]);
 
-                $cart->items()->delete();
+                $cart->items()->whereIn('id', $cart->items->modelKeys())->delete();
 
                 return $order;
             });
         } catch (\Throwable $exception) {
-            $warehouse->release($reservationId);
+            if ($reservationId !== null) {
+                $warehouse->release($reservationId);
+            }
             throw $exception;
         }
 

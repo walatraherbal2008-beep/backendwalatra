@@ -1,0 +1,32 @@
+[
+  {
+    "method": "GET",
+    "path": "/api/v1/catalog/products",
+    "status": 200,
+    "headers": {
+      "Access-Control-Allow-Origin": "*"
+    }
+  },
+  {
+    "method": "OPTIONS",
+    "path": "/api/v1/catalog/products",
+    "status": 204,
+    "headers": {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET",
+      "Access-Control-Allow-Headers": "authorization,content-type",
+      "Access-Control-Max-Age": "0"
+    }
+  },
+  {
+    "method": "OPTIONS",
+    "path": "/api/v1/cart/items",
+    "status": 204,
+    "headers": {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "POST",
+      "Access-Control-Allow-Headers": "authorization,content-type",
+      "Access-Control-Max-Age": "0"
+    }
+  }
+]

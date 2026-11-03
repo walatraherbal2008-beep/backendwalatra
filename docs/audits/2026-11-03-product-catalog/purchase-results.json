@@ -1,0 +1,271 @@
+{
+    "mode": "manual",
+    "before": {
+        "users": 8,
+        "orders": 1,
+        "carts": 1,
+        "cart_items": 0
+    },
+    "after": {
+        "users": 8,
+        "orders": 1,
+        "carts": 1,
+        "cart_items": 0
+    },
+    "rolled_back": true,
+    "results": [
+        {
+            "type": "product",
+            "listing_id": 28,
+            "variant_id": 125,
+            "cart_status": 200,
+            "preview_status": 200,
+            "order_status": 201,
+            "payment_provider": "manual",
+            "status": "pending_payment",
+            "message": "Order berhasil dibuat."
+        },
+        {
+            "type": "product",
+            "listing_id": 29,
+            "variant_id": 126,
+            "cart_status": 200,
+            "preview_status": 200,
+            "order_status": 201,
+            "payment_provider": "manual",
+            "status": "pending_payment",
+            "message": "Order berhasil dibuat."
+        },
+        {
+            "type": "product",
+            "listing_id": 29,
+            "variant_id": 127,
+            "cart_status": 200,
+            "preview_status": 200,
+            "order_status": 201,
+            "payment_provider": "manual",
+            "status": "pending_payment",
+            "message": "Order berhasil dibuat."
+        },
+        {
+            "type": "product",
+            "listing_id": 30,
+            "variant_id": 128,
+            "cart_status": 200,
+            "preview_status": 200,
+            "order_status": 201,
+            "payment_provider": "manual",
+            "status": "pending_payment",
+            "message": "Order berhasil dibuat."
+        },
+        {
+            "type": "product",
+            "listing_id": 31,
+            "variant_id": 129,
+            "cart_status": 200,
+            "preview_status": 200,
+            "order_status": 201,
+            "payment_provider": "manual",
+            "status": "pending_payment",
+            "message": "Order berhasil dibuat."
+        },
+        {
+            "type": "product",
+            "listing_id": 31,
+            "variant_id": 130,
+            "cart_status": 200,
+            "preview_status": 200,
+            "order_status": 201,
+            "payment_provider": "manual",
+            "status": "pending_payment",
+            "message": "Order berhasil dibuat."
+        },
+        {
+            "type": "product",
+            "listing_id": 31,
+            "variant_id": 131,
+            "cart_status": 200,
+            "preview_status": 200,
+            "order_status": 201,
+            "payment_provider": "manual",
+            "status": "pending_payment",
+            "message": "Order berhasil dibuat."
+        },
+        {
+            "type": "product",
+            "listing_id": 32,
+            "variant_id": 132,
+            "cart_status": 200,
+            "preview_status": 200,
+            "order_status": 201,
+            "payment_provider": "manual",
+            "status": "pending_payment",
+            "message": "Order berhasil dibuat."
+        },
+        {
+            "type": "product",
+            "listing_id": 32,
+            "variant_id": 133,
+            "cart_status": 200,
+            "preview_status": 200,
+            "order_status": 201,
+            "payment_provider": "manual",
+            "status": "pending_payment",
+            "message": "Order berhasil dibuat."
+        },
+        {
+            "type": "product",
+            "listing_id": 33,
+            "variant_id": 134,
+            "cart_status": 200,
+            "preview_status": 200,
+            "order_status": 201,
+            "payment_provider": "manual",
+            "status": "pending_payment",
+            "message": "Order berhasil dibuat."
+        },
+        {
+            "type": "product",
+            "listing_id": 34,
+            "variant_id": 135,
+            "cart_status": 200,
+            "preview_status": 200,
+            "order_status": 201,
+            "payment_provider": "manual",
+            "status": "pending_payment",
+            "message": "Order berhasil dibuat."
+        },
+        {
+            "type": "product",
+            "listing_id": 35,
+            "variant_id": 136,
+            "cart_status": 200,
+            "preview_status": 200,
+            "order_status": 201,
+            "payment_provider": "manual",
+            "status": "pending_payment",
+            "message": "Order berhasil dibuat."
+        },
+        {
+            "type": "product",
+            "listing_id": 36,
+            "variant_id": 137,
+            "cart_status": 200,
+            "preview_status": 200,
+            "order_status": 201,
+            "payment_provider": "manual",
+            "status": "pending_payment",
+            "message": "Order berhasil dibuat."
+        },
+        {
+            "type": "product",
+            "listing_id": 37,
+            "variant_id": 138,
+            "cart_status": 200,
+            "preview_status": 200,
+            "order_status": 201,
+            "payment_provider": "manual",
+            "status": "pending_payment",
+            "message": "Order berhasil dibuat."
+        },
+        {
+            "type": "product",
+            "listing_id": 38,
+            "variant_id": 139,
+            "cart_status": 200,
+            "preview_status": 200,
+            "order_status": 201,
+            "payment_provider": "manual",
+            "status": "pending_payment",
+            "message": "Order berhasil dibuat."
+        },
+        {
+            "type": "product",
+            "listing_id": 39,
+            "variant_id": 140,
+            "cart_status": 200,
+            "preview_status": 200,
+            "order_status": 201,
+            "payment_provider": "manual",
+            "status": "pending_payment",
+            "message": "Order berhasil dibuat."
+        },
+        {
+            "type": "product",
+            "listing_id": 40,
+            "variant_id": 141,
+            "cart_status": 200,
+            "preview_status": 200,
+            "order_status": 201,
+            "payment_provider": "manual",
+            "status": "pending_payment",
+            "message": "Order berhasil dibuat."
+        },
+        {
+            "type": "product",
+            "listing_id": 41,
+            "variant_id": 142,
+            "cart_status": 200,
+            "preview_status": 200,
+            "order_status": 201,
+            "payment_provider": "manual",
+            "status": "pending_payment",
+            "message": "Order berhasil dibuat."
+        },
+        {
+            "type": "product",
+            "listing_id": 42,
+            "variant_id": 143,
+            "cart_status": 200,
+            "preview_status": 200,
+            "order_status": 201,
+            "payment_provider": "manual",
+            "status": "pending_payment",
+            "message": "Order berhasil dibuat."
+        },
+        {
+            "type": "product",
+            "listing_id": 43,
+            "variant_id": 144,
+            "cart_status": 200,
+            "preview_status": 200,
+            "order_status": 201,
+            "payment_provider": "manual",
+            "status": "pending_payment",
+            "message": "Order berhasil dibuat."
+        },
+        {
+            "type": "bundle",
+            "listing_id": 10,
+            "variant_id": null,
+            "cart_status": 200,
+            "preview_status": 200,
+            "order_status": 201,
+            "payment_provider": "manual",
+            "status": "pending_payment",
+            "message": "Order berhasil dibuat."
+        },
+        {
+            "type": "bundle",
+            "listing_id": 11,
+            "variant_id": null,
+            "cart_status": 200,
+            "preview_status": 200,
+            "order_status": 201,
+            "payment_provider": "manual",
+            "status": "pending_payment",
+            "message": "Order berhasil dibuat."
+        },
+        {
+            "type": "bundle",
+            "listing_id": 12,
+            "variant_id": null,
+            "cart_status": 200,
+            "preview_status": 200,
+            "order_status": 201,
+            "payment_provider": "manual",
+            "status": "pending_payment",
+            "message": "Order berhasil dibuat."
+        }
+    ]
+}

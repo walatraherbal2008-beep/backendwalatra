@@ -155,7 +155,7 @@ class CatalogProductController extends Controller
             });
         }
 
-        if (DB::connection()->getDriverName() !== 'pgsql' || mb_strlen($search) < 2) {
+        if (DB::connection()->getDriverName() !== 'pgsql') {
             return;
         }
 
@@ -166,26 +166,6 @@ class CatalogProductController extends Controller
             ->join('products as search_products', 'search_products.id', '=', 'store_product_listings.product_id')
             ->join('stores as search_stores', 'search_stores.id', '=', 'store_product_listings.store_id')
             ->select('store_product_listings.*')
-            ->where(function (Builder $listingQuery) use ($search, $like): void {
-                $listingQuery
-                    ->whereRaw('search_products.name ILIKE ?', [$like])
-                    ->orWhereRaw('search_products.product_code ILIKE ?', [$like])
-                    ->orWhereRaw('search_stores.name ILIKE ?', [$like])
-                    ->orWhereExists(function ($variantQuery) use ($search, $like): void {
-                        $variantQuery
-                            ->selectRaw('1')
-                            ->from('product_variants as search_variants')
-                            ->whereColumn('search_variants.product_id', 'search_products.id')
-                            ->where(function ($query) use ($search, $like): void {
-                                $query
-                                    ->whereRaw('search_variants.sku ILIKE ?', [$like])
-                                    ->orWhereRaw('search_variants.sku % ?', [$search]);
-                            });
-                    })
-                    ->orWhereRaw('search_products.name % ?', [$search])
-                    ->orWhereRaw('search_products.product_code % ?', [$search])
-                    ->orWhereRaw('search_stores.name % ?', [$search]);
-            })
             ->selectRaw(
                 '(CASE
                     WHEN LOWER(search_products.name) = LOWER(?) THEN 100
@@ -198,7 +178,8 @@ class CatalogProductController extends Controller
                 + (similarity(search_stores.name, ?) * 10)
                 + COALESCE((SELECT MAX(similarity(search_variants_score.sku, ?))
                     FROM product_variants as search_variants_score
-                    WHERE search_variants_score.product_id = search_products.id), 0) * 20
+                    WHERE search_variants_score.product_id = search_products.id
+                      AND search_variants_score.deleted_at IS NULL), 0) * 20
                 ) AS search_relevance',
                 [$search, $prefix, $like, $search, $search, $search, $search],
             );
@@ -231,7 +212,8 @@ class CatalogProductController extends Controller
         + (similarity(search_stores.name, ?) * 10)
         + COALESCE((SELECT MAX(similarity(search_variants_score.sku, ?))
             FROM product_variants as search_variants_score
-            WHERE search_variants_score.product_id = search_products.id), 0) * 20), 0), 100)';
+            WHERE search_variants_score.product_id = search_products.id
+              AND search_variants_score.deleted_at IS NULL), 0) * 20), 0), 100)';
 
         $qualityScore = "(
             CASE WHEN EXISTS (

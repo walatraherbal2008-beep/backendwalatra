@@ -20,17 +20,17 @@ class PrepareOrderSimulation extends Command
     public function handle(): int
     {
         if (! CheckoutSimulation::enabled()) {
-            $this->error('Aktifkan ORDER_SIMULATION_ENABLED pada environment local/testing terlebih dahulu.');
+            $this->error('Gunakan ORDER_PROCESSING_MODE=integrated dan ORDER_SIMULATION_ENABLED=true pada environment local/testing.');
 
             return self::FAILURE;
         }
 
         $store = DB::transaction(function (): Store {
-            $store = Store::query()->where('code', 'TOKO-SIMULASI-ORDER')->first();
+            $store = Store::query()->where('code', CheckoutSimulation::STORE_CODE)->first();
 
             if (! $store) {
                 $store = new Store;
-                $store->forceFill(['code' => 'TOKO-SIMULASI-ORDER']);
+                $store->forceFill(['code' => CheckoutSimulation::STORE_CODE]);
                 $store->fill([
                     'name' => 'Toko Simulasi Order',
                     'description' => 'Toko untuk pengujian order dengan stok, ongkir, dan pembayaran simulasi.',

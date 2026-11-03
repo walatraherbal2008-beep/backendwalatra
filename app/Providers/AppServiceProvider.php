@@ -45,7 +45,7 @@ class AppServiceProvider extends ServiceProvider
             return $app->make(ExternalWarehouseDirectoryProvider::class);
         });
 
-        $this->app->singleton(
+        $this->app->bind(
             WarehouseStockProvider::class,
             function ($app): WarehouseStockProvider {
                 if (CheckoutSimulation::enabled()) {
@@ -64,7 +64,7 @@ class AppServiceProvider extends ServiceProvider
                 ? $app->make(MidtransPaymentGateway::class)
                 : $app->make(UnavailablePaymentGateway::class);
         });
-        $this->app->singleton(ShippingRateProvider::class, function ($app): ShippingRateProvider {
+        $this->app->bind(ShippingRateProvider::class, function ($app): ShippingRateProvider {
             if (CheckoutSimulation::enabled()) {
                 return $app->make(SimulatedShippingRateProvider::class);
             }

@@ -11,7 +11,11 @@
 
 Panduan operasional server tersedia di [docs/deployment/sysadmin-first-run.md](docs/deployment/sysadmin-first-run.md).
 
+Dokumentasi endpoint publik produk, bundle, kategori, pencarian, dan filter tersedia di [API katalog produk](docs/api/product-catalog.md).
+
 Dokumentasi API simulasi order, dari login OTP sampai checkout tanpa Midtrans, tersedia di [docs/api/order-simulation.md](docs/api/order-simulation.md).
+
+Untuk operasional production dengan pembayaran yang diverifikasi admin, ikuti [panduan order manual](docs/api/manual-orders.md).
 
 Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
 

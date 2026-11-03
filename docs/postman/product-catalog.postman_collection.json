@@ -1,0 +1,614 @@
+{
+  "info": {
+    "name": "Walatra - API Katalog Produk",
+    "description": "Koleksi API katalog publik sesuai implementasi 3 November 2026. Tidak membutuhkan login atau Bearer token. Tidak ada pembatasan berdasarkan label simulasi; aturan status aktif dan kelayakan listing tetap berlaku.\n\nCara pakai: import file ini, ubah collection variable base_url, jalankan request daftar sebelum detail agar slug terisi otomatis. Jika daftar kosong, isi slug yang valid secara manual atau lewati request detail. Filter opsional berada di tab Params dalam keadaan nonaktif. Aktifkan sesuai kebutuhan setelah nilai variabel diisi.\n\nRate limit katalog: 120 request/menit, berbagi limiter dengan endpoint publik terkait. Ikuti Retry-After saat HTTP 429. Harga rupiah, berat gram; gambar dapat kosong/null. Dokumentasi: docs/api/product-catalog.md. Koleksi ini hanya membaca katalog dan menjalankan contoh validasi.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "noauth"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:8000/api/v1",
+      "type": "string",
+      "description": "Base URL API tanpa slash terakhir. Ganti dengan URL server production jika diperlukan."
+    },
+    {
+      "key": "product_slug",
+      "value": "",
+      "type": "string",
+      "description": "Otomatis diisi dari request Daftar produk; dapat diganti manual."
+    },
+    {
+      "key": "bundle_slug",
+      "value": "",
+      "type": "string",
+      "description": "Otomatis diisi dari request Daftar bundle; dapat diganti manual."
+    },
+    {
+      "key": "category_slug",
+      "value": "",
+      "type": "string",
+      "description": "Otomatis diisi dari request Daftar kategori; dapat diganti manual."
+    },
+    {
+      "key": "store_slug",
+      "value": "",
+      "type": "string",
+      "description": "Otomatis diisi dari toko pertama pada Daftar produk; untuk filter opsional."
+    },
+    {
+      "key": "search",
+      "value": "herbal",
+      "type": "string",
+      "description": "Kata pencarian opsional, maksimal 100 karakter."
+    },
+    {
+      "key": "min_price",
+      "value": "0",
+      "type": "string",
+      "description": "Batas harga minimum opsional dalam rupiah."
+    },
+    {
+      "key": "max_price",
+      "value": "100000",
+      "type": "string",
+      "description": "Batas harga maksimum opsional dalam rupiah."
+    }
+  ],
+  "item": [
+    {
+      "name": "01 - Katalog gabungan",
+      "item": [
+        {
+          "name": "Katalog produk dan bundle",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/catalog?per_page=15&page=1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "catalog"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "{{search}}",
+                  "description": "Pencarian maksimal 100 karakter, maksimal 10 kata.",
+                  "disabled": true
+                },
+                {
+                  "key": "type",
+                  "value": "product",
+                  "description": "product atau bundle. Nonaktifkan untuk kedua tipe.",
+                  "disabled": true
+                },
+                {
+                  "key": "store",
+                  "value": "{{store_slug}}",
+                  "description": "Slug toko.",
+                  "disabled": true
+                },
+                {
+                  "key": "category",
+                  "value": "{{category_slug}}",
+                  "description": "Slug kategori yang terpasang langsung.",
+                  "disabled": true
+                },
+                {
+                  "key": "min_price",
+                  "value": "{{min_price}}",
+                  "description": "Harga minimum >= 0.",
+                  "disabled": true
+                },
+                {
+                  "key": "max_price",
+                  "value": "{{max_price}}",
+                  "description": "Harga maksimum >= minimum; dapat digunakan sendiri.",
+                  "disabled": true
+                },
+                {
+                  "key": "sort",
+                  "value": "latest",
+                  "description": "relevance, latest, name_asc, name_desc, price_asc, price_desc",
+                  "disabled": true
+                },
+                {
+                  "key": "per_page",
+                  "value": "15",
+                  "description": "Jumlah listing per halaman: 1–50."
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Nomor halaman mulai 1."
+                }
+              ]
+            },
+            "description": "Daftar penawaran toko. Aktifkan filter di tab Params sesuai kebutuhan. Default sort: relevance dengan q, latest tanpa q. Harga produk berupa min/max; bundle berupa value. Gunakan type + listing_id sebagai identitas baris."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Respons JSON\", function () { pm.response.to.be.json; });",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Status success sesuai\", function () { pm.expect(body.success).to.eql(true); });",
+                  "pm.test(\"Daftar dan pagination tersedia\", function () {",
+                  "  pm.expect(body.data).to.be.an(\"array\");",
+                  "  pm.expect(body.meta).to.have.property(\"current_page\");",
+                  "  pm.expect(body.links).to.have.property(\"next\");",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "02 - Produk",
+      "item": [
+        {
+          "name": "Daftar produk",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/catalog/products?per_page=15&page=1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "catalog",
+                "products"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "{{search}}",
+                  "description": "Pencarian maksimal 100 karakter, maksimal 10 kata.",
+                  "disabled": true
+                },
+                {
+                  "key": "store",
+                  "value": "{{store_slug}}",
+                  "description": "Slug toko.",
+                  "disabled": true
+                },
+                {
+                  "key": "category",
+                  "value": "{{category_slug}}",
+                  "description": "Slug kategori yang terpasang langsung.",
+                  "disabled": true
+                },
+                {
+                  "key": "min_price",
+                  "value": "{{min_price}}",
+                  "description": "Harga minimum >= 0.",
+                  "disabled": true
+                },
+                {
+                  "key": "max_price",
+                  "value": "{{max_price}}",
+                  "description": "Harga maksimum >= minimum; dapat digunakan sendiri.",
+                  "disabled": true
+                },
+                {
+                  "key": "sort",
+                  "value": "latest",
+                  "description": "relevance, latest, name_asc, name_desc, price_asc, price_desc",
+                  "disabled": true
+                },
+                {
+                  "key": "per_page",
+                  "value": "15",
+                  "description": "Jumlah listing per halaman: 1–50."
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Nomor halaman mulai 1."
+                }
+              ]
+            },
+            "description": "Jalankan sebelum Detail produk. Menyimpan product_slug dan store_slug dari hasil pertama. Default sort relevance; filter opsional dinonaktifkan agar request awal menampilkan semua listing yang memenuhi syarat."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Respons JSON\", function () { pm.response.to.be.json; });",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Status success sesuai\", function () { pm.expect(body.success).to.eql(true); });",
+                  "pm.test(\"Daftar dan pagination tersedia\", function () {",
+                  "  pm.expect(body.data).to.be.an(\"array\");",
+                  "  pm.expect(body.meta).to.have.property(\"current_page\");",
+                  "  pm.expect(body.links).to.have.property(\"next\");",
+                  "});",
+                  "if (pm.response.code === 200 && Array.isArray(body.data)) {",
+                  "  pm.collectionVariables.set(\"product_slug\", \"\");",
+                  "  const product_slug = body.data[0]?.product?.slug;",
+                  "  if (product_slug) pm.collectionVariables.set(\"product_slug\", product_slug);",
+                  "  pm.collectionVariables.set(\"store_slug\", \"\");",
+                  "  const store_slug = body.data[0]?.store?.slug;",
+                  "  if (store_slug) pm.collectionVariables.set(\"store_slug\", store_slug);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Detail produk",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/catalog/products/{{product_slug}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "catalog",
+                "products",
+                "{{product_slug}}"
+              ]
+            },
+            "description": "Jalankan Daftar produk dahulu atau isi product_slug pada Variables. Hasil berisi varian aktif dan stores[].listing_id untuk memilih toko. stores dapat kosong."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Respons JSON\", function () { pm.response.to.be.json; });",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Status success sesuai\", function () { pm.expect(body.success).to.eql(true); });"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "03 - Bundle",
+      "item": [
+        {
+          "name": "Daftar bundle",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/catalog/bundles?per_page=15&page=1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "catalog",
+                "bundles"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "{{search}}",
+                  "description": "Pencarian maksimal 100 karakter, maksimal 10 kata.",
+                  "disabled": true
+                },
+                {
+                  "key": "store",
+                  "value": "{{store_slug}}",
+                  "description": "Slug toko.",
+                  "disabled": true
+                },
+                {
+                  "key": "sort",
+                  "value": "latest",
+                  "description": "latest, name_asc, name_desc, price_asc, price_desc",
+                  "disabled": true
+                },
+                {
+                  "key": "per_page",
+                  "value": "15",
+                  "description": "Jumlah listing per halaman: 1–50."
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Nomor halaman mulai 1."
+                }
+              ]
+            },
+            "description": "Jalankan sebelum Detail bundle. Menyimpan bundle_slug. Endpoint ini mendukung q/store/sort/per_page/page; gunakan katalog gabungan dengan type=bundle untuk filter kategori/harga atau sort relevance."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Respons JSON\", function () { pm.response.to.be.json; });",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Status success sesuai\", function () { pm.expect(body.success).to.eql(true); });",
+                  "pm.test(\"Daftar dan pagination tersedia\", function () {",
+                  "  pm.expect(body.data).to.be.an(\"array\");",
+                  "  pm.expect(body.meta).to.have.property(\"current_page\");",
+                  "  pm.expect(body.links).to.have.property(\"next\");",
+                  "});",
+                  "if (pm.response.code === 200 && Array.isArray(body.data)) {",
+                  "  pm.collectionVariables.set(\"bundle_slug\", \"\");",
+                  "  const bundle_slug = body.data[0]?.bundle?.slug;",
+                  "  if (bundle_slug) pm.collectionVariables.set(\"bundle_slug\", bundle_slug);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Detail bundle",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/catalog/bundles/{{bundle_slug}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "catalog",
+                "bundles",
+                "{{bundle_slug}}"
+              ]
+            },
+            "description": "Jalankan Daftar bundle dahulu atau isi bundle_slug. Harga bundle adalah harga tetapnya, bukan jumlah harga retail komponen. items[].quantity adalah jumlah komponen per bundle."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Respons JSON\", function () { pm.response.to.be.json; });",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Status success sesuai\", function () { pm.expect(body.success).to.eql(true); });"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "04 - Kategori",
+      "item": [
+        {
+          "name": "Daftar kategori",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/catalog/categories",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "catalog",
+                "categories"
+              ]
+            },
+            "description": "Kategori utama aktif dengan anak langsung. Tidak memakai pagination. Menyimpan category_slug dari kategori pertama. product_count menghitung master produk langsung pada kategori, bukan unit stok atau agregasi kategori anak."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Respons JSON\", function () { pm.response.to.be.json; });",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Status success sesuai\", function () { pm.expect(body.success).to.eql(true); });",
+                  "if (pm.response.code === 200 && Array.isArray(body.data)) {",
+                  "  pm.collectionVariables.set(\"category_slug\", \"\");",
+                  "  const category_slug = body.data[0]?.slug;",
+                  "  if (category_slug) pm.collectionVariables.set(\"category_slug\", category_slug);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Detail kategori",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/catalog/categories/{{category_slug}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "catalog",
+                "categories",
+                "{{category_slug}}"
+              ]
+            },
+            "description": "Jalankan Daftar kategori dahulu atau isi category_slug. Hasil mencakup parent dan anak langsung; daftar produk diambil melalui filter category pada katalog."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Respons JSON\", function () { pm.response.to.be.json; });",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Status success sesuai\", function () { pm.expect(body.success).to.eql(true); });"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "05 - Contoh validasi (HTTP 422 diharapkan)",
+      "item": [
+        {
+          "name": "Harga maksimum kurang dari minimum",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/catalog?min_price=50000&max_price=10000",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "catalog"
+              ],
+              "query": [
+                {
+                  "key": "min_price",
+                  "value": "50000",
+                  "description": "Harga minimum"
+                },
+                {
+                  "key": "max_price",
+                  "value": "10000",
+                  "description": "Sengaja lebih kecil dari minimum"
+                }
+              ]
+            },
+            "description": "Contoh error VALIDATION_ERROR; HTTP 422 adalah hasil yang diharapkan."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 422\", function () { pm.response.to.have.status(422); });",
+                  "pm.test(\"Respons JSON\", function () { pm.response.to.be.json; });",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Status success sesuai\", function () { pm.expect(body.success).to.eql(false); });"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Pagination melebihi batas",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/catalog/products?per_page=51",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "catalog",
+                "products"
+              ],
+              "query": [
+                {
+                  "key": "per_page",
+                  "value": "51",
+                  "description": "Sengaja melebihi batas"
+                }
+              ]
+            },
+            "description": "Contoh validasi per_page maksimum 50; HTTP 422 adalah hasil yang diharapkan."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 422\", function () { pm.response.to.have.status(422); });",
+                  "pm.test(\"Respons JSON\", function () { pm.response.to.be.json; });",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Status success sesuai\", function () { pm.expect(body.success).to.eql(false); });"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    }
+  ]
+}

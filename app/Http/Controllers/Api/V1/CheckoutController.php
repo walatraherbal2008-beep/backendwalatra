@@ -5,18 +5,19 @@ namespace App\Http\Controllers\Api\V1;
 use App\Contracts\ShippingRateProvider;
 use App\Contracts\WarehouseStockProvider;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\CheckoutPreviewRequest;
 use App\Models\Address;
 use App\Models\Cart;
 use App\Models\CartItem;
 use App\Services\Shipping\ShippingCostCalculator;
 use App\Support\CheckoutSimulation;
+use App\Support\ManualCheckout;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 
 class CheckoutController extends Controller
 {
     public function preview(
-        Request $request,
+        CheckoutPreviewRequest $request,
         WarehouseStockProvider $warehouse,
         ShippingRateProvider $shipping,
         ShippingCostCalculator $shippingCosts,
@@ -47,7 +48,8 @@ class CheckoutController extends Controller
 
         $items = $this->stockItems($cart->items);
 
-        $availability = $warehouse->checkAvailability($items);
+        $manual = ManualCheckout::enabled();
+        $availability = $manual ? ['available' => true, 'items' => []] : $warehouse->checkAvailability($items);
 
         $shippingData = null;
         $shippingAddress = $request->input('shipping_address');
@@ -60,7 +62,7 @@ class CheckoutController extends Controller
 
         $subtotal = (float) $cart->items->sum(fn ($item): float => (float) $item->unit_price * $item->quantity);
         if (is_array($shippingAddress)) {
-            $shippingQuote = $shipping->quote($shippingAddress, $items);
+            $shippingQuote = $manual ? ManualCheckout::shippingQuote() : $shipping->quote($shippingAddress, $items);
             $cost = $shippingCosts->calculate($shippingQuote, $shippingAddress, $subtotal, $this->weightGrams($cart->items));
             $shippingData = [
                 'service' => $shippingQuote['service'],
@@ -74,12 +76,14 @@ class CheckoutController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => $availability['available']
+            'message' => $manual ? 'Order dapat diajukan. Stok dan pembayaran akan diverifikasi admin.' : ($availability['available']
                 ? 'Ketersediaan stok berhasil divalidasi.'
-                : 'Stok gudang belum dapat divalidasi.',
+                : 'Stok gudang belum dapat divalidasi.'),
             'data' => [
                 'simulation' => CheckoutSimulation::enabled(),
                 'payment_required' => ! CheckoutSimulation::enabled(),
+                'payment_provider' => $manual ? 'manual' : (CheckoutSimulation::enabled() ? 'simulation' : 'midtrans'),
+                'stock_verification' => $manual ? 'pending_manual' : (CheckoutSimulation::enabled() ? 'simulated' : 'external'),
                 'checkout_available' => $availability['available'],
                 'items' => $cart->items->map(fn ($item): array => [
                     'cart_item_id' => $item->id,

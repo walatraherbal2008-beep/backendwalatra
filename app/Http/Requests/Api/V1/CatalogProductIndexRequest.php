@@ -22,7 +22,7 @@ class CatalogProductIndexRequest extends FormRequest
             'store' => ['nullable', 'string', 'max:255'],
             'category' => ['nullable', 'string', 'max:255'],
             'min_price' => ['nullable', 'numeric', 'min:0'],
-            'max_price' => ['nullable', 'numeric', 'min:0', 'gte:min_price'],
+            'max_price' => ['nullable', 'numeric', 'min:0', ...($this->filled('min_price') ? ['gte:min_price'] : [])],
             'sort' => [
                 'nullable',
                 'string',

@@ -1,5 +1,7 @@
 # API Simulasi Order
 
+Untuk operasional production dengan verifikasi pembayaran oleh admin, gunakan [API Order Manual](manual-orders.md). Dokumen ini khusus simulasi pengembangan lokal.
+
 Mode ini digunakan untuk menguji pembelian sebelum integrasi pembayaran, stok, dan ongkir siap. Mode hanya aktif pada `APP_ENV=local` atau `testing` dan harus diaktifkan secara eksplisit di environment server. Parameter request customer tidak dapat mengaktifkannya.
 
 Semua ID, OTP, token, produk, dan harga pada contoh bersifat ilustratif. Ambil nilai sebenarnya dari respons API; jangan mengasumsikan ID selalu `1`.
@@ -20,6 +22,7 @@ Header Authorization diperlukan untuk endpoint customer. Request OTP, verify OTP
 
 ```dotenv
 ORDER_SIMULATION_ENABLED=true
+ORDER_PROCESSING_MODE=integrated
 ORDER_SIMULATION_SHIPPING_FEE=0
 ```
 

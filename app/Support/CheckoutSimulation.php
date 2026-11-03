@@ -4,9 +4,12 @@ namespace App\Support;
 
 final class CheckoutSimulation
 {
+    public const STORE_CODE = 'TOKO-SIMULASI-ORDER';
+
     public static function enabled(): bool
     {
-        return app()->environment(['local', 'testing'])
+        return ! ManualCheckout::enabled()
+            && app()->environment(['local', 'testing'])
             && config('checkout.simulation.enabled') === true;
     }
 }
