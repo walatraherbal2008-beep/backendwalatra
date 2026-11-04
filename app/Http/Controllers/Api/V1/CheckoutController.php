@@ -9,7 +9,9 @@ use App\Http\Requests\Api\V1\CheckoutPreviewRequest;
 use App\Models\Address;
 use App\Models\Cart;
 use App\Models\CartItem;
+use App\Services\Marketplace\CheckoutPricing;
 use App\Services\Shipping\ShippingCostCalculator;
+use App\Support\CheckoutShipping;
 use App\Support\CheckoutSimulation;
 use App\Support\ManualCheckout;
 use Illuminate\Http\JsonResponse;
@@ -21,6 +23,7 @@ class CheckoutController extends Controller
         WarehouseStockProvider $warehouse,
         ShippingRateProvider $shipping,
         ShippingCostCalculator $shippingCosts,
+        CheckoutPricing $pricing,
     ): JsonResponse {
         $cart = Cart::query()
             ->where('user_id', $request->user()->id)
@@ -31,6 +34,9 @@ class CheckoutController extends Controller
                 'items.bundleListing.bundle.items.variant.product',
             ])
             ->first();
+
+        $selectedItems = $request->selectedCartItems($cart?->items ?? collect());
+        $cart?->setRelation('items', $selectedItems);
 
         if (! $cart || $cart->items->isEmpty()) {
             return response()->json([
@@ -46,6 +52,7 @@ class CheckoutController extends Controller
             ], 409);
         }
 
+        $priceChanges = $pricing->review($cart->items);
         $items = $this->stockItems($cart->items);
 
         $manual = ManualCheckout::enabled();
@@ -62,7 +69,7 @@ class CheckoutController extends Controller
 
         $subtotal = (float) $cart->items->sum(fn ($item): float => (float) $item->unit_price * $item->quantity);
         if (is_array($shippingAddress)) {
-            $shippingQuote = $manual ? ManualCheckout::shippingQuote() : $shipping->quote($shippingAddress, $items);
+            $shippingQuote = CheckoutShipping::quote($shipping, $shippingAddress, $items);
             $cost = $shippingCosts->calculate($shippingQuote, $shippingAddress, $subtotal, $this->weightGrams($cart->items));
             $shippingData = [
                 'service' => $shippingQuote['service'],
@@ -80,6 +87,9 @@ class CheckoutController extends Controller
                 ? 'Ketersediaan stok berhasil divalidasi.'
                 : 'Stok gudang belum dapat divalidasi.'),
             'data' => [
+                'checkout_token' => $availability['available'] ? $pricing->token($request->user()->id, $cart->items) : null,
+                'price_changed' => $priceChanges !== [],
+                'price_changes' => $priceChanges,
                 'simulation' => CheckoutSimulation::enabled(),
                 'payment_required' => ! CheckoutSimulation::enabled(),
                 'payment_provider' => $manual ? 'manual' : (CheckoutSimulation::enabled() ? 'simulation' : 'midtrans'),

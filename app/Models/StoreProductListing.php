@@ -6,7 +6,7 @@ use App\Support\ListingImageConversions;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Validation\ValidationException;
 use Spatie\MediaLibrary\HasMedia;
@@ -83,9 +83,16 @@ class StoreProductListing extends Model implements HasMedia
         return $this->belongsTo(Product::class);
     }
 
-    public function warehouseAssignments(): HasMany
+    public function warehouseAssignments(): HasManyThrough
     {
-        return $this->hasMany(StoreProductListingWarehouse::class);
+        return $this->hasManyThrough(
+            WarehouseProductVariant::class,
+            ProductVariant::class,
+            'product_id',
+            'product_variant_id',
+            'product_id',
+            'id',
+        )->where('product_variants.status', 'active');
     }
 
     public function registerMediaCollections(): void

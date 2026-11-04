@@ -12,7 +12,9 @@ use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\Order;
 use App\Models\User;
+use App\Services\Marketplace\CheckoutPricing;
 use App\Services\Shipping\ShippingCostCalculator;
+use App\Support\CheckoutShipping;
 use App\Support\CheckoutSimulation;
 use App\Support\ManualCheckout;
 use Illuminate\Http\JsonResponse;
@@ -166,12 +168,16 @@ class OrderController extends Controller
         $cart = Cart::query()
             ->where('user_id', $request->user()->id)
             ->with([
+                'items' => fn ($query) => $query->orderBy('id')->lockForUpdate(),
                 'items.variant.product',
                 'items.listing.store',
                 'items.bundleListing.store',
                 'items.bundleListing.bundle.items.variant.product',
             ])
             ->first();
+
+        $selectedItems = $request->selectedCartItems($cart?->items ?? collect());
+        $cart?->setRelation('items', $selectedItems);
 
         if (! $cart || $cart->items->isEmpty()) {
             return response()->json([
@@ -191,9 +197,13 @@ class OrderController extends Controller
             ], 409);
         }
 
+        $pricing = app(CheckoutPricing::class);
+        $priceChanges = $pricing->review($cart->items, lock: true);
+        $pricing->confirm($request->validated('checkout_token'), $request->user()->id, $cart->items, $priceChanges);
+
         $stockItems = $this->stockItems($cart->items);
         $manual = ManualCheckout::enabled();
-        $shippingQuote = $manual ? ManualCheckout::shippingQuote() : $shipping->quote($shippingAddress, $stockItems);
+        $shippingQuote = CheckoutShipping::quote($shipping, $shippingAddress, $stockItems);
         $subtotal = (float) $cart->items->sum(
             fn ($item): float => (float) $item->unit_price * $item->quantity,
         );

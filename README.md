@@ -17,6 +17,12 @@ Dokumentasi API simulasi order, dari login OTP sampai checkout tanpa Midtrans, t
 
 Untuk operasional production dengan pembayaran yang diverifikasi admin, ikuti [panduan order manual](docs/api/manual-orders.md).
 
+Panduan frontend dari tambah produk/bundle ke cart hingga checkout bertoken tersedia di [alur API cart dan checkout](docs/api/cart-checkout.md).
+
+Pengelolaan alamat penerima, alamat utama, dan pemilihan alamat checkout tersedia di [API alamat customer dan lokasi Everpro](docs/api/customer-addresses.md).
+
+Penetapan gudang produk untuk seluruh toko dikelola superadmin melalui [panduan pengaturan gudang](docs/warehouse-management.md).
+
 Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
 
 - [Simple, fast routing engine](https://laravel.com/docs/routing).

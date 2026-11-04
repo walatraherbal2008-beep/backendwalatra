@@ -32,6 +32,7 @@
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="ORDER_SIMULATION_ENABLED" value="false"/>
         <env name="ORDER_PROCESSING_MODE" value="integrated" force="true"/>
+        <env name="FREE_SHIPPING_ENABLED" value="false" force="true"/>
         <env name="SESSION_DRIVER" value="array"/>
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>

@@ -11,6 +11,21 @@ class ShippingCostCalculatorTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_free_shipping_overrides_nonzero_quotes_and_subsidy_rules(): void
+    {
+        config(['checkout.free_shipping' => true]);
+        ShippingSubsidyRule::query()->create([
+            'name' => 'Subsidi nasional',
+            'scope_type' => 'all',
+            'max_subsidy' => 5000,
+            'enabled' => true,
+        ]);
+
+        $result = (new ShippingCostCalculator)->calculate(['fee' => 50000], [], 30000, 1000);
+
+        $this->assertSame(['gross_fee' => 0.0, 'subsidy' => 0.0, 'fee' => 0.0, 'rule_id' => null], $result);
+    }
+
     public function test_it_applies_the_most_specific_priority_rule_and_caps_at_provider_fee(): void
     {
         ShippingSubsidyRule::query()->create([

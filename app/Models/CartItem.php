@@ -18,6 +18,7 @@ class CartItem extends Model
         'product_variant_id',
         'quantity',
         'unit_price',
+        'last_added_at',
     ];
 
     protected function casts(): array
@@ -25,6 +26,7 @@ class CartItem extends Model
         return [
             'quantity' => 'integer',
             'unit_price' => 'decimal:2',
+            'last_added_at' => 'datetime',
         ];
     }
 

@@ -11,6 +11,7 @@ use App\Models\CartItem;
 use App\Models\ProductVariant;
 use App\Models\StoreBundleListing;
 use App\Models\StoreProductListing;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -27,6 +28,15 @@ class CartController extends Controller
     }
 
     public function store(AddCartItemRequest $request): CartResource
+    {
+        return DB::transaction(function () use ($request): CartResource {
+            $this->lockCartOwner($request);
+
+            return $this->addItem($request);
+        });
+    }
+
+    private function addItem(AddCartItemRequest $request): CartResource
     {
         $cart = $this->cart($request);
         $type = $request->input('type', 'product');
@@ -57,6 +67,7 @@ class CartController extends Controller
                     $item->update([
                         'quantity' => min(99, $item->quantity + $request->integer('quantity')),
                         'unit_price' => $bundleListing->bundle->price,
+                        'last_added_at' => now(),
                     ]);
                 } else {
                     $cart->items()->create([
@@ -64,6 +75,7 @@ class CartController extends Controller
                         'store_bundle_listing_id' => $bundleListing->id,
                         'quantity' => $request->integer('quantity'),
                         'unit_price' => $bundleListing->bundle->price,
+                        'last_added_at' => now(),
                     ]);
                 }
             });
@@ -117,6 +129,7 @@ class CartController extends Controller
                 $item->update([
                     'quantity' => min(99, $item->quantity + $request->integer('quantity')),
                     'unit_price' => $variant->price,
+                    'last_added_at' => now(),
                 ]);
             } else {
                 $cart->items()->create([
@@ -125,6 +138,7 @@ class CartController extends Controller
                     'product_variant_id' => $variant->id,
                     'quantity' => $request->integer('quantity'),
                     'unit_price' => $variant->price,
+                    'last_added_at' => now(),
                 ]);
             }
         });
@@ -137,38 +151,55 @@ class CartController extends Controller
 
     public function update(UpdateCartItemRequest $request, int $item): CartResource
     {
-        $cart = $this->cart($request);
-        $cartItem = $cart->items()->whereKey($item)->firstOrFail();
-        $cartItem->update(['quantity' => $request->integer('quantity')]);
+        return DB::transaction(function () use ($request, $item): CartResource {
+            $this->lockCartOwner($request);
 
-        return (new CartResource($cart->fresh()->load($this->cartRelations())))->additional([
-            'success' => true,
-            'message' => 'Jumlah item cart berhasil diperbarui.',
-        ]);
+            $cart = $this->cart($request);
+            $cartItem = $cart->items()->whereKey($item)->firstOrFail();
+            $cartItem->update(['quantity' => $request->integer('quantity')]);
+
+            return (new CartResource($cart->fresh()->load($this->cartRelations())))->additional([
+                'success' => true,
+                'message' => 'Jumlah item cart berhasil diperbarui.',
+            ]);
+        });
     }
 
     public function destroy(Request $request, int $item): JsonResponse
     {
-        $this->cart($request)->items()->whereKey($item)->delete();
+        return DB::transaction(function () use ($request, $item): JsonResponse {
+            $this->lockCartOwner($request);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Item cart dihapus.',
-            'code' => 'CART_ITEM_DELETED',
-            'data' => null,
-        ]);
+            $this->cart($request)->items()->whereKey($item)->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Item cart dihapus.',
+                'code' => 'CART_ITEM_DELETED',
+                'data' => null,
+            ]);
+        });
     }
 
     public function clear(Request $request): JsonResponse
     {
-        $this->cart($request)->items()->delete();
+        return DB::transaction(function () use ($request): JsonResponse {
+            $this->lockCartOwner($request);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Cart dikosongkan.',
-            'code' => 'CART_CLEARED',
-            'data' => null,
-        ]);
+            $this->cart($request)->items()->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Cart dikosongkan.',
+                'code' => 'CART_CLEARED',
+                'data' => null,
+            ]);
+        });
+    }
+
+    private function lockCartOwner(Request $request): void
+    {
+        User::query()->whereKey($request->user()->id)->lockForUpdate()->firstOrFail();
     }
 
     private function cart(Request $request): Cart
@@ -179,6 +210,9 @@ class CartController extends Controller
     private function cartRelations(): array
     {
         return [
+            'items' => fn ($query) => $query
+                ->orderByRaw('COALESCE(last_added_at, created_at) DESC')
+                ->orderByDesc('id'),
             'items.variant.product',
             'items.listing.store',
             'items.bundleListing.store',

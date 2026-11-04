@@ -3,6 +3,8 @@
 namespace App\Http\Requests\Api\V1;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Collection;
+use Illuminate\Validation\ValidationException;
 
 class CreateOrderRequest extends FormRequest
 {
@@ -14,6 +16,9 @@ class CreateOrderRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'checkout_token' => ['sometimes', 'required', 'string', 'max:4096'],
+            'cart_item_ids' => ['sometimes', 'required', 'array', 'list', 'min:1'],
+            'cart_item_ids.*' => ['required', 'integer', 'min:1', 'distinct'],
             'address_id' => ['nullable', 'integer', 'min:1', 'required_without:shipping_address'],
             'shipping_address' => ['nullable', 'array', 'required_without:address_id'],
             'shipping_address.name' => ['required_with:shipping_address', 'string', 'min:2', 'max:255'],
@@ -35,5 +40,24 @@ class CreateOrderRequest extends FormRequest
             'shipping_address.latitude' => ['nullable', 'numeric', 'between:-90,90'],
             'shipping_address.longitude' => ['nullable', 'numeric', 'between:-180,180'],
         ];
+    }
+
+    public function selectedCartItems(Collection $items): Collection
+    {
+        $ids = $this->validated('cart_item_ids');
+
+        if ($ids === null) {
+            return $items;
+        }
+
+        $selected = $items->whereIn('id', $ids)->values();
+
+        if ($selected->count() !== count($ids)) {
+            throw ValidationException::withMessages([
+                'cart_item_ids' => 'Sebagian item yang dipilih tidak tersedia di cart Anda. Silakan muat ulang cart.',
+            ]);
+        }
+
+        return $selected;
     }
 }

@@ -11,6 +11,10 @@ class ShippingCostCalculator
      */
     public function calculate(array $quote, array $address, float $subtotal, int $weightGrams = 0): array
     {
+        if (config('checkout.free_shipping')) {
+            return ['gross_fee' => 0.0, 'subsidy' => 0.0, 'fee' => 0.0, 'rule_id' => null];
+        }
+
         $grossFee = max(0, (float) ($quote['fee'] ?? 0));
         $rule = $this->matchingRule($address, $subtotal, $weightGrams);
         $subsidy = $rule ? min($grossFee, max(0, (float) $rule->max_subsidy)) : 0.0;

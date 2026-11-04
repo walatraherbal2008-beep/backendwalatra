@@ -32,6 +32,11 @@ class ProductResource extends Resource
 
     protected static ?string $pluralModelLabel = 'produk';
 
+    public static function canAccess(): bool
+    {
+        return auth()->user()?->status === 'active' && auth()->user()->hasRole('super_admin');
+    }
+
     public static function form(Schema $schema): Schema
     {
         return ProductForm::configure($schema);
