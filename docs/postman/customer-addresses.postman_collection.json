@@ -1,0 +1,792 @@
+{
+  "info": {
+    "name": "Walatra - Alamat Customer dan Lokasi Everpro",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Koleksi sesuai docs/api/customer-addresses.md. Isi collection variables base_url dan customer_token. Jalankan folder 01 berurutan untuk mengisi ID wilayah dari hasil pertama, lalu gunakan request alamat pada folder 02. Pilihan wilayah dapat diubah pada Variables. ID mentah disimpan sebagai string dan di-encode pada query. Endpoint Everpro bersifat publik; token Everpro ditangani backend. Request Hapus alamat menghapus ID pada address_id. Mengubah alamat utama memengaruhi penanda alamat lain. Tidak ada request checkout atau pembuatan order dalam koleksi ini."
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{customer_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:8000/api/v1",
+      "type": "string",
+      "description": "Base URL backend tanpa slash terakhir."
+    },
+    {
+      "key": "customer_token",
+      "value": "",
+      "type": "string",
+      "description": "Token login customer dengan ability customer-api; bukan token Everpro."
+    },
+    {
+      "key": "address_id",
+      "value": "",
+      "type": "string",
+      "description": "ID alamat dari respons Tambah alamat; dapat diisi manual."
+    },
+    {
+      "key": "province_search",
+      "value": "Jawa Barat",
+      "type": "string",
+      "description": "Pencarian nama provinsi."
+    },
+    {
+      "key": "province_id",
+      "value": "",
+      "type": "string",
+      "description": "Diisi dari Daftar provinsi, disimpan tanpa URL encoding."
+    },
+    {
+      "key": "province_name",
+      "value": "",
+      "type": "string",
+      "description": "Diisi dari Daftar provinsi."
+    },
+    {
+      "key": "city_id",
+      "value": "",
+      "type": "string",
+      "description": "Diisi dari Daftar kota/kabupaten."
+    },
+    {
+      "key": "city_name",
+      "value": "",
+      "type": "string",
+      "description": "Diisi dari Daftar kota/kabupaten."
+    },
+    {
+      "key": "district_id",
+      "value": "",
+      "type": "string",
+      "description": "Diisi dari Daftar kecamatan."
+    },
+    {
+      "key": "district_name",
+      "value": "",
+      "type": "string",
+      "description": "Diisi dari Daftar kecamatan."
+    },
+    {
+      "key": "sub_district_id",
+      "value": "",
+      "type": "string",
+      "description": "Diisi dari Daftar kelurahan/desa."
+    },
+    {
+      "key": "sub_district_name",
+      "value": "",
+      "type": "string",
+      "description": "Diisi dari Daftar kelurahan/desa."
+    },
+    {
+      "key": "postal_code",
+      "value": "40135",
+      "type": "string",
+      "description": "Diisi dari kelurahan terpilih; juga dipakai untuk resolve."
+    },
+    {
+      "key": "address_label",
+      "value": "Rumah",
+      "type": "string",
+      "description": "Label alamat."
+    },
+    {
+      "key": "recipient_name",
+      "value": "Pembeli Walatra",
+      "type": "string",
+      "description": "Nama penerima."
+    },
+    {
+      "key": "recipient_phone",
+      "value": "081234567890",
+      "type": "string",
+      "description": "Nomor penerima, dikirim sebagai string."
+    },
+    {
+      "key": "street_address",
+      "value": "Jalan Contoh Nomor 1",
+      "type": "string",
+      "description": "Alamat jalan penerima."
+    },
+    {
+      "key": "address_note",
+      "value": "Pagar hitam",
+      "type": "string",
+      "description": "Catatan alamat."
+    }
+  ],
+  "item": [
+    {
+      "name": "01 - Lokasi Everpro",
+      "item": [
+        {
+          "name": "Daftar provinsi",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/shipping/locations/provinces?q={{province_search}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "shipping",
+                "locations",
+                "provinces"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "{{province_search}}",
+                  "description": "Pencarian nama provinsi, maksimal 100 karakter."
+                }
+              ]
+            },
+            "description": "Publik. Menyimpan ID dan nama hasil pertama; mengosongkan pilihan wilayah turunan. Nonaktifkan q untuk daftar tanpa filter nama.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Respons JSON\", function () { pm.response.to.be.json; });",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Request berhasil\", function () { pm.expect(body.success).to.eql(true); });",
+                  "if (pm.response.code === 200 && Array.isArray(body.data?.locations)) {",
+                  "  const first = body.data.locations[0];",
+                  "  pm.collectionVariables.set(\"province_id\", \"\");",
+                  "  pm.collectionVariables.set(\"province_name\", \"\");",
+                  "  pm.collectionVariables.set(\"city_id\", \"\");",
+                  "  pm.collectionVariables.set(\"city_name\", \"\");",
+                  "  pm.collectionVariables.set(\"district_id\", \"\");",
+                  "  pm.collectionVariables.set(\"district_name\", \"\");",
+                  "  pm.collectionVariables.set(\"sub_district_id\", \"\");",
+                  "  pm.collectionVariables.set(\"sub_district_name\", \"\");",
+                  "  if (first?.province_id !== undefined && first.province_id !== null) pm.collectionVariables.set(\"province_id\", String(first.province_id));",
+                  "  if (first?.province_name !== undefined && first.province_name !== null) pm.collectionVariables.set(\"province_name\", String(first.province_name));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Daftar kota/kabupaten",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/shipping/locations/cities?province_id={{province_id_query}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "shipping",
+                "locations",
+                "cities"
+              ],
+              "query": [
+                {
+                  "key": "province_id",
+                  "value": "{{province_id_query}}",
+                  "description": "ID provinsi; otomatis di-encode dari province_id."
+                }
+              ]
+            },
+            "description": "Publik. Jalankan Daftar provinsi terlebih dahulu atau isi province_id. Menyimpan hasil kota pertama.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const value = pm.collectionVariables.get(\"province_id\");",
+                  "if (!value) throw new Error(\"Isi province_id atau jalankan daftar wilayah induk terlebih dahulu.\");",
+                  "pm.variables.set(\"province_id_query\", encodeURIComponent(value));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Respons JSON\", function () { pm.response.to.be.json; });",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Request berhasil\", function () { pm.expect(body.success).to.eql(true); });",
+                  "if (pm.response.code === 200 && Array.isArray(body.data?.locations)) {",
+                  "  const first = body.data.locations[0];",
+                  "  pm.collectionVariables.set(\"city_id\", \"\");",
+                  "  pm.collectionVariables.set(\"city_name\", \"\");",
+                  "  pm.collectionVariables.set(\"district_id\", \"\");",
+                  "  pm.collectionVariables.set(\"district_name\", \"\");",
+                  "  pm.collectionVariables.set(\"sub_district_id\", \"\");",
+                  "  pm.collectionVariables.set(\"sub_district_name\", \"\");",
+                  "  if (first?.city_id !== undefined && first.city_id !== null) pm.collectionVariables.set(\"city_id\", String(first.city_id));",
+                  "  if (first?.city_name !== undefined && first.city_name !== null) pm.collectionVariables.set(\"city_name\", String(first.city_name));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Daftar kecamatan",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/shipping/locations/districts?city_id={{city_id_query}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "shipping",
+                "locations",
+                "districts"
+              ],
+              "query": [
+                {
+                  "key": "city_id",
+                  "value": "{{city_id_query}}",
+                  "description": "ID kota; otomatis di-encode dari city_id."
+                }
+              ]
+            },
+            "description": "Publik. Jalankan Daftar kota/kabupaten terlebih dahulu. Menyimpan hasil kecamatan pertama.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const value = pm.collectionVariables.get(\"city_id\");",
+                  "if (!value) throw new Error(\"Isi city_id atau jalankan daftar wilayah induk terlebih dahulu.\");",
+                  "pm.variables.set(\"city_id_query\", encodeURIComponent(value));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Respons JSON\", function () { pm.response.to.be.json; });",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Request berhasil\", function () { pm.expect(body.success).to.eql(true); });",
+                  "if (pm.response.code === 200 && Array.isArray(body.data?.locations)) {",
+                  "  const first = body.data.locations[0];",
+                  "  pm.collectionVariables.set(\"district_id\", \"\");",
+                  "  pm.collectionVariables.set(\"district_name\", \"\");",
+                  "  pm.collectionVariables.set(\"sub_district_id\", \"\");",
+                  "  pm.collectionVariables.set(\"sub_district_name\", \"\");",
+                  "  if (first?.district_id !== undefined && first.district_id !== null) pm.collectionVariables.set(\"district_id\", String(first.district_id));",
+                  "  if (first?.district_name !== undefined && first.district_name !== null) pm.collectionVariables.set(\"district_name\", String(first.district_name));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Daftar kelurahan/desa",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/shipping/locations/sub-districts?district_id={{district_id_query}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "shipping",
+                "locations",
+                "sub-districts"
+              ],
+              "query": [
+                {
+                  "key": "district_id",
+                  "value": "{{district_id_query}}",
+                  "description": "ID kecamatan; otomatis di-encode dari district_id."
+                }
+              ]
+            },
+            "description": "Publik. Jalankan Daftar kecamatan terlebih dahulu. Menyimpan hasil kelurahan pertama dan kode pos.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const value = pm.collectionVariables.get(\"district_id\");",
+                  "if (!value) throw new Error(\"Isi district_id atau jalankan daftar wilayah induk terlebih dahulu.\");",
+                  "pm.variables.set(\"district_id_query\", encodeURIComponent(value));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Respons JSON\", function () { pm.response.to.be.json; });",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Request berhasil\", function () { pm.expect(body.success).to.eql(true); });",
+                  "if (pm.response.code === 200 && Array.isArray(body.data?.locations)) {",
+                  "  const first = body.data.locations[0];",
+                  "  pm.collectionVariables.set(\"sub_district_id\", \"\");",
+                  "  pm.collectionVariables.set(\"sub_district_name\", \"\");",
+                  "  pm.collectionVariables.set(\"postal_code\", \"\");",
+                  "  if (first?.sub_district_id !== undefined && first.sub_district_id !== null) pm.collectionVariables.set(\"sub_district_id\", String(first.sub_district_id));",
+                  "  if (first?.sub_district_name !== undefined && first.sub_district_name !== null) pm.collectionVariables.set(\"sub_district_name\", String(first.sub_district_name));",
+                  "  if (first?.postal_code !== undefined && first.postal_code !== null) pm.collectionVariables.set(\"postal_code\", String(first.postal_code));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Cari lokasi berdasarkan kode pos",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/shipping/locations/resolve",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "shipping",
+                "locations",
+                "resolve"
+              ]
+            },
+            "description": "Publik. Hasil berada di data.location dan dapat berupa beberapa kandidat. Hasil tidak otomatis mengganti variabel ID wilayah karena formatnya dapat berbeda dari endpoint daftar.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"postal_code\": \"{{postal_code}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Respons JSON\", function () { pm.response.to.be.json; });",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Request berhasil\", function () { pm.expect(body.success).to.eql(true); });"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "02 - Manajemen alamat",
+      "item": [
+        {
+          "name": "Daftar alamat",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/addresses",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "addresses"
+              ]
+            },
+            "description": "Memerlukan token customer. Respons data berupa array tanpa pagination. Request ini tidak otomatis memilih address_id dari alamat yang sudah ada."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Respons JSON\", function () { pm.response.to.be.json; });",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Request berhasil\", function () { pm.expect(body.success).to.eql(true); });"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Tambah alamat",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/addresses",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "addresses"
+              ]
+            },
+            "description": "Memerlukan token customer. Jalankan daftar wilayah secara berurutan atau isi semua variabel wilayah. ID alamat baru disimpan sebagai address_id. Alamat pertama otomatis menjadi alamat utama.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"label\": \"{{address_label}}\",\n  \"name\": \"{{recipient_name}}\",\n  \"phone\": \"{{recipient_phone}}\",\n  \"province\": \"{{province_name}}\",\n  \"province_id\": \"{{province_id}}\",\n  \"province_name\": \"{{province_name}}\",\n  \"city\": \"{{city_name}}\",\n  \"city_id\": \"{{city_id}}\",\n  \"city_name\": \"{{city_name}}\",\n  \"district\": \"{{district_name}}\",\n  \"district_id\": \"{{district_id}}\",\n  \"district_name\": \"{{district_name}}\",\n  \"sub_district_id\": \"{{sub_district_id}}\",\n  \"sub_district_name\": \"{{sub_district_name}}\",\n  \"postal_code\": \"{{postal_code}}\",\n  \"address\": \"{{street_address}}\",\n  \"address_note\": \"{{address_note}}\",\n  \"is_default\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const required = [\"province_id\", \"province_name\", \"city_id\", \"city_name\", \"district_id\", \"district_name\", \"sub_district_id\", \"sub_district_name\", \"postal_code\"];",
+                  "const missing = required.filter((key) => !pm.collectionVariables.get(key));",
+                  "if (missing.length) throw new Error(\"Lengkapi variabel lokasi: \" + missing.join(\", \"));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", function () { pm.response.to.have.status(201); });",
+                  "pm.test(\"Respons JSON\", function () { pm.response.to.be.json; });",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Request berhasil\", function () { pm.expect(body.success).to.eql(true); });",
+                  "if (pm.response.code === 201 && body.data?.id) pm.collectionVariables.set(\"address_id\", String(body.data.id));"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Ubah alamat - PATCH",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/addresses/{{address_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "addresses",
+                "{{address_id}}"
+              ]
+            },
+            "description": "Update parsial pada alamat yang ditunjuk address_id.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"label\": \"{{address_label}}\",\n  \"address_note\": \"{{address_note}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get(\"address_id\")) throw new Error(\"Jalankan Tambah alamat atau isi address_id terlebih dahulu.\");"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Respons JSON\", function () { pm.response.to.be.json; });",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Request berhasil\", function () { pm.expect(body.success).to.eql(true); });"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Ubah alamat - PUT",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/addresses/{{address_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "addresses",
+                "{{address_id}}"
+              ]
+            },
+            "description": "Alternatif PUT; implementasi saat ini juga menerima update parsial.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"label\": \"{{address_label}}\",\n  \"address_note\": \"{{address_note}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get(\"address_id\")) throw new Error(\"Jalankan Tambah alamat atau isi address_id terlebih dahulu.\");"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Respons JSON\", function () { pm.response.to.be.json; });",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Request berhasil\", function () { pm.expect(body.success).to.eql(true); });"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Jadikan alamat utama",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/addresses/{{address_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "addresses",
+                "{{address_id}}"
+              ]
+            },
+            "description": "Menjadikan address_id sebagai alamat utama dan menonaktifkan penanda utama alamat lain milik akun.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"is_default\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get(\"address_id\")) throw new Error(\"Jalankan Tambah alamat atau isi address_id terlebih dahulu.\");"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Respons JSON\", function () { pm.response.to.be.json; });",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Request berhasil\", function () { pm.expect(body.success).to.eql(true); });"
+                ]
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Hapus alamat",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/addresses/{{address_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "addresses",
+                "{{address_id}}"
+              ]
+            },
+            "description": "Menghapus alamat pada address_id. Jika dijalankan berurutan, ID berasal dari Tambah alamat. Jika diisi manual, alamat dengan ID tersebut yang dihapus."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get(\"address_id\")) throw new Error(\"Jalankan Tambah alamat atau isi address_id terlebih dahulu.\");"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Respons JSON\", function () { pm.response.to.be.json; });",
+                  "const body = pm.response.json();",
+                  "pm.test(\"Request berhasil\", function () { pm.expect(body.success).to.eql(true); });",
+                  "if (pm.response.code === 200) pm.collectionVariables.set(\"address_id\", \"\");"
+                ]
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    }
+  ]
+}

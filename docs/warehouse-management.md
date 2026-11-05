@@ -2,6 +2,22 @@
 
 Gudang penyedia ditetapkan pada varian produk master oleh superadmin. Seluruh listing toko yang menawarkan produk tersebut mengikuti penetapan pusat secara langsung; admin toko tidak memiliki pilihan gudang pada form tambah maupun edit Produk Toko.
 
+## Titik Pengiriman
+
+Menu **Manajemen Marketplace → Titik Pengiriman** tersedia khusus superadmin aktif pada `/superadmin/titik-pengiriman`.
+
+- Tabel menampilkan nama titik pengiriman, wilayah, dan grup Pulau Jawa/Luar Jawa dari API eksternal.
+- Pencarian mencocokkan nama atau wilayah; filter membatasi grup wilayah. **Muat ulang** mengambil kembali daftar dari sumber.
+- **Lihat detail** membuka panel samping berisi nama, kode, wilayah, grup, alamat lengkap, kode pos, dan koordinat.
+- Koordinat pasangan `latitude, longitude` yang valid menyediakan tautan Google Maps. Data yang kosong ditampilkan sebagai **Belum tersedia**.
+- Jika API gagal, halaman menampilkan pemberitahuan dan dapat dimuat ulang. Respons detail HTTP 200 yang seluruh identitasnya kosong dianggap tidak valid.
+
+Halaman ini hanya membaca informasi. Tidak ada tambah, edit, atau hapus titik pengiriman; penetapan titik penyedia produk tetap dilakukan pada **Edit Varian**.
+
+Daftar memakai `POST /index.php?procs=gudang.list`. Detail memakai `POST /index.php?procs=gudang.detail` dengan body `application/x-www-form-urlencoded` berisi `code` dari daftar. Membuka URL detail dengan GET atau mengirim body JSON tidak menghasilkan detail yang terisi pada API sumber yang diperiksa.
+
+Path detail dapat disesuaikan melalui `WAREHOUSE_DIRECTORY_DETAIL_PATH`; default-nya `/index.php?procs=gudang.detail`. Koneksi memakai konfigurasi `WAREHOUSE_DIRECTORY_*` yang sudah ada.
+
 ## Mengatur gudang
 
 1. Login sebagai superadmin aktif melalui `/superadmin`.

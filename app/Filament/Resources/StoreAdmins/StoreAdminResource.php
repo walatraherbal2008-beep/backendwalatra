@@ -12,6 +12,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
+use Filament\Support\Enums\Width;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
@@ -111,7 +112,10 @@ class StoreAdminResource extends Resource
             ])
             ->filters([])
             ->recordActions([
-                EditAction::make(),
+                EditAction::make()
+                    ->slideOver()
+                    ->modalWidth(Width::Medium)
+                    ->schema(fn (Schema $schema): Schema => self::form($schema)->columns(1)),
                 Action::make('verifyEmail')
                     ->label('Verifikasi email')
                     ->icon(Heroicon::OutlinedCheckCircle)
