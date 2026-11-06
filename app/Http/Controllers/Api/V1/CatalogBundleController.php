@@ -70,7 +70,8 @@ class CatalogBundleController extends Controller
             ->where('slug', $slug)
             ->where('status', 'active')
             ->with([
-                'items.variant.product',
+                'items.variant.product.media',
+                'items.variant.media',
                 'storeListings' => fn ($query) => $query
                     ->where('status', 'active')
                     ->whereHas('store', fn (Builder $storeQuery): Builder => $storeQuery->eligibleForMarketplace())
@@ -97,7 +98,8 @@ class CatalogBundleController extends Controller
                     ->purchasable();
             })
             ->with([
-                'bundle.items.variant.product',
+                'bundle.items.variant.product.media',
+                'bundle.items.variant.media',
                 'store',
                 'media',
             ]);

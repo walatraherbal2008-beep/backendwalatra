@@ -12,11 +12,13 @@ use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Schema;
 use Filament\Support\Exceptions\Halt;
+use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -54,6 +56,15 @@ class VariantsRelationManager extends RelationManager
                     ->required()
                     ->maxLength(255)
                     ->helperText('Nama varian tidak boleh sama dalam satu produk.'),
+                SpatieMediaLibraryFileUpload::make('image')
+                    ->label('Foto varian')
+                    ->collection('image')
+                    ->disk('public')
+                    ->image()
+                    ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
+                    ->maxSize(5120)
+                    ->helperText('Opsional. PNG, JPG, atau WebP, maksimal 5 MB. Jika kosong, foto etalase atau produk utama digunakan.')
+                    ->columnSpanFull(),
                 TextInput::make('sku')
                     ->label('SKU otomatis')
                     ->disabled()
@@ -104,9 +115,13 @@ class VariantsRelationManager extends RelationManager
     public function table(Table $table): Table
     {
         return $table
-            ->modifyQueryUsing(fn (Builder $query): Builder => $query->with('warehouseAssignments'))
+            ->modifyQueryUsing(fn (Builder $query): Builder => $query->with(['warehouseAssignments', 'media']))
             ->recordTitleAttribute('name')
             ->columns([
+                ImageColumn::make('image_url')
+                    ->label('Foto')
+                    ->state(fn (ProductVariant $record): ?string => $record->getFirstMediaUrl('image') ?: null)
+                    ->size(40),
                 TextColumn::make('name')
                     ->label('Nama varian')
                     ->searchable(),
@@ -147,12 +162,14 @@ class VariantsRelationManager extends RelationManager
             ])
             ->recordActions([
                 EditAction::make()
+                    ->databaseTransaction()
                     ->authorize(fn (): bool => auth()->user()?->status === 'active' && auth()->user()->hasRole('super_admin'))
                     ->mutateRecordDataUsing(fn (array $data, ProductVariant $record): array => [
                         ...$data,
                         'warehouse_codes' => $record->warehouseAssignments()->pluck('warehouse_code')->all(),
                     ])
-                    ->using(function (ProductVariant $record, array $data): ProductVariant {
+                    // Validate and save before Filament replaces media during schema relationship saving.
+                    ->before(function (ProductVariant $record, array $data): ProductVariant {
                         $warehouseCodes = $data['warehouse_codes'] ?? [];
                         unset($data['warehouse_codes']);
 
@@ -175,7 +192,8 @@ class VariantsRelationManager extends RelationManager
 
                             throw new Halt;
                         }
-                    }),
+                    })
+                    ->using(fn (ProductVariant $record): ProductVariant => $record),
                 DeleteAction::make()
                     ->label('Hapus')
                     ->requiresConfirmation(),

@@ -7,6 +7,8 @@ use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\StoreProductListing;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class CatalogCategoryTest extends TestCase
@@ -27,9 +29,28 @@ class CatalogCategoryTest extends TestCase
         $this->getJson('/api/v1/catalog/categories')
             ->assertOk()
             ->assertJsonPath('success', true)
+            ->assertJsonPath('data.0.icon_url', null)
             ->assertJsonPath('data.0.name', 'Pencernaan')
             ->assertJsonPath('data.0.slug', 'pencernaan')
             ->assertJsonPath('data.0.product_count', 1);
+    }
+
+    public function test_parent_and_child_icons_are_returned_in_list_and_detail(): void
+    {
+        Storage::fake('public');
+        $parent = Category::factory()->create();
+        $child = Category::factory()->create(['parent_id' => $parent->id]);
+        $parentIcon = $parent->addMedia(UploadedFile::fake()->image('parent.png'))->toMediaCollection('icon');
+        $childIcon = $child->addMedia(UploadedFile::fake()->image('child.png'))->toMediaCollection('icon');
+
+        $this->getJson('/api/v1/catalog/categories')->assertOk()
+            ->assertJsonPath('data.0.icon_url', $parentIcon->getUrl())
+            ->assertJsonPath('data.0.children.0.icon_url', $childIcon->getUrl());
+        $this->getJson('/api/v1/catalog/categories/'.$parent->slug)->assertOk()
+            ->assertJsonPath('data.icon_url', $parentIcon->getUrl())
+            ->assertJsonPath('data.children.0.icon_url', $childIcon->getUrl());
+        $this->getJson('/api/v1/catalog/categories/'.$child->slug)->assertOk()
+            ->assertJsonPath('data.icon_url', $childIcon->getUrl());
     }
 
     public function test_catalog_category_detail_returns_not_found_for_inactive_category(): void

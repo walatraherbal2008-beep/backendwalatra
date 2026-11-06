@@ -13,6 +13,7 @@ class CatalogCategoryResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'slug' => $this->slug,
+            'icon_url' => $this->getFirstMediaUrl('icon') ?: null,
             'description' => $this->description,
             'status' => $this->status,
             'sort_order' => $this->sort_order,

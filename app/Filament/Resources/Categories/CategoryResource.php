@@ -12,11 +12,13 @@ use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
+use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
@@ -58,6 +60,15 @@ class CategoryResource extends Resource
                 ->searchable()
                 ->preload()
                 ->placeholder('Kategori utama'),
+            SpatieMediaLibraryFileUpload::make('icon')
+                ->label('Ikon kategori')
+                ->collection('icon')
+                ->disk('public')
+                ->image()
+                ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
+                ->maxSize(2048)
+                ->helperText('PNG, JPG, atau WebP, maksimal 2 MB. Disarankan gambar persegi 512 × 512 px dengan latar transparan.')
+                ->columnSpanFull(),
             Textarea::make('description')
                 ->label('Deskripsi')
                 ->rows(4)
@@ -83,7 +94,12 @@ class CategoryResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(fn (Builder $query): Builder => $query->with('media'))
             ->columns([
+                ImageColumn::make('icon_url')
+                    ->label('Ikon')
+                    ->state(fn (Category $record): ?string => $record->getFirstMediaUrl('icon') ?: null)
+                    ->size(40),
                 TextColumn::make('name')
                     ->label('Nama kategori')
                     ->searchable()

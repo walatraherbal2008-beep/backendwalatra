@@ -11,6 +11,7 @@ use App\Models\Cart;
 use App\Models\CartItem;
 use App\Services\Marketplace\CheckoutPricing;
 use App\Services\Shipping\ShippingCostCalculator;
+use App\Support\CartItemImage;
 use App\Support\CheckoutShipping;
 use App\Support\CheckoutSimulation;
 use App\Support\ManualCheckout;
@@ -28,10 +29,14 @@ class CheckoutController extends Controller
         $cart = Cart::query()
             ->where('user_id', $request->user()->id)
             ->with([
-                'items.variant.product',
+                'items.variant.product.media',
+                'items.variant.media',
+                'items.listing.media',
+                'items.bundleListing.media',
                 'items.listing.store',
                 'items.bundleListing.store',
-                'items.bundleListing.bundle.items.variant.product',
+                'items.bundleListing.bundle.items.variant.product.media',
+                'items.bundleListing.bundle.items.variant.media',
             ])
             ->first();
 
@@ -98,6 +103,7 @@ class CheckoutController extends Controller
                 'items' => $cart->items->map(fn ($item): array => [
                     'cart_item_id' => $item->id,
                     'type' => $item->item_type,
+                    'image_url' => CartItemImage::resolve($item)?->getUrl(),
                     'sku' => $item->isBundle() ? null : $item->variant->sku,
                     'quantity' => $item->quantity,
                     'unit_price' => $item->unit_price,

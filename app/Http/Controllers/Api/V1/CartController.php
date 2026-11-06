@@ -213,10 +213,14 @@ class CartController extends Controller
             'items' => fn ($query) => $query
                 ->orderByRaw('COALESCE(last_added_at, created_at) DESC')
                 ->orderByDesc('id'),
-            'items.variant.product',
+            'items.variant.product.media',
+            'items.variant.media',
+            'items.listing.media',
+            'items.bundleListing.media',
             'items.listing.store',
             'items.bundleListing.store',
-            'items.bundleListing.bundle.items.variant.product',
+            'items.bundleListing.bundle.items.variant.product.media',
+            'items.bundleListing.bundle.items.variant.media',
         ];
     }
 }

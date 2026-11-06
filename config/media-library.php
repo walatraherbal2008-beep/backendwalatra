@@ -1,5 +1,7 @@
 <?php
 
+use App\Models\OrderItem;
+use App\Support\OrderImagePathGenerator;
 use Spatie\ImageOptimizer\Optimizers\Avifenc;
 use Spatie\ImageOptimizer\Optimizers\Cwebp;
 use Spatie\ImageOptimizer\Optimizers\Gifsicle;
@@ -152,6 +154,7 @@ return [
      * Here you can specify which path generator should be used for the given class.
      */
     'custom_path_generators' => [
+        OrderItem::class => OrderImagePathGenerator::class,
         // Model::class => PathGenerator::class
         // or
         // 'model_morph_alias' => PathGenerator::class

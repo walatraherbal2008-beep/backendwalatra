@@ -10,10 +10,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
 
-class Category extends Model
+class Category extends Model implements HasMedia
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, InteractsWithMedia, SoftDeletes;
 
     protected static function booted(): void
     {
@@ -92,6 +94,14 @@ class Category extends Model
                 'status' => 'Kategori tidak dapat dinonaktifkan atau dihapus karena masih digunakan produk aktif.',
             ]);
         }
+    }
+
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('icon')
+            ->singleFile()
+            ->useDisk('public')
+            ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp']);
     }
 
     public function parent(): BelongsTo

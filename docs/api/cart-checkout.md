@@ -122,6 +122,7 @@ Contoh respons dengan satu bundle dan satu produk:
       {
         "id": 15,
         "type": "bundle",
+        "image_url": null,
         "listing_id": null,
         "bundle_listing_id": 301,
         "variant_id": null,
@@ -133,7 +134,7 @@ Contoh respons dengan satu bundle dan satu produk:
           "items": [
             {
               "product": {"id": 10, "name": "Produk Herbal A", "slug": "produk-herbal-a", "product_code": "PRD-010"},
-              "variant": {"id": 201, "name": "Botol 60 ml", "sku": "PRD-010-60", "price": "15000.00", "weight_grams": 150},
+              "variant": {"id": 201, "name": "Botol 60 ml", "sku": "PRD-010-60", "image_url": null, "price": "15000.00", "weight_grams": 150},
               "quantity": 2
             }
           ]
@@ -147,6 +148,7 @@ Contoh respons dengan satu bundle dan satu produk:
       {
         "id": 12,
         "type": "product",
+        "image_url": "https://api.example.com/storage/123/varian.png",
         "listing_id": 101,
         "bundle_listing_id": null,
         "variant_id": 201,
@@ -264,8 +266,8 @@ Contoh respons 200 jika harga belum berubah:
     "stock_verification": "pending_manual",
     "checkout_available": true,
     "items": [
-      {"cart_item_id": 12, "type": "product", "sku": "PRD-010-60", "quantity": 2, "unit_price": "15000.00", "subtotal": "30000.00"},
-      {"cart_item_id": 15, "type": "bundle", "sku": null, "quantity": 1, "unit_price": "40000.00", "subtotal": "40000.00"}
+      {"cart_item_id": 12, "type": "product", "image_url": "https://api.example.com/storage/123/varian.png", "sku": "PRD-010-60", "quantity": 2, "unit_price": "15000.00", "subtotal": "30000.00"},
+      {"cart_item_id": 15, "type": "bundle", "image_url": null, "sku": null, "quantity": 1, "unit_price": "40000.00", "subtotal": "40000.00"}
     ],
     "subtotal": "70000.00",
     "shipping": {
@@ -441,6 +443,7 @@ Contoh konflik saat harga berubah setelah preview:
       {
         "cart_item_id": 12,
         "type": "product",
+        "image_url": "https://api.example.com/storage/123/varian.png",
         "previous_unit_price": "15000.00",
         "current_unit_price": "20000.00"
       }
@@ -472,3 +475,22 @@ Daftar pesanan tersedia melalui `GET /orders`. User dapat membatalkan order yang
 - Untuk request order yang sedang berjalan, cegah pengiriman berulang dari tombol frontend dan pertahankan `Idempotency-Key` untuk retry.
 - Tanggapi konflik dengan preview baru. Jangan menghapus isi cart atau menandai pembayaran lunas dari frontend.
 - Pada mode manual, ketersediaan stok fisik tetap diperiksa admin. Gratis ongkir tidak mengubah kewajiban verifikasi pembayaran.
+
+## Foto pada cart, preview, dan pesanan
+
+Setiap item pada cart dan checkout preview menyertakan `image_url`, dengan prioritas foto varian → foto etalase toko → foto produk utama. Item bundle memakai foto etalase bundle, lalu foto produk utama komponen pertama. Jika tidak ada gambar, nilainya `null`.
+
+Item pesanan juga menyertakan `image_url`, tetapi URL tersebut menunjuk salinan berkas yang dibuat saat checkout. URL cart/preview dan URL order dapat berbeda meskipun gambarnya sama. Foto riwayat pesanan tidak mengikuti penggantian atau penghapusan foto sumber.
+
+```json
+{
+  "id": 501,
+  "type": "product",
+  "sku": "PRD-010-60",
+  "product_name": "Produk Herbal A",
+  "variant_name": "Botol 60 ml",
+  "image_url": "https://api.example.com/storage/order-item-images/550e8400-e29b-41d4-a716-446655440000/varian.png"
+}
+```
+
+Pesanan lama dan item tanpa foto mengembalikan `image_url: null`. Jika sumber gambar ada tetapi gagal dibaca atau disalin, pembuatan order gagal; item cart dipertahankan dan salinan baru dibersihkan. Ulangi request dengan `Idempotency-Key` yang sama: order yang sudah berhasil dibuat dikembalikan tanpa membuat salinan tambahan.

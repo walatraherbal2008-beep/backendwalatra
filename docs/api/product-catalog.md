@@ -213,6 +213,7 @@ Contoh satu elemen `data[]` (envelope pagination tidak ditampilkan):
             "id": 201,
             "name": "Botol 60 ml",
             "sku": "PRD-010-60",
+            "image_url": null,
             "price": "25000.00",
             "weight_grams": 150,
             "attributes": { "volume": "60 ml" }
@@ -221,6 +222,7 @@ Contoh satu elemen `data[]` (envelope pagination tidak ditampilkan):
             "id": 202,
             "name": "Botol 120 ml",
             "sku": "PRD-010-120",
+            "image_url": null,
             "price": "45000.00",
             "weight_grams": 250,
             "attributes": { "volume": "120 ml" }
@@ -252,11 +254,13 @@ curl "$CATALOG_BASE_URL/catalog/products/produk-herbal-a" \
         "product_code": "PRD-010",
         "bpom_number": null,
         "categories": [{ "id": 5, "name": "Suplemen", "slug": "suplemen" }],
+        "images": [],
         "variants": [
             {
                 "id": 201,
                 "name": "Botol 60 ml",
                 "sku": "PRD-010-60",
+                "image_url": null,
                 "price": "25000.00",
                 "weight_grams": 150,
                 "attributes": { "volume": "60 ml" }
@@ -265,6 +269,7 @@ curl "$CATALOG_BASE_URL/catalog/products/produk-herbal-a" \
                 "id": 202,
                 "name": "Botol 120 ml",
                 "sku": "PRD-010-120",
+                "image_url": null,
                 "price": "45000.00",
                 "weight_grams": 250,
                 "attributes": { "volume": "120 ml" }
@@ -292,7 +297,7 @@ curl "$CATALOG_BASE_URL/catalog/products/produk-herbal-a" \
 }
 ```
 
-Gambar dan deskripsi penawaran ada di setiap `stores[]`, bukan di root produk. Produk aktif dengan varian aktif dapat mengembalikan 200 dengan `stores: []` jika belum memiliki penawaran toko yang memenuhi syarat; jangan menampilkan pilihan beli tanpa listing.
+Gambar dan deskripsi penawaran ada di setiap `stores[]`. Galeri foto produk utama juga tersedia pada `data.images[]` sebagai cadangan saat tidak ada konteks toko. Produk aktif dengan varian aktif dapat mengembalikan 200 dengan `stores: []` jika belum memiliki penawaran toko yang memenuhi syarat; jangan menampilkan pilihan beli tanpa listing.
 
 ## 4. Daftar bundle
 
@@ -358,6 +363,7 @@ curl "$CATALOG_BASE_URL/catalog/bundles/paket-herbal-a" \
                     "id": 201,
                     "name": "Botol 60 ml",
                     "sku": "PRD-010-60",
+                    "image_url": null,
                     "price": "25000.00",
                     "weight_grams": 150
                 },
@@ -406,6 +412,7 @@ curl "$CATALOG_BASE_URL/catalog/categories" -H 'Accept: application/json'
             "description": null,
             "status": "active",
             "sort_order": 0,
+            "icon_url": null,
             "product_count": 1,
             "children": []
         }
@@ -416,6 +423,8 @@ curl "$CATALOG_BASE_URL/catalog/categories" -H 'Accept: application/json'
 ```
 
 `GET /catalog/categories/{slug}` mengembalikan `data` berupa satu objek kategori dengan field yang sama, ditambah `parent` berisi `{id, name, slug}` atau `null`. Pesan sukses: `Detail kategori berhasil diambil.` Field `parent` tidak disertakan pada daftar kategori. Field `children` pada anak kategori dapat tidak disertakan karena relasi tingkat berikutnya tidak dimuat; respons bukan jaminan pohon kategori dengan kedalaman tak terbatas.
+
+`icon_url` berisi URL publik gambar ikon kategori yang diunggah melalui panel admin, atau `null` jika belum ada. Field ini tersedia pada kategori utama, anak kategori, dan detail kategori. Website dan Android menggunakan URL yang sama.
 
 `product_count` menghitung master produk aktif yang terhubung langsung ke kategori, memiliki varian aktif dan listing aktif pada toko yang memenuhi syarat. Nilainya bukan jumlah listing, unit stok, atau bundle. Hitungan kategori induk tidak otomatis menjumlahkan produk kategori anak.
 
@@ -495,3 +504,15 @@ Batas akses katalog adalah **120 request per menit** berdasarkan ID user yang di
     "retry_after": 30
 }
 ```
+
+## Foto varian
+
+Objek varian pada daftar/detail produk dan komponen bundle menyertakan `image_url`: URL publik foto milik varian, atau `null` jika belum diunggah. Superadmin dapat mengunggah satu foto PNG/JPG/WebP maksimal 5 MB melalui form varian.
+
+```json
+{"id": 201, "name": "Botol 60 ml", "sku": "PRD-010-60", "image_url": "https://api.example.com/storage/123/varian.png"}
+```
+
+Saat memilih varian di toko, gunakan foto varian jika tersedia, lalu gambar pertama galeri etalase (yang sudah memiliki fallback produk utama). Detail produk tanpa konteks toko juga menyediakan `images[]` pada tingkat `data` sebagai galeri produk utama. Jika seluruh gambar kosong, URL bernilai `null` dan galeri berupa array kosong.
+
+Foto varian komponen tidak menggantikan gambar utama bundle. Bundle mempertahankan pola gambar katalog: foto etalase bundle, lalu foto produk utama komponen pertama. Website dan Android menggunakan URL yang sama.

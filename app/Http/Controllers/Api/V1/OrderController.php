@@ -13,6 +13,7 @@ use App\Models\CartItem;
 use App\Models\Order;
 use App\Models\User;
 use App\Services\Marketplace\CheckoutPricing;
+use App\Services\Marketplace\OrderImageSnapshots;
 use App\Services\Shipping\ShippingCostCalculator;
 use App\Support\CheckoutShipping;
 use App\Support\CheckoutSimulation;
@@ -31,7 +32,7 @@ class OrderController extends Controller
         return OrderResource::collection(
             Order::query()
                 ->where('user_id', $request->user()->id)
-                ->with('items')
+                ->with('items.media')
                 ->latest()
                 ->paginate(15),
         )->additional([
@@ -44,7 +45,7 @@ class OrderController extends Controller
     {
         $record = Order::query()
             ->where('user_id', $request->user()->id)
-            ->with('items')
+            ->with('items.media')
             ->findOrFail($order);
 
         return (new OrderResource($record))->additional([
@@ -61,7 +62,7 @@ class OrderController extends Controller
         $record = DB::transaction(function () use ($request, $order, $warehouse): Order {
             $record = Order::query()
                 ->where('user_id', $request->user()->id)
-                ->with('items')
+                ->with('items.media')
                 ->lockForUpdate()
                 ->findOrFail($order);
 
@@ -88,7 +89,7 @@ class OrderController extends Controller
             return $record;
         });
 
-        return (new OrderResource($record->fresh()->load('items')))->additional([
+        return (new OrderResource($record->fresh()->load('items.media')))->additional([
             'success' => true,
             'message' => 'Order berhasil dibatalkan.',
         ]);
@@ -99,6 +100,7 @@ class OrderController extends Controller
         WarehouseStockProvider $warehouse,
         ShippingRateProvider $shipping,
         ShippingCostCalculator $shippingCosts,
+        OrderImageSnapshots $snapshots,
     ): OrderResource|JsonResponse {
         $idempotencyKey = trim((string) $request->header('Idempotency-Key'));
 
@@ -109,11 +111,16 @@ class OrderController extends Controller
             ], 422);
         }
 
-        return DB::transaction(function () use ($request, $warehouse, $shipping, $shippingCosts, $idempotencyKey) {
-            User::query()->whereKey($request->user()->id)->lockForUpdate()->firstOrFail();
+        try {
+            return DB::transaction(function () use ($request, $warehouse, $shipping, $shippingCosts, $idempotencyKey, $snapshots) {
+                User::query()->whereKey($request->user()->id)->lockForUpdate()->firstOrFail();
 
-            return $this->createFromCart($request, $warehouse, $shipping, $shippingCosts, $idempotencyKey);
-        });
+                return $this->createFromCart($request, $warehouse, $shipping, $shippingCosts, $idempotencyKey, $snapshots);
+            });
+        } catch (\Throwable $exception) {
+            $snapshots->discard();
+            throw $exception;
+        }
     }
 
     private function createFromCart(
@@ -122,11 +129,12 @@ class OrderController extends Controller
         ShippingRateProvider $shipping,
         ShippingCostCalculator $shippingCosts,
         string $idempotencyKey,
+        OrderImageSnapshots $snapshots,
     ): OrderResource|JsonResponse {
         $existing = Order::query()
             ->where('user_id', $request->user()->id)
             ->where('idempotency_key', $idempotencyKey)
-            ->with('items')
+            ->with('items.media')
             ->first();
 
         if ($existing) {
@@ -169,10 +177,14 @@ class OrderController extends Controller
             ->where('user_id', $request->user()->id)
             ->with([
                 'items' => fn ($query) => $query->orderBy('id')->lockForUpdate(),
-                'items.variant.product',
+                'items.variant.product.media',
+                'items.variant.media',
+                'items.listing.media',
+                'items.bundleListing.media',
                 'items.listing.store',
                 'items.bundleListing.store',
-                'items.bundleListing.bundle.items.variant.product',
+                'items.bundleListing.bundle.items.variant.product.media',
+                'items.bundleListing.bundle.items.variant.media',
             ])
             ->first();
 
@@ -229,7 +241,7 @@ class OrderController extends Controller
         $reservationId = $manual ? null : $warehouse->reserve($stockItems, $reference);
 
         try {
-            $order = DB::transaction(function () use ($request, $cart, $idempotencyKey, $reservationId, $shippingAddress, $shippingQuote, $shippingCost, $subtotal, $manual): Order {
+            $order = DB::transaction(function () use ($request, $cart, $idempotencyKey, $reservationId, $shippingAddress, $shippingQuote, $shippingCost, $subtotal, $manual, $snapshots): Order {
                 $shippingFee = (float) $shippingCost['fee'];
                 $simulated = CheckoutSimulation::enabled();
 
@@ -255,7 +267,7 @@ class OrderController extends Controller
                 foreach ($cart->items as $item) {
                     if ($item->isBundle()) {
                         $bundle = $item->bundleListing->bundle;
-                        $order->items()->create([
+                        $orderItem = $order->items()->create([
                             'item_type' => 'bundle',
                             'store_bundle_listing_id' => $item->store_bundle_listing_id,
                             'sku' => 'BUNDLE-'.$bundle->code,
@@ -274,11 +286,13 @@ class OrderController extends Controller
                             'subtotal' => (float) $item->unit_price * $item->quantity,
                         ]);
 
+                        $snapshots->capture($item, $orderItem);
+
                         continue;
                     }
 
                     $unitPrice = $item->unit_price;
-                    $order->items()->create([
+                    $orderItem = $order->items()->create([
                         'item_type' => 'product',
                         'store_product_listing_id' => $item->store_product_listing_id,
                         'product_variant_id' => $item->product_variant_id,
@@ -290,6 +304,7 @@ class OrderController extends Controller
                         'unit_price' => $unitPrice,
                         'subtotal' => (float) $unitPrice * $item->quantity,
                     ]);
+                    $snapshots->capture($item, $orderItem);
                 }
 
                 $order->statusHistories()->create([
@@ -311,7 +326,7 @@ class OrderController extends Controller
             throw $exception;
         }
 
-        return (new OrderResource($order->load('items')))->additional([
+        return (new OrderResource($order->load('items.media')))->additional([
             'success' => true,
             'message' => 'Order berhasil dibuat.',
         ]);

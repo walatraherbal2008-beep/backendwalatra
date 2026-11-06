@@ -83,6 +83,8 @@ class CatalogProductController extends Controller
             ->where('status', 'active')
             ->whereHas('variants', fn (Builder $query): Builder => $query->where('status', 'active'))
             ->with([
+                'media',
+                'variants.media',
                 'variants' => fn ($query) => $query->where('status', 'active')->orderBy('id'),
                 'categories' => fn ($query) => $query->where('status', 'active')->orderBy('sort_order'),
                 'listings' => fn ($query) => $query
@@ -108,6 +110,8 @@ class CatalogProductController extends Controller
             ->whereHas('product.variants', fn (Builder $query): Builder => $query->where('status', 'active'))
             ->whereHas('store', fn (Builder $query): Builder => $query->eligibleForMarketplace())
             ->with([
+                'product.media',
+                'product.variants.media',
                 'product.variants' => fn ($query) => $query->where('status', 'active')->orderBy('id'),
                 'product.categories' => fn ($query) => $query->where('status', 'active')->orderBy('sort_order'),
                 'store',

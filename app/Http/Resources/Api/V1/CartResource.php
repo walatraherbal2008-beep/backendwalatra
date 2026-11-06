@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\Api\V1;
 
+use App\Support\CartItemImage;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -16,6 +17,7 @@ class CartResource extends JsonResource
             'items' => $items->map(fn ($item): array => [
                 'id' => $item->id,
                 'type' => $item->item_type,
+                'image_url' => CartItemImage::resolve($item)?->getUrl(),
                 'listing_id' => $item->store_product_listing_id,
                 'bundle_listing_id' => $item->store_bundle_listing_id,
                 'variant_id' => $item->product_variant_id,

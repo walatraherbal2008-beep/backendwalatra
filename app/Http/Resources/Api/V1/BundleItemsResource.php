@@ -20,6 +20,7 @@ class BundleItemsResource extends JsonResource
                 'id' => $this->variant->id,
                 'name' => $this->variant->name,
                 'sku' => $this->variant->sku,
+                'image_url' => $this->variant->getFirstMediaUrl('image') ?: null,
                 'price' => $this->variant->price,
                 'weight_grams' => $this->variant->weight_grams,
             ],

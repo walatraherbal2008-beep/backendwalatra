@@ -44,6 +44,7 @@ class ProductListingResource extends JsonResource
                 'id' => $variant->id,
                 'name' => $variant->name,
                 'sku' => $variant->sku,
+                'image_url' => $variant->getFirstMediaUrl('image') ?: null,
                 'price' => $variant->price,
                 'weight_grams' => $variant->weight_grams,
                 'attributes' => $variant->attributes,

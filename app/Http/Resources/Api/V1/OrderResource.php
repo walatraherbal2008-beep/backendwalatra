@@ -30,6 +30,7 @@ class OrderResource extends JsonResource
             'items' => $this->whenLoaded('items', fn () => $this->items->map(fn ($item): array => [
                 'id' => $item->id,
                 'type' => $item->item_type,
+                'image_url' => $item->getFirstMediaUrl('image') ?: null,
                 'sku' => $item->sku,
                 'product_name' => $item->product_name,
                 'variant_name' => $item->variant_name,

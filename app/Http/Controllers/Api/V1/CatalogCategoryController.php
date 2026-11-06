@@ -18,8 +18,10 @@ class CatalogCategoryController extends Controller
             ->whereNull('parent_id')
             ->withCount(['products' => fn (Builder $query): Builder => $this->activeCatalogProducts($query)])
             ->with([
+                'media',
                 'children' => fn ($query) => $query
                     ->where('status', 'active')
+                    ->with('media')
                     ->withCount(['products' => fn (Builder $productQuery): Builder => $this->activeCatalogProducts($productQuery)])
                     ->orderBy('sort_order')
                     ->orderBy('name'),
@@ -41,9 +43,11 @@ class CatalogCategoryController extends Controller
             ->where('status', 'active')
             ->withCount(['products' => fn (Builder $query): Builder => $this->activeCatalogProducts($query)])
             ->with([
+                'media',
                 'parent',
                 'children' => fn ($query) => $query
                     ->where('status', 'active')
+                    ->with('media')
                     ->withCount(['products' => fn (Builder $productQuery): Builder => $this->activeCatalogProducts($productQuery)])
                     ->orderBy('sort_order')
                     ->orderBy('name'),
