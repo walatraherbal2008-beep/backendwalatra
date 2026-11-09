@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 use Illuminate\Validation\ValidationException;
+use Spatie\Image\Enums\Fit;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
@@ -17,9 +18,17 @@ class Banner extends Model implements HasMedia
 {
     use HasFactory, InteractsWithMedia, SoftDeletes;
 
+    public const POSITIONS = [
+        'main' => 'Utama (besar)',
+        'secondary_top' => 'Area 2 (kanan atas)',
+        'secondary_bottom' => 'Area 3 (kanan bawah)',
+    ];
+
     protected $fillable = [
         'name',
         'cta_url',
+        'open_in_new_tab',
+        'position',
         'status',
         'starts_at',
         'ends_at',
@@ -28,9 +37,15 @@ class Banner extends Model implements HasMedia
         'updated_by',
     ];
 
+    protected $attributes = [
+        'open_in_new_tab' => false,
+        'position' => 'main',
+    ];
+
     protected function casts(): array
     {
         return [
+            'open_in_new_tab' => 'boolean',
             'starts_at' => 'datetime',
             'ends_at' => 'datetime',
         ];
@@ -39,6 +54,12 @@ class Banner extends Model implements HasMedia
     protected static function booted(): void
     {
         static::saving(function (Banner $banner): void {
+            if (! in_array($banner->position, array_keys(self::POSITIONS), true)) {
+                throw ValidationException::withMessages([
+                    'position' => 'Area banner tidak valid.',
+                ]);
+            }
+
             $scheme = strtolower((string) parse_url($banner->cta_url, PHP_URL_SCHEME));
 
             if (! in_array($scheme, ['http', 'https'], true)) {
@@ -90,7 +111,7 @@ class Banner extends Model implements HasMedia
     {
         $this
             ->addMediaConversion('preview')
-            ->fit(\Spatie\Image\Enums\Fit::Max, 1600, 600)
+            ->fit(Fit::Max, 1600, 600)
             ->quality(85);
     }
 }

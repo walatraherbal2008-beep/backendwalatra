@@ -58,6 +58,20 @@ class ManualOrderManagementTest extends TestCase
             ->assertSchemaComponentStateSet('shipping_address.address', 'Alamat Pesanan Manual', schema: 'mountedActionSchema0');
     }
 
+    public function test_superadmin_can_view_shipping_origin_snapshot(): void
+    {
+        $this->actingAs($this->admin());
+        $order = $this->order([
+            'shipping_origin' => ['warehouse_code' => 'WH-TASIK', 'warehouse_name' => 'Tasikmalaya',
+                'address' => 'Alamat Asal Tasikmalaya', 'postal_code' => '46196', 'coordinates' => null],
+            'stock_mode' => 'unlimited',
+        ]);
+        Livewire::test(ManageOrders::class)->mountTableAction('view', $order)
+            ->assertSchemaComponentStateSet('shipping_origin.warehouse_name', 'Tasikmalaya', schema: 'mountedActionSchema0')
+            ->assertSchemaComponentStateSet('shipping_origin.address', 'Alamat Asal Tasikmalaya', schema: 'mountedActionSchema0')
+            ->assertSchemaComponentStateSet('stock_mode', 'unlimited', schema: 'mountedActionSchema0');
+    }
+
     public function test_customer_cannot_open_order_management_or_confirm_payment(): void
     {
         $customer = User::factory()->create();
@@ -66,7 +80,7 @@ class ManualOrderManagementTest extends TestCase
         app(ManualOrderService::class)->confirmPaid($this->order(), $customer, 'Percobaan akses customer.');
     }
 
-    public function test_order_table_filters_status_and_excludes_gateway_and_simulation_orders(): void
+    public function test_order_table_includes_gateway_and_excludes_simulation_orders(): void
     {
         $this->actingAs($this->admin());
         $pending = $this->order();
@@ -74,7 +88,7 @@ class ManualOrderManagementTest extends TestCase
         $gateway = $this->order(['order_number' => 'WAL-GATEWAY', 'payment_provider' => 'midtrans']);
         $simulation = $this->order(['order_number' => 'WAL-SIMULATION', 'payment_provider' => 'simulation']);
         Livewire::test(ManageOrders::class)->assertCanSeeTableRecords([$pending, $paid])
-            ->assertCanNotSeeTableRecords([$gateway, $simulation])
+            ->assertCanSeeTableRecords([$gateway])->assertCanNotSeeTableRecords([$simulation])
             ->filterTable('status', 'paid')->assertCanSeeTableRecords([$paid])
             ->assertCanNotSeeTableRecords([$pending]);
     }

@@ -54,4 +54,9 @@ class OrderItem extends Model implements HasMedia
     {
         return $this->belongsTo(StoreBundleListing::class, 'store_bundle_listing_id');
     }
+
+    public function productListing(): BelongsTo
+    {
+        return $this->belongsTo(StoreProductListing::class, 'store_product_listing_id');
+    }
 }

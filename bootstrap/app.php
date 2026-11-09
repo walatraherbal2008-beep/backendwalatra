@@ -1,22 +1,23 @@
 <?php
 
-use App\Exceptions\OtpDeliveryException;
-use App\Exceptions\WarehouseUnavailableException;
-use App\Exceptions\WarehouseDirectoryUnavailableException;
-use App\Exceptions\PaymentGatewayUnavailableException;
-use App\Exceptions\ShippingUnavailableException;
 use App\Exceptions\EverproUnavailableException;
+use App\Exceptions\OtpDeliveryException;
+use App\Exceptions\PaymentGatewayUnavailableException;
+use App\Exceptions\PaymentOperationInProgress;
+use App\Exceptions\ShippingUnavailableException;
+use App\Exceptions\WarehouseDirectoryUnavailableException;
+use App\Exceptions\WarehouseUnavailableException;
 use App\Support\ApiResponse;
-use Illuminate\Auth\AuthenticationException;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
-use Laravel\Sanctum\Http\Middleware\CheckAbilities;
 use Illuminate\Validation\ValidationException;
-use Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException;
+use Laravel\Sanctum\Http\Middleware\CheckAbilities;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
+use Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -108,6 +109,14 @@ return Application::configure(basePath: dirname(__DIR__))
             }
 
             return ApiResponse::error('Layanan daftar gudang sedang tidak tersedia. Silakan coba lagi.', 'WAREHOUSE_DIRECTORY_UNAVAILABLE', status: 503);
+        });
+
+        $exceptions->render(function (PaymentOperationInProgress $exception, Request $request) {
+            if (! $request->is('api/*')) {
+                return null;
+            }
+
+            return response()->json(['success' => true, 'code' => 'PAYMENT_PROCESSING', 'message' => 'Pembayaran sedang diproses. Silakan muat ulang status.', 'data' => null], 202);
         });
 
         $exceptions->render(function (PaymentGatewayUnavailableException $exception, Request $request) {

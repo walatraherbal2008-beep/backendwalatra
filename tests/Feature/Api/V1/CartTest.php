@@ -11,11 +11,12 @@ use App\Models\StoreProductListing;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
+use Tests\Concerns\WithCheckoutWarehouse;
 use Tests\TestCase;
 
 class CartTest extends TestCase
 {
-    use RefreshDatabase;
+    use RefreshDatabase, WithCheckoutWarehouse;
 
     public function test_cart_orders_products_and_bundles_by_last_addition_without_reordering_quantity_edits(): void
     {
@@ -24,7 +25,7 @@ class CartTest extends TestCase
         Sanctum::actingAs($user, ['customer-api']);
 
         $product = Product::factory()->create();
-        $variant = ProductVariant::factory()->create(['product_id' => $product->id, 'price' => 12500]);
+        $variant = ProductVariant::factory()->withWarehouse()->create(['product_id' => $product->id, 'price' => 12500]);
         $listing = StoreProductListing::factory()->create(['product_id' => $product->id]);
         $bundle = ProductBundle::factory()->create(['price' => 25000]);
         ProductBundleItem::factory()->create([
@@ -70,7 +71,7 @@ class CartTest extends TestCase
         $user = User::factory()->create();
         Sanctum::actingAs($user, ['customer-api']);
         $product = Product::factory()->create();
-        $variant = ProductVariant::factory()->create(['product_id' => $product->id]);
+        $variant = ProductVariant::factory()->withWarehouse()->create(['product_id' => $product->id]);
         $listing = StoreProductListing::factory()->create(['product_id' => $product->id]);
         $cart = $user->carts()->create();
         $attributes = [
@@ -82,7 +83,7 @@ class CartTest extends TestCase
         ];
         $old = $cart->items()->create($attributes);
         $this->travel(2)->seconds();
-        $attributes['product_variant_id'] = ProductVariant::factory()->create([
+        $attributes['product_variant_id'] = ProductVariant::factory()->withWarehouse()->create([
             'product_id' => $product->id,
             'name' => 'Varian Cart Kedua',
         ])->id;
@@ -101,7 +102,7 @@ class CartTest extends TestCase
         Sanctum::actingAs($user, ['customer-api']);
 
         $product = Product::factory()->create();
-        $variant = ProductVariant::factory()->create([
+        $variant = ProductVariant::factory()->withWarehouse()->create([
             'product_id' => $product->id,
             'price' => 12500,
         ]);
@@ -139,7 +140,7 @@ class CartTest extends TestCase
         Sanctum::actingAs($owner, ['customer-api']);
 
         $product = Product::factory()->create();
-        $variant = ProductVariant::factory()->create(['product_id' => $product->id]);
+        $variant = ProductVariant::factory()->withWarehouse()->create(['product_id' => $product->id]);
         $listing = StoreProductListing::factory()->create(['product_id' => $product->id]);
 
         $this->postJson('/api/v1/cart/items', [
@@ -162,7 +163,7 @@ class CartTest extends TestCase
         Sanctum::actingAs($user, ['customer-api']);
 
         $product = Product::factory()->create();
-        $variant = ProductVariant::factory()->create(['product_id' => $product->id]);
+        $variant = ProductVariant::factory()->withWarehouse()->create(['product_id' => $product->id]);
         $listing = StoreProductListing::factory()->create(['product_id' => $product->id]);
 
         $this->postJson('/api/v1/cart/items', [
@@ -182,7 +183,7 @@ class CartTest extends TestCase
         Sanctum::actingAs($user, ['customer-api']);
 
         $product = Product::factory()->create();
-        $variant = ProductVariant::factory()->create(['product_id' => $product->id]);
+        $variant = ProductVariant::factory()->withWarehouse()->create(['product_id' => $product->id]);
         $listing = StoreProductListing::factory()->create(['product_id' => $product->id]);
 
         $this->postJson('/api/v1/cart/items', [
@@ -204,7 +205,7 @@ class CartTest extends TestCase
         Sanctum::actingAs($user, ['customer-api']);
 
         $product = Product::factory()->create(['status' => 'active']);
-        $variant = ProductVariant::factory()->create([
+        $variant = ProductVariant::factory()->withWarehouse()->create([
             'product_id' => $product->id,
             'status' => 'active',
         ]);

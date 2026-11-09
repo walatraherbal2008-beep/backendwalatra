@@ -2,11 +2,10 @@
 
 namespace Tests\Feature\Api\V1;
 
-use App\Contracts\PaymentGateway;
-use App\Contracts\WarehouseStockProvider;
 use App\Contracts\ShippingRateProvider;
-use App\Models\Order;
+use App\Contracts\WarehouseStockProvider;
 use App\Models\Address;
+use App\Models\Order;
 use App\Models\Product;
 use App\Models\ProductBundle;
 use App\Models\ProductBundleItem;
@@ -15,12 +14,14 @@ use App\Models\StoreBundleListing;
 use App\Models\StoreProductListing;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
 use Laravel\Sanctum\Sanctum;
+use Tests\Concerns\WithCheckoutWarehouse;
 use Tests\TestCase;
 
 class OrderTest extends TestCase
 {
-    use RefreshDatabase;
+    use RefreshDatabase, WithCheckoutWarehouse;
 
     public function test_order_requires_idempotency_key_and_warehouse_availability(): void
     {
@@ -28,7 +29,7 @@ class OrderTest extends TestCase
         Sanctum::actingAs($user, ['customer-api']);
 
         $product = Product::factory()->create();
-        $variant = ProductVariant::factory()->create(['product_id' => $product->id]);
+        $variant = ProductVariant::factory()->withWarehouse()->create(['product_id' => $product->id]);
         $listing = StoreProductListing::factory()->create(['product_id' => $product->id]);
 
         $this->postJson('/api/v1/cart/items', [
@@ -95,24 +96,28 @@ class OrderTest extends TestCase
                 }
             };
         });
-        $this->app->bind(PaymentGateway::class, function (): object {
-            return new class implements PaymentGateway
-            {
-                public function createPayment(Order $order): array
-                {
-                    return [
-                        'payment_reference' => 'payment-reference-test',
-                        'payment_token' => 'payment-token-test',
-                        'payment_url' => null,
-                    ];
-                }
-            };
+        config(['services.midtrans.server_key' => 'test-server-key']);
+        $cancelled = false;
+        Http::fake(function ($request) use (&$cancelled) {
+            $path = parse_url($request->url(), PHP_URL_PATH);
+            $charge = $path === '/v2/charge';
+            $id = $charge ? $request['transaction_details']['order_id'] : explode('/', $path)[2];
+            if (str_ends_with($path, '/cancel')) {
+                $cancelled = true;
+            }
+
+            return Http::response([
+                'order_id' => $id, 'transaction_id' => 'trx-order-test', 'gross_amount' => '40000.00',
+                'currency' => 'IDR', 'payment_type' => 'bank_transfer', 'status_code' => $cancelled ? '202' : '201',
+                'transaction_status' => $cancelled ? 'cancel' : 'pending', 'fraud_status' => 'accept',
+                'va_numbers' => [['bank' => 'bca', 'va_number' => '123456789']],
+            ], $charge ? 201 : 200);
         });
 
         $user = User::factory()->create();
         Sanctum::actingAs($user, ['customer-api']);
         $product = Product::factory()->create(['name' => 'Produk Snapshot']);
-        $variant = ProductVariant::factory()->create([
+        $variant = ProductVariant::factory()->withWarehouse()->create([
             'product_id' => $product->id,
             'price' => 15000,
         ]);
@@ -146,9 +151,9 @@ class OrderTest extends TestCase
         $this->assertDatabaseCount('order_items', 1);
         $this->assertDatabaseCount('cart_items', 0);
 
-        $this->postJson('/api/v1/orders/'.$first->json('data.id').'/payment')
-            ->assertOk()
-            ->assertJsonPath('data.payment_token', 'payment-token-test');
+        $this->postJson('/api/v1/orders/'.$first->json('data.id').'/payment', ['method' => 'bca_va'], ['Idempotency-Key' => 'core-order-payment'])
+            ->assertCreated()
+            ->assertJsonPath('data.payment.va_number', '123456789');
 
         $this->postJson('/api/v1/orders', $payload, $headers)
             ->assertOk()
@@ -171,9 +176,18 @@ class OrderTest extends TestCase
         $this->app->bind(WarehouseStockProvider::class, function (): object {
             return new class implements WarehouseStockProvider
             {
-                public function checkAvailability(array $items): array { return ['available' => true, 'items' => $items]; }
-                public function reserve(array $items, string $reference): string { return 'reservation-location'; }
+                public function checkAvailability(array $items): array
+                {
+                    return ['available' => true, 'items' => $items];
+                }
+
+                public function reserve(array $items, string $reference): string
+                {
+                    return 'reservation-location';
+                }
+
                 public function confirm(string $reservationId): void {}
+
                 public function release(string $reservationId): void {}
             };
         });
@@ -190,7 +204,7 @@ class OrderTest extends TestCase
         $user = User::factory()->create();
         Sanctum::actingAs($user, ['customer-api']);
         $product = Product::factory()->create();
-        $variant = ProductVariant::factory()->create(['product_id' => $product->id]);
+        $variant = ProductVariant::factory()->withWarehouse()->create(['product_id' => $product->id]);
         $listing = StoreProductListing::factory()->create(['product_id' => $product->id]);
 
         $this->postJson('/api/v1/cart/items', [
@@ -237,9 +251,18 @@ class OrderTest extends TestCase
         $this->app->bind(WarehouseStockProvider::class, function (): object {
             return new class implements WarehouseStockProvider
             {
-                public function checkAvailability(array $items): array { return ['available' => true, 'items' => []]; }
-                public function reserve(array $items, string $reference): string { return 'reservation'; }
+                public function checkAvailability(array $items): array
+                {
+                    return ['available' => true, 'items' => []];
+                }
+
+                public function reserve(array $items, string $reference): string
+                {
+                    return 'reservation';
+                }
+
                 public function confirm(string $reservationId): void {}
+
                 public function release(string $reservationId): void {}
             };
         });
@@ -264,6 +287,12 @@ class OrderTest extends TestCase
             ],
             'stock_reservation_id' => 'reservation',
         ]);
+
+        Http::fake(['*midtrans.com/v2/*/status' => Http::response([
+            'order_id' => $order->order_number, 'transaction_id' => 'trx-legacy-webhook', 'currency' => 'IDR',
+            'gross_amount' => '10000.00', 'payment_type' => 'bank_transfer', 'transaction_status' => 'settlement',
+            'status_code' => '200', 'fraud_status' => 'accept',
+        ])]);
 
         $statusCode = '200';
         $grossAmount = '10000.00';
@@ -296,16 +325,21 @@ class OrderTest extends TestCase
             return new class($reservedItems) implements WarehouseStockProvider
             {
                 public function __construct(private array &$reservedItems) {}
+
                 public function checkAvailability(array $items): array
                 {
                     return ['available' => true, 'items' => $items];
                 }
+
                 public function reserve(array $items, string $reference): string
                 {
                     $this->reservedItems = $items;
+
                     return 'bundle-reservation';
                 }
+
                 public function confirm(string $reservationId): void {}
+
                 public function release(string $reservationId): void {}
             };
         });
@@ -322,7 +356,7 @@ class OrderTest extends TestCase
         $user = User::factory()->create();
         Sanctum::actingAs($user, ['customer-api']);
         $product = Product::factory()->create(['status' => 'active', 'name' => 'Produk Bundle']);
-        $variant = ProductVariant::factory()->create([
+        $variant = ProductVariant::factory()->withWarehouse()->create([
             'product_id' => $product->id,
             'sku' => 'SKU-BUNDLE-COMPONENT',
             'status' => 'active',

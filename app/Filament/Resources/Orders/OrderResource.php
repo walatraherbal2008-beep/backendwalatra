@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Orders;
 use App\Filament\Resources\Orders\Pages\ManageOrders;
 use App\Models\Order;
 use App\Services\Marketplace\ManualOrderService;
+use App\Services\Payments\OrderPayments;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
@@ -52,7 +53,7 @@ class OrderResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->where('payment_provider', 'manual')->with(['user', 'items', 'statusHistories.createdBy']);
+        return parent::getEloquentQuery()->whereIn('payment_provider', ['manual', 'midtrans'])->with(['user', 'items', 'statusHistories.createdBy', 'payments', 'activePayment']);
     }
 
     private static function statusLabel(string $status): string
@@ -61,6 +62,9 @@ class OrderResource extends Resource
             'pending_payment' => 'Menunggu pembayaran',
             'paid' => 'Lunas',
             'cancelled' => 'Dibatalkan',
+            'expired' => 'Kedaluwarsa',
+            'refunded' => 'Dikembalikan',
+            'payment_review' => 'Perlu pemeriksaan pembayaran',
             default => $status,
         };
     }
@@ -81,6 +85,30 @@ class OrderResource extends Resource
                 TextEntry::make('payment_reference')->label('Referensi pembayaran')->placeholder('-'),
                 TextEntry::make('placed_at')->label('Dibuat')->dateTime('d M Y H:i'),
                 TextEntry::make('paid_at')->label('Dikonfirmasi lunas')->dateTime('d M Y H:i')->placeholder('Belum dikonfirmasi'),
+            ])->columns(2),
+            Section::make('Pembayaran')->schema([
+                TextEntry::make('payment_provider')->label('Penyedia pembayaran'),
+                TextEntry::make('payment_due_at')->label('Batas pembayaran order')->dateTime('d M Y H:i')->placeholder('-'),
+                RepeatableEntry::make('payments')->label('Percobaan pembayaran')->schema([
+                    TextEntry::make('method')->label('Metode'),
+                    TextEntry::make('state')->label('Status pembayaran'),
+                    TextEntry::make('provider_order_id')->label('Referensi transaksi'),
+                    TextEntry::make('transaction_id')->label('ID Midtrans')->placeholder('-'),
+                    TextEntry::make('amount')->label('Nominal')->money('IDR'),
+                    TextEntry::make('expires_at')->label('Berlaku sampai')->dateTime('d M Y H:i'),
+                    TextEntry::make('response_payload.va_numbers.0.va_number')->label('Nomor VA')->placeholder('-'),
+                    TextEntry::make('response_payload.permata_va_number')->label('VA Permata')->placeholder('-'),
+                    TextEntry::make('response_payload.bill_key')->label('Mandiri bill key')->placeholder('-'),
+                    TextEntry::make('response_payload.biller_code')->label('Mandiri biller code')->placeholder('-'),
+                ])->columns(2),
+            ])->columns(2),
+            Section::make('Titik pengiriman')->schema([
+                TextEntry::make('shipping_origin.warehouse_name')->label('Gudang asal')->placeholder('Belum tercatat'),
+                TextEntry::make('shipping_origin.warehouse_code')->label('Kode gudang')->placeholder('-'),
+                TextEntry::make('shipping_origin.address')->label('Alamat asal')->placeholder('-'),
+                TextEntry::make('shipping_origin.postal_code')->label('Kode pos asal')->placeholder('-'),
+                TextEntry::make('shipping_origin.coordinates')->label('Koordinat asal')->placeholder('-'),
+                TextEntry::make('stock_mode')->label('Mode stok')->placeholder('Belum tercatat'),
             ])->columns(2),
             Section::make('Alamat pengiriman')->schema([
                 TextEntry::make('shipping_address.name')->label('Penerima'),
@@ -119,6 +147,8 @@ class OrderResource extends Resource
     public static function table(Table $table): Table
     {
         return $table->columns([
+            TextColumn::make('payment_provider')->label('Pembayaran')->badge(),
+            TextColumn::make('activePayment.method')->label('Metode')->placeholder('-'),
             TextColumn::make('order_number')->label('Nomor pesanan')->searchable(),
             TextColumn::make('user.name')->label('Customer')->searchable()->wrap()->placeholder('Belum melengkapi nama'),
             TextColumn::make('user.phone')->label('WhatsApp')->searchable()->toggleable(isToggledHiddenByDefault: true),
@@ -133,6 +163,7 @@ class OrderResource extends Resource
         ])->filters([
             SelectFilter::make('status')->label('Status')->options([
                 'pending_payment' => 'Menunggu pembayaran', 'paid' => 'Lunas', 'cancelled' => 'Dibatalkan',
+                'expired' => 'Kedaluwarsa', 'refunded' => 'Dikembalikan', 'payment_review' => 'Perlu pemeriksaan pembayaran',
             ]),
         ])->recordActions([
             ActionGroup::make([
@@ -145,7 +176,7 @@ class OrderResource extends Resource
                         TextInput::make('reference')->label('Referensi pembayaran')->maxLength(255),
                         Textarea::make('note')->label('Catatan verifikasi')->required()->minLength(5)->maxLength(1000),
                     ])
-                    ->visible(fn (Order $record): bool => $record->status === 'pending_payment')
+                    ->visible(fn (Order $record): bool => $record->payment_provider === 'manual' && $record->status === 'pending_payment')
                     ->action(function (Order $record, array $data): void {
                         app(ManualOrderService::class)->confirmPaid($record, auth()->user(), $data['note'], $data['reference'] ?? null);
                         Notification::make()->title('Pembayaran berhasil dikonfirmasi')->success()->send();
@@ -155,13 +186,18 @@ class OrderResource extends Resource
                     ->schema([Textarea::make('note')->label('Alasan pembatalan')->required()->minLength(5)->maxLength(1000)])
                     ->visible(fn (Order $record): bool => $record->status === 'pending_payment')
                     ->action(function (Order $record, array $data): void {
-                        app(ManualOrderService::class)->cancel($record, auth()->user(), $data['note']);
+                        abort_unless(auth()->user()?->status === 'active' && auth()->user()->hasRole('super_admin'), 403);
+                        if ($record->payment_provider === 'midtrans') {
+                            app(OrderPayments::class)->cancel($record);
+                        } else {
+                            app(ManualOrderService::class)->cancel($record, auth()->user(), $data['note']);
+                        }
                         Notification::make()->title('Pesanan dibatalkan')->success()->send();
                     }),
             ])->label('Tindakan')->button(),
         ])->defaultSort('created_at', 'desc')
-            ->emptyStateHeading('Belum ada pesanan manual')
-            ->emptyStateDescription('Pesanan customer akan muncul di sini setelah checkout dengan metode pembayaran manual.');
+            ->emptyStateHeading('Belum ada pesanan')
+            ->emptyStateDescription('Pesanan customer akan muncul di sini setelah checkout.');
     }
 
     public static function getPages(): array

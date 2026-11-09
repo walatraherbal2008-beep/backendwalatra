@@ -24,7 +24,7 @@ class WarehouseProductAssignmentService
     }
 
     /**
-     * @param list<string> $warehouseCodes
+     * @param  list<string>  $warehouseCodes
      * @return list<WarehouseProductVariant>
      */
     public function sync(ProductVariant $variant, array $warehouseCodes): array
@@ -46,6 +46,7 @@ class WarehouseProductAssignmentService
         }
 
         return DB::transaction(function () use ($variant, $warehouseCodes): array {
+            ProductVariant::query()->whereKey($variant->id)->lockForUpdate()->firstOrFail();
             $variant->warehouseAssignments()
                 ->whereNotIn('warehouse_code', $warehouseCodes ?: ['__none__'])
                 ->delete();

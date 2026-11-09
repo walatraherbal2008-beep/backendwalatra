@@ -1,20 +1,20 @@
 <?php
 
+use App\Http\Controllers\Api\V1\AddressController;
 use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Api\V1\BannerController;
+use App\Http\Controllers\Api\V1\CartController;
 use App\Http\Controllers\Api\V1\CatalogBundleController;
 use App\Http\Controllers\Api\V1\CatalogCategoryController;
 use App\Http\Controllers\Api\V1\CatalogController;
 use App\Http\Controllers\Api\V1\CatalogProductController;
-use App\Http\Controllers\Api\V1\CustomerAuthController;
-use App\Http\Controllers\Api\V1\CartController;
 use App\Http\Controllers\Api\V1\CheckoutController;
+use App\Http\Controllers\Api\V1\CustomerAuthController;
 use App\Http\Controllers\Api\V1\OrderController;
 use App\Http\Controllers\Api\V1\PaymentController;
-use App\Http\Controllers\Api\V1\AddressController;
-use App\Http\Controllers\Api\V1\BannerController;
 use App\Http\Controllers\Api\V1\ShippingLocationController;
-use App\Http\Controllers\Api\V1\WarehouseController;
 use App\Http\Controllers\Api\V1\StoreOnboardingController;
+use App\Http\Controllers\Api\V1\WarehouseController;
 use App\Http\Middleware\EnsureUserIsActive;
 use Illuminate\Support\Facades\Route;
 
@@ -58,11 +58,16 @@ Route::prefix('v1')->group(function (): void {
             Route::post('/orders', [OrderController::class, 'store']);
             Route::get('/orders/{order}', [OrderController::class, 'show']);
             Route::post('/orders/{order}/cancel', [OrderController::class, 'cancel']);
-            Route::post('/orders/{order}/payment', [PaymentController::class, 'create']);
+            Route::get('/payment-methods', [PaymentController::class, 'methods']);
+            Route::post('/orders/{order}/payment', [PaymentController::class, 'create'])->middleware('throttle:payment-create');
+            Route::get('/orders/{order}/payment', [PaymentController::class, 'show']);
+            Route::post('/orders/{order}/payment/refresh', [PaymentController::class, 'refresh'])->middleware('throttle:payment-refresh');
+            Route::get('/orders/{order}/payments/{payment}/qr-code', [PaymentController::class, 'qrCode']);
         });
     });
 
-    Route::post('/payments/midtrans/webhook', [PaymentController::class, 'webhook']);
+    Route::post('/payments/midtrans/webhook', [PaymentController::class, 'webhook'])
+        ->name('payments.midtrans.webhook');
     Route::post(
         '/auth/customer/request-otp',
         [CustomerAuthController::class, 'requestOtp'],

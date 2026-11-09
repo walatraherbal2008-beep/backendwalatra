@@ -1,0 +1,638 @@
+{
+  "info": {
+    "name": "Walatra - Banner Iklan",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Koleksi API sesuai docs/api/banners.md. Isi variable base_url dengan URL backend yang berakhiran /api/v1, tanpa slash terakhir. Endpoint bersifat publik dan tidak memerlukan token. Pengelolaan banner dan unggah gambar dilakukan melalui panel superadmin. Tersedia request seluruh area dan filter masing-masing area banner; semua respons tetap berbentuk array data."
+  },
+  "auth": {
+    "type": "noauth"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:8000/api/v1",
+      "type": "string",
+      "description": "Base URL backend termasuk /api/v1, tanpa slash terakhir."
+    }
+  ],
+  "item": [
+    {
+      "name": "Daftar banner iklan",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Status respons 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test(\"Respons berupa JSON\", function () {",
+              "    pm.response.to.be.json;",
+              "});",
+              "const body = pm.response.json();",
+              "pm.test(\"Daftar banner berhasil diambil\", function () {",
+              "    pm.expect(body.success).to.eql(true);",
+              "    pm.expect(body.message).to.eql(\"Daftar banner berhasil diambil.\");",
+              "    pm.expect(body.data).to.be.an(\"array\");",
+              "});",
+              "pm.test(\"Format banner dan pengaturan tab sesuai kontrak API\", function () {",
+              "    pm.expect(body.data).to.be.an(\"array\");",
+              "    body.data.forEach(function (banner) {",
+              "        pm.expect(banner.id).to.be.a(\"number\");",
+              "        pm.expect(banner.name).to.be.a(\"string\");",
+              "        pm.expect(banner.position).to.be.oneOf([\"main\", \"secondary_top\", \"secondary_bottom\"]);",
+              "        pm.expect(banner.image_url).to.be.a(\"string\").and.match(/^https?:\\/\\//);",
+              "        pm.expect(banner.cta_url).to.be.a(\"string\").and.match(/^https?:\\/\\//);",
+              "        pm.expect(banner.open_in_new_tab).to.be.a(\"boolean\");",
+              "        pm.expect(banner.sort_order).to.be.a(\"number\");",
+              "        [\"image_preview_url\", \"starts_at\", \"ends_at\"].forEach(function (field) {",
+              "            pm.expect(banner).to.have.property(field);",
+              "            if (banner[field] !== null) {",
+              "                pm.expect(banner[field]).to.be.a(\"string\");",
+              "            }",
+              "        });",
+              "    });",
+              "});",
+              "pm.test(\"Area sesuai filter jika position diisi\", function () {",
+              "    const position = pm.request.url.query.get(\"position\");",
+              "    if (position) {",
+              "        body.data.forEach(function (banner) {",
+              "            pm.expect(banner.position).to.eql(position);",
+              "        });",
+              "    }",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/banners",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "banners"
+          ]
+        },
+        "description": "Mengambil banner aktif yang memiliki gambar dan berada dalam jadwal tayang. Tanpa token. Tambahkan query position untuk memfilter area: main, secondary_top, atau secondary_bottom. Urutan sort_order lalu banner terbaru. open_in_new_tab=false: tab yang sama; true: tab baru. Gambar PNG/JPG/WebP maksimal 2 MB, rekomendasi 1536 × 625 px; unggah melalui panel superadmin."
+      },
+      "response": [
+        {
+          "name": "Daftar banner aktif",
+          "originalRequest": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/banners",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "banners"
+              ]
+            },
+            "description": "Mengambil banner aktif yang memiliki gambar dan berada dalam jadwal tayang. Tanpa token. Tambahkan query position untuk memfilter area: main, secondary_top, atau secondary_bottom. Urutan sort_order lalu banner terbaru. open_in_new_tab=false: tab yang sama; true: tab baru. Gambar PNG/JPG/WebP maksimal 2 MB, rekomendasi 1536 × 625 px; unggah melalui panel superadmin."
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n  \"data\": [\n    {\n      \"id\": 1,\n      \"name\": \"Promo Herbal\",\n      \"image_url\": \"https://api.example.com/storage/123/banner.png\",\n      \"image_preview_url\": null,\n      \"cta_url\": \"https://example.com/promo\",\n      \"open_in_new_tab\": true,\n      \"starts_at\": null,\n      \"ends_at\": null,\n      \"sort_order\": 1,\n      \"position\": \"main\"\n    }\n  ],\n  \"success\": true,\n  \"message\": \"Daftar banner berhasil diambil.\"\n}"
+        },
+        {
+          "name": "Belum ada banner yang tayang",
+          "originalRequest": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/banners",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "banners"
+              ]
+            },
+            "description": "Mengambil banner aktif yang memiliki gambar dan berada dalam jadwal tayang. Tanpa token. Tambahkan query position untuk memfilter area: main, secondary_top, atau secondary_bottom. Urutan sort_order lalu banner terbaru. open_in_new_tab=false: tab yang sama; true: tab baru. Gambar PNG/JPG/WebP maksimal 2 MB, rekomendasi 1536 × 625 px; unggah melalui panel superadmin."
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n  \"data\": [],\n  \"success\": true,\n  \"message\": \"Daftar banner berhasil diambil.\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Banner utama",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Status respons 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test(\"Respons berupa JSON\", function () {",
+              "    pm.response.to.be.json;",
+              "});",
+              "const body = pm.response.json();",
+              "pm.test(\"Daftar banner berhasil diambil\", function () {",
+              "    pm.expect(body.success).to.eql(true);",
+              "    pm.expect(body.message).to.eql(\"Daftar banner berhasil diambil.\");",
+              "    pm.expect(body.data).to.be.an(\"array\");",
+              "});",
+              "pm.test(\"Format banner dan pengaturan tab sesuai kontrak API\", function () {",
+              "    pm.expect(body.data).to.be.an(\"array\");",
+              "    body.data.forEach(function (banner) {",
+              "        pm.expect(banner.id).to.be.a(\"number\");",
+              "        pm.expect(banner.name).to.be.a(\"string\");",
+              "        pm.expect(banner.position).to.be.oneOf([\"main\", \"secondary_top\", \"secondary_bottom\"]);",
+              "        pm.expect(banner.image_url).to.be.a(\"string\").and.match(/^https?:\\/\\//);",
+              "        pm.expect(banner.cta_url).to.be.a(\"string\").and.match(/^https?:\\/\\//);",
+              "        pm.expect(banner.open_in_new_tab).to.be.a(\"boolean\");",
+              "        pm.expect(banner.sort_order).to.be.a(\"number\");",
+              "        [\"image_preview_url\", \"starts_at\", \"ends_at\"].forEach(function (field) {",
+              "            pm.expect(banner).to.have.property(field);",
+              "            if (banner[field] !== null) {",
+              "                pm.expect(banner[field]).to.be.a(\"string\");",
+              "            }",
+              "        });",
+              "    });",
+              "});",
+              "pm.test(\"Area sesuai filter jika position diisi\", function () {",
+              "    const position = pm.request.url.query.get(\"position\");",
+              "    if (position) {",
+              "        body.data.forEach(function (banner) {",
+              "            pm.expect(banner.position).to.eql(position);",
+              "        });",
+              "    }",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/banners?position=main",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "banners"
+          ],
+          "query": [
+            {
+              "key": "position",
+              "value": "main"
+            }
+          ]
+        },
+        "description": "Mengambil banner aktif yang memiliki gambar dan berada dalam jadwal tayang. Tanpa token. Tambahkan query position untuk memfilter area: main, secondary_top, atau secondary_bottom. Urutan sort_order lalu banner terbaru. open_in_new_tab=false: tab yang sama; true: tab baru. Gambar PNG/JPG/WebP maksimal 2 MB, rekomendasi 1536 × 625 px; unggah melalui panel superadmin."
+      },
+      "response": [
+        {
+          "name": "Daftar banner aktif",
+          "originalRequest": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/banners?position=main",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "banners"
+              ],
+              "query": [
+                {
+                  "key": "position",
+                  "value": "main"
+                }
+              ]
+            },
+            "description": "Mengambil banner aktif yang memiliki gambar dan berada dalam jadwal tayang. Tanpa token. Tambahkan query position untuk memfilter area: main, secondary_top, atau secondary_bottom. Urutan sort_order lalu banner terbaru. open_in_new_tab=false: tab yang sama; true: tab baru. Gambar PNG/JPG/WebP maksimal 2 MB, rekomendasi 1536 × 625 px; unggah melalui panel superadmin."
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n  \"data\": [\n    {\n      \"id\": 1,\n      \"name\": \"Banner utama\",\n      \"image_url\": \"https://api.example.com/storage/123/banner.png\",\n      \"image_preview_url\": null,\n      \"cta_url\": \"https://example.com/promo\",\n      \"open_in_new_tab\": true,\n      \"starts_at\": null,\n      \"ends_at\": null,\n      \"sort_order\": 1,\n      \"position\": \"main\"\n    }\n  ],\n  \"success\": true,\n  \"message\": \"Daftar banner berhasil diambil.\"\n}"
+        },
+        {
+          "name": "Belum ada banner yang tayang",
+          "originalRequest": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/banners?position=main",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "banners"
+              ],
+              "query": [
+                {
+                  "key": "position",
+                  "value": "main"
+                }
+              ]
+            },
+            "description": "Mengambil banner aktif yang memiliki gambar dan berada dalam jadwal tayang. Tanpa token. Tambahkan query position untuk memfilter area: main, secondary_top, atau secondary_bottom. Urutan sort_order lalu banner terbaru. open_in_new_tab=false: tab yang sama; true: tab baru. Gambar PNG/JPG/WebP maksimal 2 MB, rekomendasi 1536 × 625 px; unggah melalui panel superadmin."
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n  \"data\": [],\n  \"success\": true,\n  \"message\": \"Daftar banner berhasil diambil.\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Banner area 2 - kanan atas",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Status respons 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test(\"Respons berupa JSON\", function () {",
+              "    pm.response.to.be.json;",
+              "});",
+              "const body = pm.response.json();",
+              "pm.test(\"Daftar banner berhasil diambil\", function () {",
+              "    pm.expect(body.success).to.eql(true);",
+              "    pm.expect(body.message).to.eql(\"Daftar banner berhasil diambil.\");",
+              "    pm.expect(body.data).to.be.an(\"array\");",
+              "});",
+              "pm.test(\"Format banner dan pengaturan tab sesuai kontrak API\", function () {",
+              "    pm.expect(body.data).to.be.an(\"array\");",
+              "    body.data.forEach(function (banner) {",
+              "        pm.expect(banner.id).to.be.a(\"number\");",
+              "        pm.expect(banner.name).to.be.a(\"string\");",
+              "        pm.expect(banner.position).to.be.oneOf([\"main\", \"secondary_top\", \"secondary_bottom\"]);",
+              "        pm.expect(banner.image_url).to.be.a(\"string\").and.match(/^https?:\\/\\//);",
+              "        pm.expect(banner.cta_url).to.be.a(\"string\").and.match(/^https?:\\/\\//);",
+              "        pm.expect(banner.open_in_new_tab).to.be.a(\"boolean\");",
+              "        pm.expect(banner.sort_order).to.be.a(\"number\");",
+              "        [\"image_preview_url\", \"starts_at\", \"ends_at\"].forEach(function (field) {",
+              "            pm.expect(banner).to.have.property(field);",
+              "            if (banner[field] !== null) {",
+              "                pm.expect(banner[field]).to.be.a(\"string\");",
+              "            }",
+              "        });",
+              "    });",
+              "});",
+              "pm.test(\"Area sesuai filter jika position diisi\", function () {",
+              "    const position = pm.request.url.query.get(\"position\");",
+              "    if (position) {",
+              "        body.data.forEach(function (banner) {",
+              "            pm.expect(banner.position).to.eql(position);",
+              "        });",
+              "    }",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/banners?position=secondary_top",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "banners"
+          ],
+          "query": [
+            {
+              "key": "position",
+              "value": "secondary_top"
+            }
+          ]
+        },
+        "description": "Mengambil banner aktif yang memiliki gambar dan berada dalam jadwal tayang. Tanpa token. Tambahkan query position untuk memfilter area: main, secondary_top, atau secondary_bottom. Urutan sort_order lalu banner terbaru. open_in_new_tab=false: tab yang sama; true: tab baru. Gambar PNG/JPG/WebP maksimal 2 MB, rekomendasi 1536 × 625 px; unggah melalui panel superadmin."
+      },
+      "response": [
+        {
+          "name": "Daftar banner aktif",
+          "originalRequest": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/banners?position=secondary_top",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "banners"
+              ],
+              "query": [
+                {
+                  "key": "position",
+                  "value": "secondary_top"
+                }
+              ]
+            },
+            "description": "Mengambil banner aktif yang memiliki gambar dan berada dalam jadwal tayang. Tanpa token. Tambahkan query position untuk memfilter area: main, secondary_top, atau secondary_bottom. Urutan sort_order lalu banner terbaru. open_in_new_tab=false: tab yang sama; true: tab baru. Gambar PNG/JPG/WebP maksimal 2 MB, rekomendasi 1536 × 625 px; unggah melalui panel superadmin."
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n  \"data\": [\n    {\n      \"id\": 1,\n      \"name\": \"Banner area 2 - kanan atas\",\n      \"image_url\": \"https://api.example.com/storage/123/banner.png\",\n      \"image_preview_url\": null,\n      \"cta_url\": \"https://example.com/promo\",\n      \"open_in_new_tab\": true,\n      \"starts_at\": null,\n      \"ends_at\": null,\n      \"sort_order\": 1,\n      \"position\": \"secondary_top\"\n    }\n  ],\n  \"success\": true,\n  \"message\": \"Daftar banner berhasil diambil.\"\n}"
+        },
+        {
+          "name": "Belum ada banner yang tayang",
+          "originalRequest": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/banners?position=secondary_top",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "banners"
+              ],
+              "query": [
+                {
+                  "key": "position",
+                  "value": "secondary_top"
+                }
+              ]
+            },
+            "description": "Mengambil banner aktif yang memiliki gambar dan berada dalam jadwal tayang. Tanpa token. Tambahkan query position untuk memfilter area: main, secondary_top, atau secondary_bottom. Urutan sort_order lalu banner terbaru. open_in_new_tab=false: tab yang sama; true: tab baru. Gambar PNG/JPG/WebP maksimal 2 MB, rekomendasi 1536 × 625 px; unggah melalui panel superadmin."
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n  \"data\": [],\n  \"success\": true,\n  \"message\": \"Daftar banner berhasil diambil.\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "Banner area 3 - kanan bawah",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Status respons 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test(\"Respons berupa JSON\", function () {",
+              "    pm.response.to.be.json;",
+              "});",
+              "const body = pm.response.json();",
+              "pm.test(\"Daftar banner berhasil diambil\", function () {",
+              "    pm.expect(body.success).to.eql(true);",
+              "    pm.expect(body.message).to.eql(\"Daftar banner berhasil diambil.\");",
+              "    pm.expect(body.data).to.be.an(\"array\");",
+              "});",
+              "pm.test(\"Format banner dan pengaturan tab sesuai kontrak API\", function () {",
+              "    pm.expect(body.data).to.be.an(\"array\");",
+              "    body.data.forEach(function (banner) {",
+              "        pm.expect(banner.id).to.be.a(\"number\");",
+              "        pm.expect(banner.name).to.be.a(\"string\");",
+              "        pm.expect(banner.position).to.be.oneOf([\"main\", \"secondary_top\", \"secondary_bottom\"]);",
+              "        pm.expect(banner.image_url).to.be.a(\"string\").and.match(/^https?:\\/\\//);",
+              "        pm.expect(banner.cta_url).to.be.a(\"string\").and.match(/^https?:\\/\\//);",
+              "        pm.expect(banner.open_in_new_tab).to.be.a(\"boolean\");",
+              "        pm.expect(banner.sort_order).to.be.a(\"number\");",
+              "        [\"image_preview_url\", \"starts_at\", \"ends_at\"].forEach(function (field) {",
+              "            pm.expect(banner).to.have.property(field);",
+              "            if (banner[field] !== null) {",
+              "                pm.expect(banner[field]).to.be.a(\"string\");",
+              "            }",
+              "        });",
+              "    });",
+              "});",
+              "pm.test(\"Area sesuai filter jika position diisi\", function () {",
+              "    const position = pm.request.url.query.get(\"position\");",
+              "    if (position) {",
+              "        body.data.forEach(function (banner) {",
+              "            pm.expect(banner.position).to.eql(position);",
+              "        });",
+              "    }",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/banners?position=secondary_bottom",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "banners"
+          ],
+          "query": [
+            {
+              "key": "position",
+              "value": "secondary_bottom"
+            }
+          ]
+        },
+        "description": "Mengambil banner aktif yang memiliki gambar dan berada dalam jadwal tayang. Tanpa token. Tambahkan query position untuk memfilter area: main, secondary_top, atau secondary_bottom. Urutan sort_order lalu banner terbaru. open_in_new_tab=false: tab yang sama; true: tab baru. Gambar PNG/JPG/WebP maksimal 2 MB, rekomendasi 1536 × 625 px; unggah melalui panel superadmin."
+      },
+      "response": [
+        {
+          "name": "Daftar banner aktif",
+          "originalRequest": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/banners?position=secondary_bottom",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "banners"
+              ],
+              "query": [
+                {
+                  "key": "position",
+                  "value": "secondary_bottom"
+                }
+              ]
+            },
+            "description": "Mengambil banner aktif yang memiliki gambar dan berada dalam jadwal tayang. Tanpa token. Tambahkan query position untuk memfilter area: main, secondary_top, atau secondary_bottom. Urutan sort_order lalu banner terbaru. open_in_new_tab=false: tab yang sama; true: tab baru. Gambar PNG/JPG/WebP maksimal 2 MB, rekomendasi 1536 × 625 px; unggah melalui panel superadmin."
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n  \"data\": [\n    {\n      \"id\": 1,\n      \"name\": \"Banner area 3 - kanan bawah\",\n      \"image_url\": \"https://api.example.com/storage/123/banner.png\",\n      \"image_preview_url\": null,\n      \"cta_url\": \"https://example.com/promo\",\n      \"open_in_new_tab\": true,\n      \"starts_at\": null,\n      \"ends_at\": null,\n      \"sort_order\": 1,\n      \"position\": \"secondary_bottom\"\n    }\n  ],\n  \"success\": true,\n  \"message\": \"Daftar banner berhasil diambil.\"\n}"
+        },
+        {
+          "name": "Belum ada banner yang tayang",
+          "originalRequest": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/banners?position=secondary_bottom",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "banners"
+              ],
+              "query": [
+                {
+                  "key": "position",
+                  "value": "secondary_bottom"
+                }
+              ]
+            },
+            "description": "Mengambil banner aktif yang memiliki gambar dan berada dalam jadwal tayang. Tanpa token. Tambahkan query position untuk memfilter area: main, secondary_top, atau secondary_bottom. Urutan sort_order lalu banner terbaru. open_in_new_tab=false: tab yang sama; true: tab baru. Gambar PNG/JPG/WebP maksimal 2 MB, rekomendasi 1536 × 625 px; unggah melalui panel superadmin."
+          },
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "cookie": [],
+          "body": "{\n  \"data\": [],\n  \"success\": true,\n  \"message\": \"Daftar banner berhasil diambil.\"\n}"
+        }
+      ]
+    }
+  ]
+}

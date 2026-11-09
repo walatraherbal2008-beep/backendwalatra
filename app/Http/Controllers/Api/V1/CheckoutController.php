@@ -10,10 +10,12 @@ use App\Models\Address;
 use App\Models\Cart;
 use App\Models\CartItem;
 use App\Services\Marketplace\CheckoutPricing;
+use App\Services\Marketplace\CheckoutShippingOrigin;
 use App\Services\Shipping\ShippingCostCalculator;
 use App\Support\CartItemImage;
 use App\Support\CheckoutShipping;
 use App\Support\CheckoutSimulation;
+use App\Support\CheckoutStock;
 use App\Support\ManualCheckout;
 use Illuminate\Http\JsonResponse;
 
@@ -25,6 +27,7 @@ class CheckoutController extends Controller
         ShippingRateProvider $shipping,
         ShippingCostCalculator $shippingCosts,
         CheckoutPricing $pricing,
+        CheckoutShippingOrigin $origins,
     ): JsonResponse {
         $cart = Cart::query()
             ->where('user_id', $request->user()->id)
@@ -58,10 +61,12 @@ class CheckoutController extends Controller
         }
 
         $priceChanges = $pricing->review($cart->items);
+        $origin = $origins->resolve($cart->items);
         $items = $this->stockItems($cart->items);
 
         $manual = ManualCheckout::enabled();
-        $availability = $manual ? ['available' => true, 'items' => []] : $warehouse->checkAvailability($items);
+        $unlimitedStock = CheckoutStock::unlimited();
+        $availability = $unlimitedStock ? ['available' => true, 'items' => []] : $warehouse->checkAvailability($items);
 
         $shippingData = null;
         $shippingAddress = $request->input('shipping_address');
@@ -88,17 +93,21 @@ class CheckoutController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => $manual ? 'Order dapat diajukan. Stok dan pembayaran akan diverifikasi admin.' : ($availability['available']
+            'message' => $unlimitedStock
+                ? ($manual ? 'Order dapat diajukan. Stok dan pembayaran akan diverifikasi admin.' : 'Order dapat diajukan. Stok belum diverifikasi.')
+                : ($availability['available']
                 ? 'Ketersediaan stok berhasil divalidasi.'
                 : 'Stok gudang belum dapat divalidasi.'),
             'data' => [
-                'checkout_token' => $availability['available'] ? $pricing->token($request->user()->id, $cart->items) : null,
+                'checkout_token' => $availability['available'] ? $pricing->token($request->user()->id, $cart->items, $origin['warehouse_code']) : null,
                 'price_changed' => $priceChanges !== [],
                 'price_changes' => $priceChanges,
                 'simulation' => CheckoutSimulation::enabled(),
                 'payment_required' => ! CheckoutSimulation::enabled(),
                 'payment_provider' => $manual ? 'manual' : (CheckoutSimulation::enabled() ? 'simulation' : 'midtrans'),
-                'stock_verification' => $manual ? 'pending_manual' : (CheckoutSimulation::enabled() ? 'simulated' : 'external'),
+                'stock_mode' => CheckoutStock::mode(),
+                'shipping_origin' => $origin,
+                'stock_verification' => $unlimitedStock ? 'pending_manual' : (CheckoutSimulation::enabled() ? 'simulated' : 'external'),
                 'checkout_available' => $availability['available'],
                 'items' => $cart->items->map(fn ($item): array => [
                     'cart_item_id' => $item->id,

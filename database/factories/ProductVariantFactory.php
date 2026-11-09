@@ -11,6 +11,11 @@ class ProductVariantFactory extends Factory
 {
     protected $model = ProductVariant::class;
 
+    public function withWarehouse(string $code = 'WH-TASIK'): static
+    {
+        return $this->afterCreating(fn (ProductVariant $variant) => $variant->warehouseAssignments()->create(['warehouse_code' => $code]));
+    }
+
     public function definition(): array
     {
         return [

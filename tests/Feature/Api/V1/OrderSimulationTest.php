@@ -20,11 +20,12 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Laravel\Sanctum\Sanctum;
 use Mockery;
+use Tests\Concerns\WithCheckoutWarehouse;
 use Tests\TestCase;
 
 class OrderSimulationTest extends TestCase
 {
-    use RefreshDatabase;
+    use RefreshDatabase, WithCheckoutWarehouse;
 
     protected function setUp(): void
     {
@@ -58,7 +59,7 @@ class OrderSimulationTest extends TestCase
         }
 
         $product = Product::factory()->create();
-        $variant = ProductVariant::factory()->create(['product_id' => $product->id, 'price' => 15000]);
+        $variant = ProductVariant::factory()->withWarehouse()->create(['product_id' => $product->id, 'price' => 15000]);
         $listing = StoreProductListing::factory()->create(['product_id' => $product->id]);
         $this->postJson('/api/v1/cart/items', [
             'listing_id' => $listing->id, 'variant_id' => $variant->id, 'quantity' => 2,
@@ -134,7 +135,7 @@ class OrderSimulationTest extends TestCase
     public function test_bundle_order_keeps_component_snapshot_in_simulation(): void
     {
         Sanctum::actingAs(User::factory()->create(), ['customer-api']);
-        $variant = ProductVariant::factory()->create();
+        $variant = ProductVariant::factory()->withWarehouse()->create();
         $bundle = ProductBundle::factory()->create(['price' => 40000, 'status' => 'active']);
         ProductBundleItem::factory()->create([
             'product_bundle_id' => $bundle->id, 'product_variant_id' => $variant->id, 'quantity' => 2,
@@ -191,7 +192,7 @@ class OrderSimulationTest extends TestCase
             'order_id' => $order->order_number, 'status_code' => '200', 'gross_amount' => $amount,
             'signature_key' => hash('sha512', $order->order_number.'200'.$amount.'test-server-key'),
             'transaction_status' => 'refund',
-        ])->assertNotFound();
+        ])->assertOk();
         $this->assertSame('paid', $order->fresh()->status);
     }
 
@@ -218,7 +219,7 @@ class OrderSimulationTest extends TestCase
     public function test_prepare_command_can_run_twice_without_resetting_catalog(): void
     {
         $product = Product::factory()->create();
-        ProductVariant::factory()->create(['product_id' => $product->id]);
+        ProductVariant::factory()->withWarehouse()->create(['product_id' => $product->id]);
         $this->artisan('orders:prepare-simulation')->assertSuccessful();
         $this->artisan('orders:prepare-simulation')->assertSuccessful();
         $this->assertDatabaseCount('products', 1);

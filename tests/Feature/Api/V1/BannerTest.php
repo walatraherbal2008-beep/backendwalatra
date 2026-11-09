@@ -7,6 +7,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
 
 class BannerTest extends TestCase
@@ -31,6 +32,7 @@ class BannerTest extends TestCase
 
         $visibleLatest = Banner::query()->create([
             'name' => 'Banner terbaru',
+            'open_in_new_tab' => true,
             'cta_url' => 'https://example.com/latest',
             'status' => 'active',
             'starts_at' => now()->subHour(),
@@ -77,11 +79,13 @@ class BannerTest extends TestCase
             ->assertJsonPath('data.0.id', $visibleLatest->id)
             ->assertJsonPath('data.0.name', 'Banner terbaru')
             ->assertJsonPath('data.0.cta_url', 'https://example.com/latest')
+            ->assertJsonPath('data.0.open_in_new_tab', true)
             ->assertJsonPath('data.0.sort_order', 1)
             ->assertJsonPath('data.0.image_url', fn ($value): bool => is_string($value) && $value !== '')
             ->assertJsonPath('data.1.id', $visible->id)
             ->assertJsonPath('data.1.name', 'Banner tampil')
             ->assertJsonPath('data.1.cta_url', 'https://example.com/promo')
+            ->assertJsonPath('data.1.open_in_new_tab', false)
             ->assertJsonPath('data.1.sort_order', 1)
             ->assertJsonMissing(['name' => 'Aktif tanpa gambar'])
             ->assertJsonMissing(['name' => 'Belum mulai'])
@@ -106,7 +110,7 @@ class BannerTest extends TestCase
 
     public function test_banner_rejects_unsafe_cta_and_invalid_schedule(): void
     {
-        $this->expectException(\Illuminate\Validation\ValidationException::class);
+        $this->expectException(ValidationException::class);
 
         Banner::query()->create([
             'name' => 'Banner tidak valid',

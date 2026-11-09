@@ -52,6 +52,12 @@ return [
         'server_key' => env('MIDTRANS_SERVER_KEY'),
         'client_key' => env('MIDTRANS_CLIENT_KEY'),
         'is_production' => (bool) env('MIDTRANS_IS_PRODUCTION', false),
+        'timeout' => (int) env('MIDTRANS_TIMEOUT', 10),
+        'methods' => array_filter(array_map('trim', explode(',', (string) env('MIDTRANS_PAYMENT_METHODS', 'bca_va,bni_va,bri_va,mandiri_bill,permata_va,qris')))),
+        'qris_acquirer' => env('MIDTRANS_QRIS_ACQUIRER', 'gopay'),
+        'va_expiry_minutes' => (int) env('MIDTRANS_VA_EXPIRY_MINUTES', 1440),
+        'qris_expiry_minutes' => (int) env('MIDTRANS_QRIS_EXPIRY_MINUTES', 15),
+        'order_ttl_hours' => (int) env('MIDTRANS_ORDER_TTL_HOURS', 24),
     ],
     'warehouse' => [
         'enabled' => (bool) env('WAREHOUSE_STOCK_ENABLED', false),

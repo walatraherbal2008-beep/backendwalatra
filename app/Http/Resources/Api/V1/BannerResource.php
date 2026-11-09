@@ -14,11 +14,13 @@ class BannerResource extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->name,
+            'position' => $this->position,
             'image_url' => $media?->getUrl(),
             'image_preview_url' => $media?->hasGeneratedConversion('preview')
                 ? $media->getUrl('preview')
                 : null,
             'cta_url' => $this->cta_url,
+            'open_in_new_tab' => $this->open_in_new_tab,
             'starts_at' => $this->starts_at?->toIso8601String(),
             'ends_at' => $this->ends_at?->toIso8601String(),
             'sort_order' => $this->sort_order,

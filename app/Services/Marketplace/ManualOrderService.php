@@ -2,6 +2,7 @@
 
 namespace App\Services\Marketplace;
 
+use App\Contracts\WarehouseStockProvider;
 use App\Models\Order;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -39,7 +40,17 @@ class ManualOrderService
                 throw ValidationException::withMessages(['note' => 'Hanya order manual yang menunggu pembayaran dapat diproses.']);
             }
 
+            if ($record->stock_reservation_id !== null) {
+                $warehouse = app(WarehouseStockProvider::class);
+                if ($status === 'paid') {
+                    $warehouse->confirm($record->stock_reservation_id);
+                } else {
+                    $warehouse->release($record->stock_reservation_id);
+                }
+            }
+
             $record->update([
+                'stock_reservation_id' => $status === 'cancelled' ? null : $record->stock_reservation_id,
                 'status' => $status,
                 'paid_at' => $status === 'paid' ? now() : null,
                 'payment_reference' => $status === 'paid' ? (filled($reference) ? trim($reference) : null) : null,

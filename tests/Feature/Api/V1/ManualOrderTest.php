@@ -21,17 +21,18 @@ use Illuminate\Support\Facades\Http;
 use Laravel\Sanctum\Sanctum;
 use Mockery;
 use Spatie\Permission\Models\Role;
+use Tests\Concerns\WithCheckoutWarehouse;
 use Tests\TestCase;
 
 class ManualOrderTest extends TestCase
 {
-    use RefreshDatabase;
+    use RefreshDatabase, WithCheckoutWarehouse;
 
     protected function setUp(): void
     {
         parent::setUp();
         config([
-            'checkout.mode' => 'manual',
+            'checkout.mode' => 'manual', 'checkout.stock_mode' => 'unlimited',
             'checkout.manual.shipping_fee' => 10000,
             'checkout.manual.payment_instructions' => 'Hubungi admin untuk rekening pembayaran.',
             'checkout.simulation.enabled' => true,
@@ -56,7 +57,7 @@ class ManualOrderTest extends TestCase
     private function addProduct(?string $storeCode = null): StoreProductListing
     {
         $product = Product::factory()->create();
-        $variant = ProductVariant::factory()->create(['product_id' => $product->id, 'price' => 15000]);
+        $variant = ProductVariant::factory()->withWarehouse()->create(['product_id' => $product->id, 'price' => 15000]);
         $listing = StoreProductListing::factory()->create(['product_id' => $product->id]);
         if ($storeCode !== null) {
             $listing->store->forceFill(['code' => $storeCode])->save();
@@ -150,7 +151,7 @@ class ManualOrderTest extends TestCase
         Sanctum::actingAs(User::factory()->create(), ['customer-api']);
         $store = Store::factory()->create();
         $store->forceFill(['code' => CheckoutSimulation::STORE_CODE])->save();
-        $variant = ProductVariant::factory()->create();
+        $variant = ProductVariant::factory()->withWarehouse()->create();
         $bundle = ProductBundle::factory()->create(['price' => 40000]);
         ProductBundleItem::factory()->create(['product_bundle_id' => $bundle->id, 'product_variant_id' => $variant->id, 'quantity' => 2]);
         $listing = StoreBundleListing::factory()->create(['store_id' => $store->id, 'product_bundle_id' => $bundle->id]);
@@ -164,7 +165,7 @@ class ManualOrderTest extends TestCase
     public function test_bundle_components_and_manual_shipping_are_snapshotted(): void
     {
         Sanctum::actingAs(User::factory()->create(), ['customer-api']);
-        $variant = ProductVariant::factory()->create();
+        $variant = ProductVariant::factory()->withWarehouse()->create();
         $bundle = ProductBundle::factory()->create(['price' => 40000]);
         ProductBundleItem::factory()->create(['product_bundle_id' => $bundle->id, 'product_variant_id' => $variant->id, 'quantity' => 2]);
         $listing = StoreBundleListing::factory()->create(['product_bundle_id' => $bundle->id]);
@@ -240,7 +241,7 @@ class ManualOrderTest extends TestCase
             'order_id' => $order->order_number, 'status_code' => '200', 'gross_amount' => '40000.00',
             'signature_key' => hash('sha512', $order->order_number.'200'.'40000.00'.'manual-test-key'),
             'transaction_status' => 'settlement',
-        ])->assertNotFound();
+        ])->assertOk();
         $this->assertSame('pending_payment', $order->fresh()->status);
     }
 }

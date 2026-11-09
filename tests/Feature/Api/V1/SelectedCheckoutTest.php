@@ -15,16 +15,17 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 use Mockery;
+use Tests\Concerns\WithCheckoutWarehouse;
 use Tests\TestCase;
 
 class SelectedCheckoutTest extends TestCase
 {
-    use RefreshDatabase;
+    use RefreshDatabase, WithCheckoutWarehouse;
 
     protected function setUp(): void
     {
         parent::setUp();
-        config(['checkout.mode' => 'manual', 'checkout.free_shipping' => true, 'checkout.manual.shipping_fee' => 25000]);
+        config(['checkout.mode' => 'manual', 'checkout.stock_mode' => 'unlimited', 'checkout.free_shipping' => true, 'checkout.manual.shipping_fee' => 25000]);
         Sanctum::actingAs(User::factory()->create(), ['customer-api']);
         $shipping = Mockery::mock(ShippingRateProvider::class);
         $shipping->shouldNotReceive('quote');
@@ -39,7 +40,7 @@ class SelectedCheckoutTest extends TestCase
 
     private function addProduct(int $price = 15000): array
     {
-        $variant = ProductVariant::factory()->create(['price' => $price]);
+        $variant = ProductVariant::factory()->withWarehouse()->create(['price' => $price]);
         $listing = StoreProductListing::factory()->create(['product_id' => $variant->product_id]);
         $response = $this->postJson('/api/v1/cart/items', [
             'listing_id' => $listing->id, 'variant_id' => $variant->id, 'quantity' => 2,
@@ -51,7 +52,7 @@ class SelectedCheckoutTest extends TestCase
 
     private function addBundle(): int
     {
-        $variant = ProductVariant::factory()->create();
+        $variant = ProductVariant::factory()->withWarehouse()->create();
         $bundle = ProductBundle::factory()->create(['price' => 40000]);
         ProductBundleItem::factory()->create(['product_bundle_id' => $bundle->id, 'product_variant_id' => $variant->id, 'quantity' => 2]);
         $listing = StoreBundleListing::factory()->create(['product_bundle_id' => $bundle->id]);
@@ -163,7 +164,7 @@ class SelectedCheckoutTest extends TestCase
 
     public function test_integrated_checkout_uses_only_selected_stock_and_does_not_request_shipping_rates(): void
     {
-        config(['checkout.mode' => 'integrated']);
+        config(['checkout.mode' => 'integrated', 'checkout.stock_mode' => 'external']);
         [$id, , $variant] = $this->addProduct();
         $this->addBundle();
         $items = [['sku' => $variant->sku, 'quantity' => 2]];

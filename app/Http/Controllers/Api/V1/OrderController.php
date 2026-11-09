@@ -13,10 +13,13 @@ use App\Models\CartItem;
 use App\Models\Order;
 use App\Models\User;
 use App\Services\Marketplace\CheckoutPricing;
+use App\Services\Marketplace\CheckoutShippingOrigin;
 use App\Services\Marketplace\OrderImageSnapshots;
+use App\Services\Payments\OrderPayments;
 use App\Services\Shipping\ShippingCostCalculator;
 use App\Support\CheckoutShipping;
 use App\Support\CheckoutSimulation;
+use App\Support\CheckoutStock;
 use App\Support\ManualCheckout;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -32,7 +35,7 @@ class OrderController extends Controller
         return OrderResource::collection(
             Order::query()
                 ->where('user_id', $request->user()->id)
-                ->with('items.media')
+                ->with(['items.media', 'activePayment'])
                 ->latest()
                 ->paginate(15),
         )->additional([
@@ -45,7 +48,7 @@ class OrderController extends Controller
     {
         $record = Order::query()
             ->where('user_id', $request->user()->id)
-            ->with('items.media')
+            ->with(['items.media', 'activePayment'])
             ->findOrFail($order);
 
         return (new OrderResource($record))->additional([
@@ -59,10 +62,16 @@ class OrderController extends Controller
         int $order,
         WarehouseStockProvider $warehouse,
     ): OrderResource|JsonResponse {
+        $existing = Order::where('user_id', $request->user()->id)->findOrFail($order);
+        if ($existing->payment_provider === 'midtrans') {
+            $cancelled = app(OrderPayments::class)->cancel($existing);
+
+            return (new OrderResource($cancelled->load('items.media', 'activePayment')))->additional(['success' => true, 'message' => 'Order berhasil dibatalkan.']);
+        }
         $record = DB::transaction(function () use ($request, $order, $warehouse): Order {
             $record = Order::query()
                 ->where('user_id', $request->user()->id)
-                ->with('items.media')
+                ->with(['items.media', 'activePayment'])
                 ->lockForUpdate()
                 ->findOrFail($order);
 
@@ -89,7 +98,7 @@ class OrderController extends Controller
             return $record;
         });
 
-        return (new OrderResource($record->fresh()->load('items.media')))->additional([
+        return (new OrderResource($record->fresh()->load(['items.media', 'activePayment'])))->additional([
             'success' => true,
             'message' => 'Order berhasil dibatalkan.',
         ]);
@@ -134,7 +143,7 @@ class OrderController extends Controller
         $existing = Order::query()
             ->where('user_id', $request->user()->id)
             ->where('idempotency_key', $idempotencyKey)
-            ->with('items.media')
+            ->with(['items.media', 'activePayment'])
             ->first();
 
         if ($existing) {
@@ -211,7 +220,8 @@ class OrderController extends Controller
 
         $pricing = app(CheckoutPricing::class);
         $priceChanges = $pricing->review($cart->items, lock: true);
-        $pricing->confirm($request->validated('checkout_token'), $request->user()->id, $cart->items, $priceChanges);
+        $origin = app(CheckoutShippingOrigin::class)->resolve($cart->items, lock: true);
+        $pricing->confirm($request->validated('checkout_token'), $request->user()->id, $cart->items, $priceChanges, $origin['warehouse_code']);
 
         $stockItems = $this->stockItems($cart->items);
         $manual = ManualCheckout::enabled();
@@ -225,7 +235,8 @@ class OrderController extends Controller
             $subtotal,
             $this->weightGrams($cart->items),
         );
-        $availability = $manual ? ['available' => true, 'items' => []] : $warehouse->checkAvailability($stockItems);
+        $unlimitedStock = CheckoutStock::unlimited();
+        $availability = $unlimitedStock ? ['available' => true, 'items' => []] : $warehouse->checkAvailability($stockItems);
 
         if (! $availability['available']) {
             return response()->json([
@@ -238,10 +249,10 @@ class OrderController extends Controller
         }
 
         $reference = (string) Str::uuid();
-        $reservationId = $manual ? null : $warehouse->reserve($stockItems, $reference);
+        $reservationId = $unlimitedStock ? null : $warehouse->reserve($stockItems, $reference);
 
         try {
-            $order = DB::transaction(function () use ($request, $cart, $idempotencyKey, $reservationId, $shippingAddress, $shippingQuote, $shippingCost, $subtotal, $manual, $snapshots): Order {
+            $order = DB::transaction(function () use ($request, $cart, $idempotencyKey, $reservationId, $shippingAddress, $shippingQuote, $shippingCost, $subtotal, $manual, $snapshots, $origin): Order {
                 $shippingFee = (float) $shippingCost['fee'];
                 $simulated = CheckoutSimulation::enabled();
 
@@ -251,6 +262,8 @@ class OrderController extends Controller
                     'idempotency_key' => $idempotencyKey,
                     'status' => $simulated ? 'paid' : 'pending_payment',
                     'payment_provider' => $manual ? 'manual' : ($simulated ? 'simulation' : 'midtrans'),
+                    'payment_integration' => ! $manual && ! $simulated ? 'core_api' : null,
+                    'payment_due_at' => ! $manual && ! $simulated ? now()->addHours(max(1, (int) config('services.midtrans.order_ttl_hours', 24))) : null,
                     'payment_reference' => $simulated ? 'SIM-PAY-'.Str::uuid() : null,
                     'currency' => 'IDR',
                     'subtotal' => $subtotal,
@@ -260,6 +273,8 @@ class OrderController extends Controller
                     'shipping_service' => $shippingQuote['service'],
                     'total' => $subtotal + $shippingFee,
                     'shipping_address' => $shippingAddress,
+                    'shipping_origin' => $origin,
+                    'stock_mode' => CheckoutStock::mode(),
                     'stock_reservation_id' => $simulated ? null : $reservationId,
                     'placed_at' => now(),
                 ]);
@@ -326,7 +341,7 @@ class OrderController extends Controller
             throw $exception;
         }
 
-        return (new OrderResource($order->load('items.media')))->additional([
+        return (new OrderResource($order->load(['items.media', 'activePayment'])))->additional([
             'success' => true,
             'message' => 'Order berhasil dibuat.',
         ]);

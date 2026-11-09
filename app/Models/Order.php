@@ -24,11 +24,20 @@ class Order extends Model
         'shipping_service',
         'total',
         'shipping_address',
+        'shipping_origin',
+        'stock_mode',
         'stock_reservation_id',
         'payment_reference',
         'payment_provider',
         'placed_at',
         'paid_at',
+        'payment_integration',
+        'payment_due_at',
+        'active_payment_id',
+        'payment_operation_token',
+        'payment_operation_started_at',
+        'payment_close_reason',
+        'payment_last_synced_at',
     ];
 
     protected function casts(): array
@@ -40,8 +49,12 @@ class Order extends Model
             'shipping_fee' => 'decimal:2',
             'total' => 'decimal:2',
             'shipping_address' => 'array',
+            'shipping_origin' => 'array',
             'placed_at' => 'datetime',
             'paid_at' => 'datetime',
+            'payment_due_at' => 'datetime',
+            'payment_operation_started_at' => 'datetime',
+            'payment_last_synced_at' => 'datetime',
         ];
     }
 
@@ -53,6 +66,16 @@ class Order extends Model
     public function items(): HasMany
     {
         return $this->hasMany(OrderItem::class);
+    }
+
+    public function payments(): HasMany
+    {
+        return $this->hasMany(OrderPayment::class)->orderBy('attempt_number');
+    }
+
+    public function activePayment(): BelongsTo
+    {
+        return $this->belongsTo(OrderPayment::class, 'active_payment_id');
     }
 
     public function statusHistories(): HasMany

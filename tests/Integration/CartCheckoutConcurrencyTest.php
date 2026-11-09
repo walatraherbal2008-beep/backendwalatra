@@ -13,10 +13,13 @@ use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Laravel\Sanctum\Sanctum;
 use Symfony\Component\Process\Process;
+use Tests\Concerns\WithCheckoutWarehouse;
 use Tests\TestCase;
 
 class CartCheckoutConcurrencyTest extends TestCase
 {
+    use WithCheckoutWarehouse;
+
     private function assertWorkerIsWaitingForLock(Process $worker): void
     {
         $ready = $worker->waitUntil(fn (): bool => str_contains($worker->getOutput(), 'locking:'));
@@ -42,7 +45,7 @@ class CartCheckoutConcurrencyTest extends TestCase
             $this->markTestSkipped('Memerlukan database PostgreSQL khusus dengan prefix walatra_cart_concurrency_test_.');
         }
         $this->artisan('migrate:fresh', ['--force' => true])->assertExitCode(0);
-        config(['checkout.mode' => 'manual', 'checkout.free_shipping' => true]);
+        config(['checkout.mode' => 'manual', 'checkout.stock_mode' => 'unlimited', 'checkout.free_shipping' => true]);
     }
 
     public function test_cart_mutations_wait_for_checkout_and_cannot_change_or_delete_its_snapshot(): void
@@ -50,7 +53,7 @@ class CartCheckoutConcurrencyTest extends TestCase
         foreach (['add_product', 'add_bundle', 'update', 'delete', 'clear'] as $operation) {
             $user = User::factory()->create();
             Sanctum::actingAs($user, ['customer-api']);
-            $variant = ProductVariant::factory()->create(['price' => 15000]);
+            $variant = ProductVariant::factory()->withWarehouse()->create(['price' => 15000]);
             $listing = StoreProductListing::factory()->create(['product_id' => $variant->product_id]);
             $productPayload = ['listing_id' => $listing->id, 'variant_id' => $variant->id, 'quantity' => 2];
             $this->postJson('/api/v1/cart/items', $productPayload)->assertOk();
@@ -122,7 +125,7 @@ class CartCheckoutConcurrencyTest extends TestCase
         foreach (['product', 'bundle'] as $type) {
             $user = User::factory()->create();
             Sanctum::actingAs($user, ['customer-api']);
-            $variant = ProductVariant::factory()->create(['price' => 15000]);
+            $variant = ProductVariant::factory()->withWarehouse()->create(['price' => 15000]);
             if ($type === 'product') {
                 $master = $variant;
                 $listing = StoreProductListing::factory()->create(['product_id' => $variant->product_id]);

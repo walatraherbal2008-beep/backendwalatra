@@ -82,6 +82,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        RateLimiter::for('payment-create', fn ($request) => Limit::perMinute(10)->by('payment-create:'.$request->user()?->id.':'.$request->route('order')));
+        RateLimiter::for('payment-refresh', fn ($request) => Limit::perMinute(12)->by('payment-refresh:'.$request->user()?->id.':'.$request->route('order')));
         Product::observe(ProductObserver::class);
         ProductVariant::observe(ProductVariantObserver::class);
 
@@ -108,7 +110,7 @@ class AppServiceProvider extends ServiceProvider
                 Limit::perMinute(10, 1)
                     ->by('phone:'.$phoneKey)
                     ->response($throttledResponse),
-                Limit::perMinute(5, 15)
+                Limit::perMinute(20, 15)
                     ->by('ip:'.$request->ip())
                     ->response($throttledResponse),
             ];

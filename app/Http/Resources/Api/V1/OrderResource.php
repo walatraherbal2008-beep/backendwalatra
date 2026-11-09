@@ -15,7 +15,10 @@ class OrderResource extends JsonResource
             'status' => $this->status,
             'payment_provider' => $this->payment_provider,
             'simulation' => $this->payment_provider === 'simulation',
-            'payment_required' => $this->status === 'pending_payment',
+            'payment_required' => $this->status === 'pending_payment' && $this->payment_close_reason === null && ($this->payment_due_at === null || $this->payment_due_at->isFuture()),
+            'payment_integration' => $this->payment_integration,
+            'payment_due_at' => $this->payment_due_at?->toIso8601String(),
+            'payment' => $this->whenLoaded('activePayment', fn () => new OrderPaymentResource($this->activePayment)),
             'payment_instructions' => $this->payment_provider === 'manual' && $this->status === 'pending_payment'
                 ? config('checkout.manual.payment_instructions') : null,
             'paid_at' => $this->paid_at?->toIso8601String(),
@@ -27,6 +30,8 @@ class OrderResource extends JsonResource
             'shipping_service' => $this->shipping_service,
             'total' => $this->total,
             'shipping_address' => $this->shipping_address,
+            'shipping_origin' => $this->shipping_origin,
+            'stock_mode' => $this->stock_mode,
             'items' => $this->whenLoaded('items', fn () => $this->items->map(fn ($item): array => [
                 'id' => $item->id,
                 'type' => $item->item_type,

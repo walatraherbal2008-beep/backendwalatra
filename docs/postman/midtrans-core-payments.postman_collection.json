@@ -1,0 +1,189 @@
+{
+  "info": {
+    "name": "Walatra - Midtrans Core Payments",
+    "description": "Isi customer_token dan order_id dari checkout. Pilih payment_method: bca_va, bni_va, bri_va, mandiri_bill, permata_va, qris. Retry wajib memakai idempotency_key yang sama; ganti key hanya untuk metode baru atau percobaan kedaluwarsa. Respons 202 berarti belum selesai. QR berupa PNG. Webhook disiapkan di dashboard Midtrans, bukan dipanggil frontend. Server Key tidak diperlukan dan tidak boleh disimpan di koleksi ini.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{customer_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:8000/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "customer_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "order_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "payment_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "payment_method",
+      "value": "bca_va",
+      "type": "string"
+    },
+    {
+      "key": "idempotency_key",
+      "value": "payment-order-1-attempt-1",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Metode pembayaran",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/payment-methods"
+      }
+    },
+    {
+      "name": "Buat / retry instruksi pembayaran",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Idempotency-Key",
+            "value": "{{idempotency_key}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/orders/{{order_id}}/payment",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"method\": \"{{payment_method}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if ([200, 201].includes(pm.response.code)) {",
+              "  const data = pm.response.json().data;",
+              "  if (data && data.payment) pm.collectionVariables.set(\"payment_id\", String(data.payment.id));",
+              "}",
+              "pm.test(\"Payment response\", () => pm.expect([200, 201, 202]).to.include(pm.response.code));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Snapshot pembayaran",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/orders/{{order_id}}/payment"
+      }
+    },
+    {
+      "name": "Refresh status dari Midtrans",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/orders/{{order_id}}/payment/refresh"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if ([200, 201].includes(pm.response.code)) {",
+              "  const data = pm.response.json().data;",
+              "  if (data && data.payment) pm.collectionVariables.set(\"payment_id\", String(data.payment.id));",
+              "}",
+              "pm.test(\"Payment response\", () => pm.expect([200, 201, 202]).to.include(pm.response.code));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Unduh gambar QRIS (Bearer token)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/orders/{{order_id}}/payments/{{payment_id}}/qr-code"
+      }
+    },
+    {
+      "name": "Detail order",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/orders/{{order_id}}"
+      }
+    },
+    {
+      "name": "Batalkan order dan transaksi pending",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/orders/{{order_id}}/cancel"
+      }
+    }
+  ]
+}

@@ -12,16 +12,17 @@ use App\Models\StoreProductListing;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
+use Tests\Concerns\WithCheckoutWarehouse;
 use Tests\TestCase;
 
 class CheckoutPricingTest extends TestCase
 {
-    use RefreshDatabase;
+    use RefreshDatabase, WithCheckoutWarehouse;
 
     protected function setUp(): void
     {
         parent::setUp();
-        config(['checkout.mode' => 'manual', 'checkout.free_shipping' => true]);
+        config(['checkout.mode' => 'manual', 'checkout.stock_mode' => 'unlimited', 'checkout.free_shipping' => true]);
         Sanctum::actingAs(User::factory()->create(), ['customer-api']);
     }
 
@@ -35,7 +36,7 @@ class CheckoutPricingTest extends TestCase
 
     private function addProduct(int $price = 15000): array
     {
-        $variant = ProductVariant::factory()->create(['price' => $price]);
+        $variant = ProductVariant::factory()->withWarehouse()->create(['price' => $price]);
         $listing = StoreProductListing::factory()->create(['product_id' => $variant->product_id]);
         $this->postJson('/api/v1/cart/items', [
             'listing_id' => $listing->id, 'variant_id' => $variant->id, 'quantity' => 2,
@@ -46,7 +47,7 @@ class CheckoutPricingTest extends TestCase
 
     private function addBundle(): array
     {
-        $component = ProductVariant::factory()->create();
+        $component = ProductVariant::factory()->withWarehouse()->create();
         $bundle = ProductBundle::factory()->create(['price' => 40000]);
         ProductBundleItem::factory()->create(['product_bundle_id' => $bundle->id, 'product_variant_id' => $component->id, 'quantity' => 2]);
         $listing = StoreBundleListing::factory()->create(['product_bundle_id' => $bundle->id]);

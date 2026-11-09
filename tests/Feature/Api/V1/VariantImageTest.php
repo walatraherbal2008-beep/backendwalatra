@@ -21,23 +21,24 @@ use Mockery;
 use RuntimeException;
 use Spatie\MediaLibrary\MediaCollections\Filesystem;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
+use Tests\Concerns\WithCheckoutWarehouse;
 use Tests\TestCase;
 
 class VariantImageTest extends TestCase
 {
-    use RefreshDatabase;
+    use RefreshDatabase, WithCheckoutWarehouse;
 
     protected function setUp(): void
     {
         parent::setUp();
         Storage::fake('public');
-        config(['checkout.mode' => 'manual', 'checkout.free_shipping' => true]);
+        config(['checkout.mode' => 'manual', 'checkout.stock_mode' => 'unlimited', 'checkout.free_shipping' => true]);
         Sanctum::actingAs(User::factory()->create(), ['customer-api']);
     }
 
     private function product(): array
     {
-        $variant = ProductVariant::factory()->create(['price' => 25000]);
+        $variant = ProductVariant::factory()->withWarehouse()->create(['price' => 25000]);
         $listing = StoreProductListing::factory()->create(['product_id' => $variant->product_id]);
         $this->postJson('/api/v1/cart/items', [
             'listing_id' => $listing->id, 'variant_id' => $variant->id, 'quantity' => 1,
@@ -188,7 +189,7 @@ class VariantImageTest extends TestCase
 
     public function test_copy_failure_releases_reserved_stock_in_integrated_checkout(): void
     {
-        config(['checkout.mode' => 'integrated']);
+        config(['checkout.mode' => 'integrated', 'checkout.stock_mode' => 'external']);
         [$variant] = $this->product();
         $source = $this->photo($variant, 'image');
         Storage::disk('public')->delete($source->getPathRelativeToRoot());

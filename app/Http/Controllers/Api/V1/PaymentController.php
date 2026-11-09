@@ -3,167 +3,128 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Contracts\PaymentGateway;
-use App\Contracts\WarehouseStockProvider;
 use App\Http\Controllers\Controller;
+use App\Http\Resources\Api\V1\OrderPaymentResource;
+use App\Jobs\ProcessMidtransNotification;
 use App\Models\Order;
+use App\Models\PaymentNotification;
+use App\Services\Payments\OrderPayments;
+use App\Support\PaymentMethods;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\ValidationException;
+use Illuminate\Validation\Rule;
+use Symfony\Component\HttpFoundation\Response;
+use Throwable;
 
 class PaymentController extends Controller
 {
-    public function create(
-        Request $request,
-        int $order,
-        PaymentGateway $gateway,
-    ): JsonResponse {
-        $record = Order::query()
-            ->where('user_id', $request->user()->id)
-            ->with('items')
-            ->findOrFail($order);
-
-        if ($record->payment_provider === 'manual') {
-            abort_unless(in_array($record->status, ['pending_payment', 'paid'], true), 404);
-
-            return response()->json([
-                'success' => true,
-                'message' => $record->status === 'paid' ? 'Pembayaran sudah dikonfirmasi admin.' : 'Pembayaran menunggu verifikasi admin.',
-                'code' => $record->status === 'paid' ? 'MANUAL_PAYMENT_CONFIRMED' : 'MANUAL_PAYMENT_REQUIRED',
-                'data' => [
-                    'order_id' => $record->id,
-                    'order_number' => $record->order_number,
-                    'payment_provider' => 'manual',
-                    'payment_required' => $record->status === 'pending_payment',
-                    'instructions' => $record->status === 'pending_payment' ? config('checkout.manual.payment_instructions') : null,
-                    'payment_token' => null,
-                    'payment_url' => null,
-                ],
-            ]);
-        }
-
-        if ($record->payment_provider === 'simulation' && $record->status === 'paid') {
-            return response()->json([
-                'success' => true,
-                'message' => 'Order simulasi sudah dianggap dibayar.',
-                'code' => 'PAYMENT_SIMULATED',
-                'data' => [
-                    'order_id' => $record->id,
-                    'order_number' => $record->order_number,
-                    'simulation' => true,
-                    'payment_required' => false,
-                    'payment_token' => null,
-                    'payment_url' => null,
-                ],
-            ]);
-        }
-
-        abort_unless($record->status === 'pending_payment' && $record->payment_provider === 'midtrans', 404);
-
-        $payment = $gateway->createPayment($record);
-
-        $record->update([
-            'payment_reference' => $payment['payment_reference'],
-        ]);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Pembayaran berhasil disiapkan.',
-            'data' => [
-                'order_id' => $record->id,
-                'order_number' => $record->order_number,
-                'payment_token' => $payment['payment_token'],
-                'payment_url' => $payment['payment_url'],
-            ],
-            'code' => 'PAYMENT_CREATED',
-        ]);
+    private function order(Request $request, int $id): Order
+    {
+        return Order::where('user_id', $request->user()->id)->findOrFail($id);
     }
 
-    public function webhook(
-        Request $request,
-        WarehouseStockProvider $warehouse,
-    ): JsonResponse {
-        $validated = $request->validate([
-            'order_id' => ['required', 'string', 'max:40'],
-            'status_code' => ['required', 'string', 'max:10'],
-            'gross_amount' => ['required', 'string', 'max:30'],
-            'signature_key' => ['required', 'string', 'size:128'],
-            'transaction_status' => ['required', 'string', 'max:30'],
+    public function methods(): JsonResponse
+    {
+        return response()->json(['success' => true, 'data' => array_map(fn (string $method): array => [
+            'code' => $method, 'name' => PaymentMethods::LABELS[$method], 'payment_type' => PaymentMethods::type($method),
+            'expiry_minutes' => PaymentMethods::ttl($method),
+        ], PaymentMethods::enabled())]);
+    }
+
+    public function create(Request $request, int $order, OrderPayments $payments): JsonResponse
+    {
+        $record = $this->order($request, $order);
+        if ($record->payment_provider === 'manual' || ($record->payment_provider === 'simulation' && $record->status === 'paid')) {
+            abort_unless(in_array($record->status, ['pending_payment', 'paid'], true), 404);
+            $manual = $record->payment_provider === 'manual';
+
+            return response()->json(['success' => true,
+                'message' => $manual ? 'Pembayaran menunggu verifikasi admin.' : 'Order simulasi sudah dianggap dibayar.',
+                'code' => $manual ? ($record->status === 'paid' ? 'MANUAL_PAYMENT_CONFIRMED' : 'MANUAL_PAYMENT_REQUIRED') : 'PAYMENT_SIMULATED',
+                'data' => ['order_id' => $record->id, 'order_number' => $record->order_number, 'payment_provider' => $record->payment_provider,
+                    'payment_required' => $record->status === 'pending_payment', 'simulation' => ! $manual,
+                    'instructions' => $manual && $record->status === 'pending_payment' ? config('checkout.manual.payment_instructions') : null,
+                    'payment_token' => null, 'payment_url' => null],
+            ]);
+        }
+        $validated = $request->validate(['method' => ['required', 'string', Rule::in(PaymentMethods::enabled())]]);
+        $key = trim((string) $request->header('Idempotency-Key'));
+        if ($key === '' || strlen($key) > 100) {
+            return response()->json(['success' => false, 'message' => 'Idempotency-Key wajib diisi, maksimal 100 karakter.', 'code' => 'VALIDATION_ERROR'], 422);
+        }
+        [$payment, $created] = $payments->create($record, $validated['method'], $key);
+
+        return $this->response($record->fresh(), $payment, $created ? 201 : 200);
+    }
+
+    public function show(Request $request, int $order): JsonResponse
+    {
+        $record = $this->order($request, $order);
+
+        return $this->response($record, $record->activePayment);
+    }
+
+    public function refresh(Request $request, int $order, OrderPayments $payments): JsonResponse
+    {
+        $record = $this->order($request, $order);
+        abort_unless($record->payment_provider === 'midtrans', 404);
+        $payment = $payments->refresh($record);
+
+        return $this->response($record->fresh(), $payment);
+    }
+
+    private function response(Order $order, $payment, int $status = 200): JsonResponse
+    {
+        return response()->json(['success' => true, 'code' => 'PAYMENT_READY', 'message' => 'Informasi pembayaran berhasil diambil.',
+            'data' => ['order_id' => $order->id, 'order_number' => $order->order_number, 'order_status' => $order->status,
+                'payment_due_at' => $order->payment_due_at?->toIso8601String(),
+                'payment_required' => $order->status === 'pending_payment' && $order->payment_close_reason === null && ($order->payment_due_at === null || $order->payment_due_at->isFuture()),
+                'payment_token' => null, 'payment_url' => null, 'payment' => $payment ? new OrderPaymentResource($payment) : null],
+        ], $status);
+    }
+
+    public function qrCode(Request $request, int $order, int $payment, PaymentGateway $gateway): Response
+    {
+        $record = $this->order($request, $order);
+        $attempt = $record->payments()->findOrFail($payment);
+        abort_unless($attempt->id === $record->active_payment_id && $attempt->method === 'qris', 404);
+        abort_unless($record->status === 'pending_payment' && $record->payment_close_reason === null
+            && $record->payment_due_at?->isFuture() && $attempt->state === 'pending' && $attempt->expires_at?->isFuture(), 410);
+        abort_unless($attempt->environment === PaymentMethods::environment(), 409);
+        $actions = collect($attempt->response_payload['actions'] ?? []);
+        $action = $actions->firstWhere('name', 'generate-qr-code-v2') ?? $actions->firstWhere('name', 'generate-qr-code');
+        abort_unless(is_string($action['url'] ?? null), 404);
+
+        return response($gateway->qrImage($action['url']), 200)->header('Content-Type', 'image/png')->header('Cache-Control', 'no-store');
+    }
+
+    public function webhook(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'order_id' => ['required', 'string', 'max:100'], 'status_code' => ['required', 'string', 'max:10'],
+            'gross_amount' => ['required', 'string', 'max:30'], 'signature_key' => ['required', 'string', 'size:128'],
+            'transaction_status' => ['required', 'string', 'max:30'], 'transaction_id' => ['sometimes', 'string', 'max:100'],
             'fraud_status' => ['nullable', 'string', 'max:30'],
         ]);
-
-        $expectedSignature = hash(
-            'sha512',
-            $validated['order_id'].$validated['status_code'].$validated['gross_amount'].config('services.midtrans.server_key'),
-        );
-
-        if (
-            blank(config('services.midtrans.server_key'))
-            || ! hash_equals($expectedSignature, $validated['signature_key'])
-        ) {
-            throw ValidationException::withMessages([
-                'signature_key' => 'Signature pembayaran tidak valid.',
-            ]);
+        $key = (string) config('services.midtrans.server_key');
+        $signature = hash('sha512', $data['order_id'].$data['status_code'].$data['gross_amount'].$key);
+        if ($key === '' || ! hash_equals($signature, $data['signature_key'])) {
+            return response()->json(['success' => false, 'code' => 'INVALID_SIGNATURE', 'message' => 'Signature pembayaran tidak valid.'], 403);
         }
-
-        $record = Order::query()
-            ->where('order_number', $validated['order_id'])
-            ->where('payment_provider', 'midtrans')
-            ->lockForUpdate()
-            ->firstOrFail();
-        $transactionStatus = $validated['transaction_status'];
-
-        if (number_format((float) $record->total, 2, '.', '') !== $validated['gross_amount']) {
-            throw ValidationException::withMessages([
-                'gross_amount' => 'Nominal pembayaran tidak sesuai dengan order.',
-            ]);
-        }
-
-        $isSuccessfulCapture = $transactionStatus === 'capture'
-            && ($validated['fraud_status'] ?? null) !== 'deny';
-
-        if ($transactionStatus === 'settlement' || $isSuccessfulCapture) {
-            if ($record->status !== 'paid') {
-                if ($record->stock_reservation_id !== null) {
-                    $warehouse->confirm($record->stock_reservation_id);
-                }
-
-                $this->transition($record, 'paid', 'Pembayaran berhasil dikonfirmasi.');
-                $record->update(['stock_reservation_id' => null]);
+        ksort($data);
+        $hash = hash('sha256', PaymentMethods::environment().json_encode($data, JSON_THROW_ON_ERROR));
+        $notification = DB::transaction(fn () => PaymentNotification::firstOrCreate(['event_hash' => $hash], [
+            'provider_order_id' => $data['order_id'], 'environment' => PaymentMethods::environment(), 'payload' => $data,
+        ]));
+        if ($notification->processed_at === null) {
+            try {
+                ProcessMidtransNotification::dispatch($notification->id);
+            } catch (Throwable) {
+                // The durable inbox is retried by payments:reconcile even when the queue is unavailable.
             }
-        } elseif (in_array($transactionStatus, ['deny', 'cancel', 'expire', 'failure'], true)) {
-            if ($record->status === 'pending_payment') {
-                if ($record->stock_reservation_id !== null) {
-                    $warehouse->release($record->stock_reservation_id);
-                }
-
-                $this->transition(
-                    $record,
-                    $transactionStatus === 'expire' ? 'expired' : 'cancelled',
-                    'Pembayaran gagal atau kedaluwarsa.',
-                );
-                $record->update(['stock_reservation_id' => null]);
-            }
-        } elseif ($transactionStatus === 'refund' && $record->status === 'paid') {
-            $this->transition($record, 'refunded', 'Pembayaran dikembalikan.');
         }
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Webhook diterima.',
-            'code' => 'PAYMENT_WEBHOOK_ACCEPTED',
-            'data' => null,
-        ]);
-    }
-
-    private function transition(Order $order, string $status, string $note): void
-    {
-        DB::transaction(function () use ($order, $status, $note): void {
-            $order->update(['status' => $status]);
-            $order->statusHistories()->create([
-                'status' => $status,
-                'note' => $note,
-            ]);
-        });
+        return response()->json(['success' => true, 'message' => 'Webhook diterima.', 'code' => 'PAYMENT_WEBHOOK_ACCEPTED', 'data' => null]);
     }
 }

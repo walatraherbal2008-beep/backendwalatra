@@ -30,7 +30,11 @@
         <env name="MAXCHAT_ENABLED" value="false"/>
         <env name="MAXCHAT_API_TOKEN" value=""/>
         <env name="QUEUE_CONNECTION" value="sync"/>
+        <env name="MIDTRANS_SERVER_KEY" value="" force="true"/>
+        <env name="MIDTRANS_IS_PRODUCTION" value="false" force="true"/>
         <env name="ORDER_SIMULATION_ENABLED" value="false"/>
+        <env name="CHECKOUT_STOCK_MODE" value="external" force="true"/>
+        <env name="CHECKOUT_WAREHOUSE_CODE" value="" force="true"/>
         <env name="ORDER_PROCESSING_MODE" value="integrated" force="true"/>
         <env name="FREE_SHIPPING_ENABLED" value="false" force="true"/>
         <env name="SESSION_DRIVER" value="array"/>

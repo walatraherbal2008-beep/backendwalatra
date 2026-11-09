@@ -2,6 +2,8 @@
 
 return [
     'mode' => env('ORDER_PROCESSING_MODE', 'manual'),
+    'stock_mode' => env('CHECKOUT_STOCK_MODE', 'unlimited'),
+    'preferred_warehouse_code' => env('CHECKOUT_WAREHOUSE_CODE'),
     'free_shipping' => (bool) env('FREE_SHIPPING_ENABLED', true),
     'manual' => [
         'shipping_fee' => (int) env('MANUAL_ORDER_SHIPPING_FEE', 0),

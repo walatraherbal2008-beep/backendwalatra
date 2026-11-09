@@ -49,15 +49,21 @@ class BannerResource extends Resource
                 ->label('Nama iklan')
                 ->required()
                 ->maxLength(255),
+            Select::make('position')
+                ->label('Area banner')
+                ->options(Banner::POSITIONS)
+                ->default('main')
+                ->required()
+                ->helperText('Pilih banner utama yang besar, area kanan atas, atau area kanan bawah.'),
             SpatieMediaLibraryFileUpload::make('image')
                 ->label('Gambar banner')
                 ->collection('image')
                 ->disk('public')
                 ->image()
                 ->required(fn (string $operation): bool => $operation === 'create')
-                ->maxSize(5120)
+                ->maxSize(2048)
                 ->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp'])
-                ->helperText('Rekomendasi sekitar 2115 × 743 px dengan rasio 2.85:1. Maksimal 5 MB.')
+                ->helperText('Rekomendasi ukuran 1536 × 625 px. Maksimal 2 MB.')
                 ->columnSpanFull(),
             TextInput::make('cta_url')
                 ->label('URL CTA')
@@ -65,6 +71,13 @@ class BannerResource extends Resource
                 ->required()
                 ->maxLength(2048)
                 ->helperText('URL yang dibuka ketika banner dipilih di Android atau website.'),
+            Select::make('open_in_new_tab')
+                ->label('Buka tautan')
+                ->boolean(trueLabel: 'Tab baru', falseLabel: 'Tab yang sama')
+                ->default(false)
+                ->rules(['boolean'])
+                ->required()
+                ->helperText('Mengatur cara website membuka URL CTA. Android menyesuaikan navigasi aplikasi.'),
             Select::make('status')
                 ->label('Status')
                 ->options([
@@ -87,7 +100,7 @@ class BannerResource extends Resource
                 ->minValue(1)
                 ->default(100)
                 ->required()
-                ->helperText('Angka lebih kecil tampil lebih dahulu.'),
+                ->helperText('Angka lebih kecil tampil lebih dahulu dalam area yang dipilih.'),
         ]);
     }
 
@@ -106,6 +119,11 @@ class BannerResource extends Resource
                 TextColumn::make('status')
                     ->label('Status')
                     ->badge(),
+                TextColumn::make('position')
+                    ->label('Area banner')
+                    ->formatStateUsing(fn (string $state): string => Banner::POSITIONS[$state] ?? $state)
+                    ->badge()
+                    ->sortable(),
                 TextColumn::make('starts_at')
                     ->label('Mulai')
                     ->dateTime('d M Y H:i')
@@ -121,6 +139,9 @@ class BannerResource extends Resource
                     ->sortable(),
             ])
             ->filters([
+                SelectFilter::make('position')
+                    ->label('Area banner')
+                    ->options(Banner::POSITIONS),
                 SelectFilter::make('status')
                     ->label('Status')
                     ->options([

@@ -1,8 +1,8 @@
 # Alur API Cart dan Checkout
 
-Panduan integrasi frontend untuk menambahkan produk dan bundle ke satu cart, memilih barang yang dibeli, meninjau harga terbaru, lalu membuat order. Mengikuti implementasi backend pada 4 November 2026.
+Panduan integrasi frontend untuk menambahkan produk dan bundle ke satu cart, memilih barang yang dibeli, meninjau harga terbaru, lalu membuat order. Mengikuti implementasi backend pada 9 November 2026.
 
-Alur operasional saat ini memakai pembayaran manual dan gratis ongkir: order baru berstatus `pending_payment`, ongkir `0.00`, dan pembayaran dikonfirmasi superadmin setelah diperiksa. Penjelasan konfigurasi server dan pembayaran tersedia di [API order manual](manual-orders.md).
+Alur operasional memakai Midtrans Core API dan gratis ongkir: order baru berstatus `pending_payment`, ongkir `0.00`, dan pembayaran diverifikasi backend melalui Midtrans. Lihat [API pembayaran Midtrans](midtrans-core-payments.md) untuk VA, QRIS, dan webhook. Stok sementara dianggap tidak membatasi checkout. Titik pengiriman dipilih dari penetapan gudang pada varian; detail pengaturannya tersedia di [manajemen gudang](../warehouse-management.md).
 
 ## 1. Persiapan
 
@@ -262,8 +262,16 @@ Contoh respons 200 jika harga belum berubah:
     "price_changes": [],
     "simulation": false,
     "payment_required": true,
-    "payment_provider": "manual",
+    "payment_provider": "midtrans",
+    "stock_mode": "unlimited",
     "stock_verification": "pending_manual",
+    "shipping_origin": {
+      "warehouse_code": "<KODE_GUDANG_DARI_DIREKTORI>",
+      "warehouse_name": "Tasikmalaya",
+      "address": "Alamat gudang dari API direktori",
+      "postal_code": null,
+      "coordinates": null
+    },
     "checkout_available": true,
     "items": [
       {"cart_item_id": 12, "type": "product", "image_url": "https://api.example.com/storage/123/varian.png", "sku": "PRD-010-60", "quantity": 2, "unit_price": "15000.00", "subtotal": "30000.00"},
@@ -290,8 +298,10 @@ Contoh respons 200 jika harga belum berubah:
 | `items` | Hanya item yang dipilih; kaitkan `cart_item_id` dengan `items[].id` dari cart untuk nama barang, varian, dan toko |
 | `price_changed` | Harga terbaru berbeda dari harga yang tersimpan pada cart |
 | `price_changes` | Rincian harga tersimpan dan harga terbaru untuk item terpilih |
-| `checkout_token` | Konfirmasi pilihan, quantity, dan harga; terikat akun dan berlaku 15 menit |
+| `checkout_token` | Konfirmasi pilihan, quantity, harga, dan kode gudang asal; terikat akun dan berlaku 15 menit |
 | `checkout_available` | Checkout dapat diajukan; pada mode manual bukan jaminan stok fisik sudah diperiksa |
+| `shipping_origin` | Titik pengiriman bersama untuk seluruh varian terpilih, termasuk komponen bundle |
+| `stock_mode` | `unlimited`: kuantitas stok tidak membatasi checkout; `external`: mengikuti pemeriksaan stok eksternal |
 | `stock_verification` | `pending_manual` berarti stok masih perlu diperiksa admin |
 | `shipping.fee` | Ongkir bersih; `0.00` selama gratis ongkir aktif |
 | `total` | Subtotal item terpilih + ongkir |
@@ -325,7 +335,7 @@ Sebagai contoh terpisah, hanya produk cart 12 dipilih, quantity 2, dan harga ber
 
 Frontend menampilkan harga dan total terbaru untuk ditinjau user. Setelah user setuju, kirim `checkout_token` dari preview tersebut pada create order. Jangan langsung membuat order secara otomatis hanya karena `checkout_available` bernilai `true`.
 
-Token tidak membekukan harga di database atau mereservasi stok. Jika harga, quantity, atau pilihan berubah sesudah preview, backend meminta preview baru saat pembuatan order.
+Token tidak membekukan harga di database atau mereservasi stok. Jika harga, quantity, pilihan, atau gudang asal berubah sesudah preview, backend meminta preview baru saat pembuatan order.
 
 ## 8. Konfirmasi dan buat order
 
@@ -378,10 +388,10 @@ Respons pertama **201**. Berikut cuplikan; respons lengkap juga menyertakan alam
     "id": 90,
     "order_number": "WAL-CONTOH123456",
     "status": "pending_payment",
-    "payment_provider": "manual",
+    "payment_provider": "midtrans",
     "simulation": false,
     "payment_required": true,
-    "payment_instructions": "Hubungi admin untuk petunjuk pembayaran. Pembayaran akan diverifikasi secara manual.",
+    "payment_instructions": null,
     "paid_at": null,
     "currency": "IDR",
     "subtotal": "70000.00",
@@ -389,6 +399,14 @@ Respons pertama **201**. Berikut cuplikan; respons lengkap juga menyertakan alam
     "shipping_subsidy": "0.00",
     "shipping_fee": "0.00",
     "shipping_service": "FREE",
+    "shipping_origin": {
+      "warehouse_code": "<KODE_GUDANG_DARI_DIREKTORI>",
+      "warehouse_name": "Tasikmalaya",
+      "address": "Alamat gudang dari API direktori",
+      "postal_code": null,
+      "coordinates": null
+    },
+    "stock_mode": "unlimited",
     "total": "70000.00",
     "created_at": "2026-11-04T08:00:00+07:00"
   },
@@ -424,7 +442,11 @@ Tidak semua endpoint memakai envelope error yang sama. Gunakan HTTP status sebag
 | 422 pada cart kosong | Tidak ada item untuk checkout | Arahkan ke cart/katalog |
 | 409 `STALE_CART` pada order | Item terpilih tidak aktif/tidak tersedia | Muat ulang cart dan perbarui pilihan |
 | 409 `PRICE_CHANGED` | Order tanpa token memakai harga cart yang sudah berbeda | Panggil preview, tampilkan harga terbaru, konfirmasikan token |
-| 409 `CHECKOUT_CHANGED` | Isi pilihan, quantity, atau harga berbeda dari preview bertoken | Buat preview baru dan minta persetujuan user |
+| 409 `CHECKOUT_CHANGED` | Isi pilihan, quantity, harga, atau gudang asal berbeda dari preview bertoken | Buat preview baru dan minta persetujuan user |
+| 409 `WAREHOUSE_NOT_ASSIGNED` | Varian produk atau komponen bundle belum ditetapkan ke gudang | Tampilkan pesan server; admin perlu mengatur varian |
+| 409 `WAREHOUSE_MISMATCH` | Tidak ada satu gudang bersama untuk seluruh barang terpilih | Ubah pilihan barang atau perbaiki penetapan gudang |
+| 409 `WAREHOUSE_SELECTION_REQUIRED` | Ada beberapa gudang bersama tanpa pilihan prioritas server | Admin menentukan satu gudang atau mengisi konfigurasi prioritas |
+| 409 `WAREHOUSE_NOT_AVAILABLE` | Gudang prioritas tidak dimiliki semua varian atau kode gudang tidak ditemukan | Periksa penetapan serta direktori gudang |
 | 409 `CHECKOUT_EXPIRED` | Token preview sudah melewati 15 menit | Buat preview baru |
 | 503 pada integrasi eksternal | Layanan stok atau layanan terkait tidak tersedia | Tampilkan pesan layanan; jangan menyatakan order berhasil |
 
@@ -459,11 +481,11 @@ Token rusak atau milik akun lain menghasilkan 422 pada `checkout_token`; jangan 
 ## 10. Sesudah order dibuat
 
 1. Simpan `data.id` dan `data.order_number`, lalu tampilkan detail pesanan melalui `GET /orders/{order}`.
-2. Tampilkan `status`, `total`, dan `payment_instructions` dari respons server. Endpoint `POST /orders/{order}/payment` juga menyediakan petunjuk pembayaran manual.
+2. Ambil `GET /payment-methods`, lalu kirim `POST /orders/{order}/payment` dengan `method` dan `Idempotency-Key` untuk memperoleh instruksi VA atau QRIS. Lihat [API pembayaran Midtrans](midtrans-core-payments.md).
 3. Muat ulang `GET /cart` agar tampilan sesuai sisa barang yang belum dibeli.
-4. Baca status order kembali setelah admin mengonfirmasi pembayaran. `paid` berarti pembayaran sudah dikonfirmasi; bukan otomatis status pengiriman.
+4. Baca status order kembali setelah pembayaran; webhook dan endpoint refresh memverifikasi status melalui Midtrans. `paid` berarti pembayaran sudah dikonfirmasi; bukan otomatis status pengiriman.
 
-Daftar pesanan tersedia melalui `GET /orders`. User dapat membatalkan order yang masih `pending_payment` melalui `POST /orders/{order}/cancel`; order yang sudah dibayar tidak dapat dibatalkan melalui endpoint customer tersebut. Pembatalan tidak otomatis mengembalikan item ke cart. Lihat [API order manual](manual-orders.md) untuk rincian pembayaran dan operasional admin.
+Daftar pesanan tersedia melalui `GET /orders`. User dapat membatalkan order yang masih `pending_payment` melalui `POST /orders/{order}/cancel`; order yang sudah dibayar tidak dapat dibatalkan melalui endpoint customer tersebut. Pembatalan tidak otomatis mengembalikan item ke cart. Lihat [API pembayaran Midtrans](midtrans-core-payments.md). Order manual lama tetap menggunakan [konfirmasi admin](manual-orders.md).
 
 ## 11. Ringkasan implementasi frontend
 
@@ -494,3 +516,33 @@ Item pesanan juga menyertakan `image_url`, tetapi URL tersebut menunjuk salinan 
 ```
 
 Pesanan lama dan item tanpa foto mengembalikan `image_url: null`. Jika sumber gambar ada tetapi gagal dibaca atau disalin, pembuatan order gagal; item cart dipertahankan dan salinan baru dibersihkan. Ulangi request dengan `Idempotency-Key` yang sama: order yang sudah berhasil dibuat dikembalikan tanpa membuat salinan tambahan.
+
+## Stok sementara dan titik pengiriman
+
+Frontend tetap mengirim `cart_item_ids`, alamat, dan token preview. Pemilihan gudang dilakukan backend; frontend tidak mengirim `warehouse_code` atau menentukan stok tersedia.
+
+Semua varian produk dan seluruh komponen bundle terpilih wajib memiliki penetapan gudang. Backend memilih satu gudang yang sama untuk seluruh checkout. Barang yang tidak dipilih di cart tidak ikut diperiksa. Pada tahap ini belum ada pemilihan berdasarkan jarak, panggilan Google Maps, atau pembagian satu order menjadi beberapa pengiriman.
+
+Jika semua varian ditetapkan hanya ke Tasikmalaya melalui superadmin, gudang tersebut dipilih otomatis. Tidak ada kode/nama Tasikmalaya yang ditanam permanen pada logika checkout. Jika terdapat beberapa gudang bersama, server memerlukan `CHECKOUT_WAREHOUSE_CODE`; gudang tersebut tetap wajib dimiliki oleh semua varian terpilih.
+
+`shipping_origin` pada preview dan order berisi `warehouse_code`, `warehouse_name`, `address`, `postal_code`, dan `coordinates`. Alamat, kode pos, atau koordinat yang belum diisi sumber bernilai `null`. Detail diambil dari direktori gudang, sehingga kegagalan API daftar/detail menghasilkan HTTP 503 dan order tidak dibuat.
+
+Origin disalin ke order saat checkout. Detail/list order dan retry idempotent membaca snapshot tersebut, tanpa mengambil ulang direktori atau mengikuti perubahan penetapan gudang. Order lama memiliki `shipping_origin: null` dan `stock_mode: null`.
+
+Token preview mencakup kode gudang asal. Perubahan kode setelah preview menghasilkan `409 CHECKOUT_CHANGED`; panggil preview kembali. Token lama sebelum fitur ini ditambahkan perlu dibuat ulang.
+
+### Konfigurasi server
+
+```dotenv
+ORDER_PROCESSING_MODE=integrated
+CHECKOUT_STOCK_MODE=unlimited
+CHECKOUT_WAREHOUSE_CODE=
+FREE_SHIPPING_ENABLED=true
+```
+
+- `CHECKOUT_STOCK_MODE=unlimited`: tidak memeriksa jumlah stok, tidak membuat reservasi, dan tidak mengurangi stok fisik. API preview mengirim `stock_verification: pending_manual`. Kuantitas cart, status barang, kelayakan toko, dan penetapan gudang tetap divalidasi.
+- `CHECKOUT_WAREHOUSE_CODE`: opsional jika hanya ada satu gudang bersama. Isi kode asli dari direktori untuk menentukan prioritas ketika beberapa gudang tersedia; bukan nama atau kode contoh dari dokumentasi.
+- `ORDER_PROCESSING_MODE=integrated`: pembayaran tetap menunggu konfirmasi superadmin. Mode pembayaran ini terpisah dari mode stok.
+- `CHECKOUT_STOCK_MODE=external`: memakai kontrak pemeriksaan/reservasi stok yang tersedia. Kontrak saat ini mengirim SKU dan quantity; integrasi alokasi stok per kode gudang masih perlu dilengkapi saat API stok gudang siap.
+
+Saat `external` digunakan bersama pembayaran manual, konfirmasi lunas admin mengonfirmasi reservasi yang tercatat; pembatalan melepasnya. Pada `unlimited`, reservasi tidak dibuat sehingga tidak ada panggilan tersebut.

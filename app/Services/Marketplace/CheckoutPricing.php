@@ -46,16 +46,16 @@ class CheckoutPricing
         return $changes;
     }
 
-    public function token(int $userId, Collection $items): string
+    public function token(int $userId, Collection $items, ?string $warehouseCode = null): string
     {
         return Crypt::encryptString(json_encode([
             'user_id' => $userId,
             'expires_at' => now()->addMinutes(15)->timestamp,
-            'fingerprint' => $this->fingerprint($items),
+            'fingerprint' => $this->fingerprint($items, $warehouseCode),
         ], JSON_THROW_ON_ERROR));
     }
 
-    public function confirm(?string $token, int $userId, Collection $items, array $changes): void
+    public function confirm(?string $token, int $userId, Collection $items, array $changes, ?string $warehouseCode = null): void
     {
         if ($token === null) {
             if ($changes !== []) {
@@ -80,12 +80,12 @@ class CheckoutPricing
             $this->conflict('CHECKOUT_EXPIRED', 'Preview checkout sudah kedaluwarsa. Silakan buat preview baru.');
         }
 
-        if (! hash_equals($payload['fingerprint'], $this->fingerprint($items))) {
-            $this->conflict('CHECKOUT_CHANGED', 'Pilihan barang, jumlah, atau harga berubah. Silakan tinjau ulang preview checkout.', ['price_changes' => $changes]);
+        if (! hash_equals($payload['fingerprint'], $this->fingerprint($items, $warehouseCode))) {
+            $this->conflict('CHECKOUT_CHANGED', 'Pilihan barang, jumlah, harga, atau titik pengiriman berubah. Silakan tinjau ulang preview checkout.', ['price_changes' => $changes]);
         }
     }
 
-    private function fingerprint(Collection $items): string
+    private function fingerprint(Collection $items, ?string $warehouseCode): string
     {
         return hash('sha256', json_encode($items->sortBy('id')->map(fn ($item): array => [
             'id' => $item->id,
@@ -95,6 +95,7 @@ class CheckoutPricing
             'variant_id' => $item->product_variant_id,
             'quantity' => $item->quantity,
             'unit_price' => $item->unit_price,
+            'warehouse_code' => $warehouseCode,
         ])->values()->all(), JSON_THROW_ON_ERROR));
     }
 

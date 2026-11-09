@@ -39,8 +39,20 @@ Mengosongkan pilihan pada form menghapus penetapan untuk varian tersebut, bukan 
 - Data lama pada `store_product_listing_warehouses` dipertahankan, tetapi tidak dipakai sebagai override. Service penetapan gudang per listing sudah dihapus.
 - Kode gudang yang tidak dikenal ditolak. Jika API direktori tidak tersedia, form menampilkan pemberitahuan dan penyimpanan tidak menghapus penetapan yang sudah ada.
 
-## Batas fungsi
+## Pemilihan titik pengiriman saat checkout
 
-Penetapan menunjukkan gudang penyedia varian, bukan jumlah stok aktual atau reservasi barang. Katalog dan order manual tetap dapat diproses tanpa penetapan gudang; verifikasi stok fisik pada mode manual masih dilakukan admin. Request pemeriksaan/reservasi stok eksternal saat ini memakai SKU dan quantity, belum mengirim pilihan `warehouse_code` sebagai instruksi alokasi gudang. Pembagian pengiriman dan penentuan gudang pemenuhan order memerlukan integrasi lanjutan.
+Checkout memeriksa penetapan semua varian terpilih, termasuk setiap komponen bundle. Seluruh barang pada satu order harus memiliki satu gudang bersama. Varian tanpa penetapan ditolak dengan `WAREHOUSE_NOT_ASSIGNED`; barang tanpa gudang bersama ditolak dengan `WAREHOUSE_MISMATCH`.
 
-Perubahan ini memakai tabel yang sudah tersedia dan tidak membutuhkan migration tambahan khusus penetapan gudang.
+Untuk operasional sementara, pilih hanya gudang Tasikmalaya pada setiap varian yang akan dijual. Checkout otomatis memakai gudang yang ditetapkan, tanpa kode Tasikmalaya permanen dalam aplikasi. Jika beberapa gudang bersama tersedia, konfigurasi `CHECKOUT_WAREHOUSE_CODE` harus berisi kode prioritas yang juga dimiliki semua varian; jika tidak diisi, checkout mengembalikan `WAREHOUSE_SELECTION_REQUIRED`.
+
+Belum ada perhitungan jarak pembeli, integrasi Google Maps, atau pemecahan pengiriman. API direktori memberikan nama dan detail alamat asal. Jika direktori/detail gagal dimuat, checkout mengembalikan 503 dan tidak membuat order.
+
+Nama, kode, alamat, kode pos, dan koordinat titik pengiriman disimpan sebagai snapshot `orders.shipping_origin` dan dapat dilihat pada detail order superadmin. Perubahan penetapan atau direktori berikutnya tidak mengubah asal pengiriman order lama. Data yang kosong pada sumber ditampilkan sebagai belum tersedia.
+
+## Stok sementara
+
+`CHECKOUT_STOCK_MODE=unlimited` menjadi default: semua jumlah stok dianggap tidak membatasi pembelian, tanpa pemeriksaan/reservasi/pengurangan stok eksternal. Penetapan gudang tetap wajib untuk checkout; katalog dan cart tetap dapat dibaca tanpa penetapan tersebut. Mode pembayaran manual dan gratis ongkir tidak berubah.
+
+Mode stok terpisah dari `ORDER_PROCESSING_MODE`. Kontrak eksternal saat ini memakai SKU dan quantity; alokasi stok per gudang perlu disesuaikan ketika API stok siap. Tidak ada jumlah stok fisik yang diklaim tersedia hanya berdasarkan penetapan gudang.
+
+Penetapan varian memakai tabel yang sudah tersedia. Snapshot asal dan mode stok pada order membutuhkan migrasi `2026_11_09_000000_add_shipping_origin_and_stock_mode_to_orders_table`.
