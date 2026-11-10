@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Filament\Resources\StoreTransactions\Widgets;
+namespace App\Filament\Resources\Orders\Widgets;
 
-use App\Filament\Resources\StoreTransactions\Pages\ManageStoreTransactions;
-use App\Filament\Resources\StoreTransactions\StoreTransactionResource;
+use App\Filament\Resources\Orders\OrderResource;
+use App\Filament\Resources\Orders\Pages\ManageOrders;
 use App\Services\Marketplace\StoreTransactionReport;
 use Filament\Widgets\Concerns\InteractsWithPageTable;
 use Filament\Widgets\StatsOverviewWidget;
@@ -11,7 +11,7 @@ use Filament\Widgets\StatsOverviewWidget\Stat;
 use Illuminate\Support\Number;
 use Livewire\Attributes\On;
 
-class StoreTransactionStats extends StatsOverviewWidget
+class OrderStats extends StatsOverviewWidget
 {
     use InteractsWithPageTable;
 
@@ -23,15 +23,15 @@ class StoreTransactionStats extends StatsOverviewWidget
 
     public static function canView(): bool
     {
-        return StoreTransactionResource::canAccess();
+        return OrderResource::canAccess();
     }
 
     protected function getTablePage(): string
     {
-        return ManageStoreTransactions::class;
+        return ManageOrders::class;
     }
 
-    #[On('store-transactions-refreshed')]
+    #[On('orders-monitoring-refreshed')]
     public function refreshSummary(): void {}
 
     protected function getStats(): array
@@ -42,7 +42,7 @@ class StoreTransactionStats extends StatsOverviewWidget
         $label = $storeId === null ? 'Nilai order lunas: ' : 'Nilai barang toko lunas: ';
 
         return [
-            Stat::make('Jumlah transaksi', $summary['total'])->description('Mengikuti filter dan pencarian'),
+            Stat::make('Jumlah pesanan', $summary['total'])->description('Semua sumber sesuai filter'),
             Stat::make('Menunggu pembayaran', $summary['pending'])->color('warning'),
             Stat::make('Lunas', $summary['paid'])->color('success')
                 ->description($label.Number::currency($summary['paid_amount'], in: 'IDR', locale: 'id')),

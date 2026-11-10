@@ -80,7 +80,7 @@ class ManualOrderManagementTest extends TestCase
         app(ManualOrderService::class)->confirmPaid($this->order(), $customer, 'Percobaan akses customer.');
     }
 
-    public function test_order_table_includes_gateway_and_excludes_simulation_orders(): void
+    public function test_order_table_includes_gateway_and_simulation_orders(): void
     {
         $this->actingAs($this->admin());
         $pending = $this->order();
@@ -88,7 +88,7 @@ class ManualOrderManagementTest extends TestCase
         $gateway = $this->order(['order_number' => 'WAL-GATEWAY', 'payment_provider' => 'midtrans']);
         $simulation = $this->order(['order_number' => 'WAL-SIMULATION', 'payment_provider' => 'simulation']);
         Livewire::test(ManageOrders::class)->assertCanSeeTableRecords([$pending, $paid])
-            ->assertCanSeeTableRecords([$gateway])->assertCanNotSeeTableRecords([$simulation])
+            ->assertCanSeeTableRecords([$gateway])->assertCanSeeTableRecords([$simulation])
             ->filterTable('status', 'paid')->assertCanSeeTableRecords([$paid])
             ->assertCanNotSeeTableRecords([$pending]);
     }

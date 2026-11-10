@@ -1,8 +1,9 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\SellerRegistrationController;
 use App\Http\Controllers\Superadmin\CustomerExportController;
+use App\Http\Controllers\Superadmin\RedirectStoreTransactionsController;
+use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return view('welcome');
@@ -11,6 +12,9 @@ Route::get('/', function () {
 Route::get('/superadmin/customers/export', CustomerExportController::class)
     ->middleware('auth')
     ->name('superadmin.customers.export');
+
+Route::get('/superadmin/transaksi-toko', RedirectStoreTransactionsController::class)
+    ->name('superadmin.store-transactions.redirect');
 
 Route::prefix('seller')->name('seller.')->group(function (): void {
     Route::get('/login', [SellerRegistrationController::class, 'login'])->name('login');

@@ -1,31 +1,61 @@
-# Monitoring Transaksi Toko
+# Monitoring Pesanan dan Transaksi
 
-Menu **Manajemen Marketplace → Transaksi Toko** tersedia di `/superadmin/transaksi-toko`, khusus akun superadmin aktif. Menu menampilkan order manual dan Midtrans; order simulasi tidak disertakan.
+Menu **Manajemen Marketplace → Pesanan** tersedia di `/superadmin/orders`, khusus akun superadmin aktif. Pengelolaan pesanan dan monitoring transaksi menggunakan satu resource. URL lama `/superadmin/transaksi-toko` diarahkan ke Pesanan dengan pencarian dan filter tetap dibawa.
 
-Satu baris merupakan satu order, walaupun berisi beberapa toko atau mempunyai beberapa percobaan pembayaran. Daftar diurutkan dari yang terbaru dan menyediakan pencarian nomor order, nama customer, serta WhatsApp.
+Seluruh order yang tersimpan di database ditampilkan secara default: manual, Midtrans sandbox/production, simulasi, dan penyedia lain yang telah tercatat. Satu baris merupakan satu order, walaupun berisi beberapa toko atau mempunyai beberapa percobaan pembayaran. Menu ini tidak mengimpor transaksi dari luar backend yang belum memiliki record order.
 
-## Filter dan nominal
+## Tampilan dan filter
 
-Filter tersedia untuk satu toko, status order, penyedia pembayaran, lingkungan Midtrans, serta rentang tanggal pembuatan. Tanggal dan waktu ditampilkan dalam WIB; tanggal akhir filter termasuk seluruh hari tersebut. Toko nonaktif dan listing yang dihapus secara soft delete tetap dapat ditelusuri.
+Empat kartu ringkasan memakai `StatsOverviewWidget` bawaan Filament: jumlah pesanan, menunggu pembayaran, lunas, dan perlu pemeriksaan pembayaran. Nilai mengikuti filter serta pencarian.
 
-Tanpa filter toko, jumlah nominal lunas menggunakan total pembayaran order. Ketika toko dipilih:
+Tabel menampilkan nomor order dengan customer/waktu di bawahnya, toko, sumber pembayaran, status, nominal, dan tindakan. Kolom tambahan seperti metode, lingkungan, WhatsApp, waktu dibuat, serta waktu lunas dapat diaktifkan melalui pemilih kolom. Lingkungan Midtrans juga ditampilkan pada keterangan sumber agar sandbox dan production tetap dapat dibedakan.
 
-- Kolom **Subtotal barang toko** menjumlahkan snapshot subtotal produk dan bundle milik toko tersebut.
-- Kolom **Total pembayaran order** tetap menunjukkan keseluruhan tagihan customer.
-- Nominal pada kartu **Lunas** menggunakan subtotal barang toko yang dipilih; kartu lain menghitung order yang memenuhi filter dan pencarian.
+Pencarian mencakup nomor order, nama customer, serta WhatsApp. Filter tersedia untuk toko, status, sumber pembayaran, lingkungan, dan rentang tanggal pembuatan. Status/sumber lain yang sudah tercatat ikut tersedia dalam pilihan filter. Tanggal dan waktu menggunakan WIB; tanggal akhir filter termasuk seluruh hari tersebut. Toko nonaktif serta listing yang dihapus secara soft delete tetap dapat ditelusuri.
 
-Nilai barang toko bukan saldo seller atau nilai pencairan. Ongkir, subsidi, biaya provider, dan refund tidak dibagi ke toko. Order `refunded` dan `payment_review` tidak ikut nominal lunas. Transaksi sandbox tetap dihitung jika tidak difilter; gunakan filter lingkungan ketika memantau production.
+Nama toko/barang, quantity, dan harga menggunakan snapshot pembelian. Identitas toko ditelusuri dari listing, sehingga penggantian nama toko tidak memindahkan transaksi. Item lama tanpa relasi listing tetap terlihat pada daftar umum; identitasnya tidak ditebak berdasarkan nama.
 
-Nama toko, nama barang, quantity, dan harga menggunakan snapshot pembelian. Filter menggunakan identitas toko dari listing, sehingga perubahan nama toko tidak mengubah kepemilikan transaksi. Item lama tanpa relasi listing tetap terlihat pada daftar umum, tetapi tidak ditebak identitas tokonya berdasarkan nama.
+## Pembaruan otomatis
 
-Lingkungan mengikuti pembayaran aktif yang tersimpan, bukan konfigurasi server saat ini. Order Midtrans tanpa pembayaran aktif ditandai **Belum diketahui**; order manual ditandai **Manual**.
+Halaman memperbarui tabel, kartu ringkasan, dan detail yang sedang terbuka sekitar setiap **5 detik** ketika panel aktif. Polling dipasang pada halaman, sehingga daftar kosong juga dapat mendeteksi order baru. Tombol **Muat ulang** tersedia untuk memperbarui lebih cepat. Pencarian, filter, halaman pagination, dan catatan form yang sedang diketik tetap dipertahankan.
 
-## Detail dan sinkronisasi
+Polling membaca database, tidak memanggil Midtrans atau membuat charge. Perubahan pembayaran dari Midtrans mengikuti webhook dan worker queue `payments` yang sudah tersedia. Worker serta scheduler rekonsiliasi tetap harus berjalan agar status provider masuk ke database; pengaturannya dijelaskan pada [API pembayaran Midtrans](api/midtrans-core-payments.md).
 
-Klik **Detail** atau baris order untuk membuka slide-over. Detail berisi customer, seluruh barang/toko, subtotal toko terpilih jika ada, rincian tagihan, seluruh percobaan pembayaran, pengiriman, serta riwayat status. Payload mentah dan signature pembayaran tidak ditampilkan.
+## Perhitungan nominal per toko
 
-**Sinkronkan pembayaran** tersedia pada order Midtrans, melalui tabel maupun slide-over. Tindakan memakai service pembayaran yang sudah tersedia untuk memverifikasi status provider. Sinkronisasi tidak membuat charge atau percobaan baru, tetapi dapat memperbarui status order dan menutup pembayaran kedaluwarsa sesuai aturan pembayaran. Filter tetap dipertahankan dan ringkasan ikut diperbarui.
+Tanpa filter toko, nominal lunas memakai total pembayaran order dan dihitung sekali per order. Ketika toko dipilih:
 
-Jika proses pembayaran masih berjalan atau provider belum dapat dihubungi, panel menampilkan notifikasi dan status terakhir. Pembayaran dengan lingkungan berbeda dari konfigurasi aktif tidak disinkronkan lintas lingkungan.
+- **Subtotal barang toko** menjumlahkan snapshot subtotal produk dan bundle milik toko tersebut.
+- **Total pembayaran order** tetap memperlihatkan keseluruhan tagihan customer.
+- Nominal pada kartu **Lunas** menggunakan subtotal barang toko terpilih; kartu lain menghitung order yang memenuhi filter dan pencarian.
 
-Gunakan **Buka Pesanan** pada slide-over untuk menuju pencarian order yang sama pada menu Pesanan. Konfirmasi pembayaran manual dan pembatalan tetap dilakukan di sana. Monitoring tidak menyediakan tambah, edit, hapus, refund, ekspor, atau pembagian dana seller.
+Nilai ini bukan saldo/pencairan seller. Ongkir, subsidi, biaya provider, dan refund tidak dialokasikan ke toko. Order `refunded` dan `payment_review` tidak masuk nominal lunas. Simulasi dan sandbox ikut dihitung jika tidak difilter; pilih sumber/lingkungan yang sesuai untuk memantau transaksi production.
+
+Lingkungan mengikuti pembayaran aktif yang tersimpan. Order Midtrans tanpa pembayaran aktif ditandai **Belum diketahui**; konfigurasi server saat ini tidak dipakai untuk menebaknya. Sumber manual dan simulasi mempunyai penanda masing-masing.
+
+## Detail dan tindakan
+
+Klik **Detail** atau baris order untuk membuka slide-over. Susunan detail memakai Section dan RepeatableEntry bawaan Filament, meliputi customer, semua barang/toko, subtotal toko terpilih, tagihan, seluruh percobaan pembayaran, VA/billing, pengiriman, serta riwayat status. Payload mentah dan signature tidak ditampilkan. Riwayat lengkap dimuat ketika detail dibuka agar polling daftar tetap ringan.
+
+Tindakan tersedia pada tabel serta slide-over:
+
+| Tindakan | Ketersediaan |
+| --- | --- |
+| **Sinkronkan pembayaran** | Order Midtrans; verifikasi status melalui service pembayaran yang sudah tersedia |
+| **Konfirmasi lunas** | Hanya order manual yang masih menunggu pembayaran; wajib catatan verifikasi, referensi opsional |
+| **Batalkan** | Order manual/Midtrans yang masih menunggu pembayaran; wajib alasan |
+
+Sinkronisasi tidak membuat charge/percobaan baru, tetapi dapat memperbarui status atau menutup pembayaran kedaluwarsa sesuai aturan pembayaran. Pembatalan Midtrans baru dinyatakan berhasil setelah provider mengonfirmasi. Proses yang masih berjalan atau provider gagal dihubungi menghasilkan notifikasi dan mempertahankan status terakhir yang terverifikasi.
+
+Simulasi dan penyedia lain dapat dimonitor tanpa dipaksakan mengikuti tindakan pembayaran manual atau adapter Midtrans. Hak akses diperiksa ulang pada setiap tindakan dan polling. Resource tidak menyediakan tambah, edit bebas, hapus, refund, ekspor, atau pembagian dana seller.
+
+## Susunan kode
+
+- `Orders/OrderResource`: model, navigasi, otorisasi, dan penghubung konfigurasi.
+- `Orders/Pages/ManageOrders`: state filter, polling halaman, dan widget.
+- `Orders/Tables/OrdersTable`: kolom, pencarian, filter, pagination, serta tindakan tabel.
+- `Orders/Schemas/OrderInfolist`: susunan detail slide-over.
+- `Orders/Actions/OrderActions`: konfirmasi manual, pembatalan, dan sinkronisasi.
+- `Orders/Widgets/OrderStats`: ringkasan menggunakan widget Filament.
+- `StoreTransactionReport`: query, agregasi nominal, lingkungan, dan penelusuran toko.
+
+Perubahan ini tidak memerlukan migrasi database atau mengubah kontrak API customer.

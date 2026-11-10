@@ -18,11 +18,19 @@ class StoreTransactionReport
 
     public static function query(): Builder
     {
-        return Order::query()->whereIn('payment_provider', ['manual', 'midtrans'])
-            ->with(['user', 'activePayment', 'payments', 'statusHistories.createdBy',
+        return Order::query()
+            ->with(['user', 'activePayment',
                 'items.productListing' => fn ($query) => $query->withTrashed(),
                 'items.bundleListing' => fn ($query) => $query->withTrashed(),
             ]);
+    }
+
+    public static function loadDetails(Order $order): void
+    {
+        $order->loadMissing(['payments', 'statusHistories.createdBy',
+            'items.productListing' => fn ($query) => $query->withTrashed(),
+            'items.bundleListing' => fn ($query) => $query->withTrashed(),
+        ]);
     }
 
     public static function itemsForStore(Builder $query, int $storeId): Builder
@@ -72,6 +80,55 @@ class StoreTransactionReport
 
     public static function environment(Order $order): string
     {
-        return $order->payment_provider === 'manual' ? 'manual' : ($order->activePayment?->environment ?? 'unknown');
+        if (in_array($order->payment_provider, ['manual', 'simulation'], true)) {
+            return $order->payment_provider;
+        }
+
+        $environment = $order->activePayment?->environment;
+
+        return in_array($environment, ['sandbox', 'production'], true) ? $environment : 'unknown';
+    }
+
+    public static function environmentLabel(string $state): string
+    {
+        return match ($state) {
+            'sandbox' => 'Sandbox', 'production' => 'Production', 'manual' => 'Manual',
+            'simulation' => 'Simulasi', default => 'Belum diketahui',
+        };
+    }
+
+    public static function providerLabel(string $provider): string
+    {
+        return match ($provider) {
+            'manual' => 'Manual', 'midtrans' => 'Midtrans', 'simulation' => 'Simulasi', default => $provider,
+        };
+    }
+
+    public static function providerOptions(): array
+    {
+        return collect(['manual', 'midtrans', 'simulation'])->merge(Order::query()->distinct()->pluck('payment_provider'))
+            ->unique()->filter()->mapWithKeys(fn (string $provider): array => [$provider => self::providerLabel($provider)])->all();
+    }
+
+    public static function statusOptions(): array
+    {
+        return collect(self::STATUSES)->union(Order::query()->distinct()->pluck('status')->mapWithKeys(fn (string $status): array => [$status => $status]))->all();
+    }
+
+    public static function filterEnvironment(Builder $query, ?string $environment): Builder
+    {
+        if (blank($environment)) {
+            return $query;
+        }
+        if (in_array($environment, ['manual', 'simulation'], true)) {
+            return $query->where('payment_provider', $environment);
+        }
+        $query->whereNotIn('payment_provider', ['manual', 'simulation']);
+        if ($environment === 'unknown') {
+            return $query->where(fn (Builder $orders) => $orders->whereDoesntHave('activePayment')
+                ->orWhereHas('activePayment', fn (Builder $payment) => $payment->whereNotIn('environment', ['sandbox', 'production'])));
+        }
+
+        return $query->whereHas('activePayment', fn (Builder $payment) => $payment->where('environment', $environment));
     }
 }
