@@ -93,7 +93,7 @@ class OrderPayments
 
                         return [$active, false];
                     }
-                    $this->synchronizeAttempt($record, $active);
+                    $this->synchronizeForReplacement($record, $active);
                     $this->open($record->fresh());
                     if ($active->fresh()->isActive()) {
                         $this->cancelAttempt($record, $active->fresh());
@@ -220,9 +220,21 @@ class OrderPayments
         $body = $this->fetch($order, $payment);
         if ($body === null) {
             if (in_array($payment->state, ['creating', 'unknown'], true)) {
-                return $this->recoverOrCharge($order, $payment);
+                return $payment;
             }
             throw new PaymentGatewayUnavailableException('Status pembayaran belum ditemukan di Midtrans.');
+        }
+
+        return $this->apply($order, $payment, $body);
+    }
+
+    private function synchronizeForReplacement(Order $order, OrderPayment $payment): OrderPayment
+    {
+        // A method change must never recover an unknown charge by issuing it again.
+        // Midtrans may have accepted the original request even when its response timed out.
+        $body = $this->fetch($order, $payment);
+        if ($body === null) {
+            throw new PaymentOperationInProgress;
         }
 
         return $this->apply($order, $payment, $body);
@@ -231,6 +243,9 @@ class OrderPayments
     private function cancelAttempt(Order $order, OrderPayment $payment): void
     {
         $payment = $this->synchronizeAttempt($order, $payment);
+        if (in_array($payment->state, ['creating', 'unknown'], true)) {
+            throw new PaymentOperationInProgress;
+        }
         if (! $payment->isActive()) {
             return;
         }

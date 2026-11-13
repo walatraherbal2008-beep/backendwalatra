@@ -1,0 +1,70 @@
+{
+  "tested_at": "2026-11-13T08:50:35+07:00",
+  "environment": "sandbox",
+  "reference": "AUDIT-LOG-RETEST-20261113085034-P000001",
+  "amount": 93000,
+  "request_matches_sent_json": true,
+  "response_matches_received_json": true,
+  "historical_response_preserved": true,
+  "final_provider_status": "cancel",
+  "logs": [
+    {
+      "id": 6,
+      "operation": "charge",
+      "http_status": 200,
+      "outcome": "succeeded",
+      "duration_ms": 509
+    },
+    {
+      "id": 7,
+      "operation": "status",
+      "http_status": 200,
+      "outcome": "succeeded",
+      "duration_ms": 149
+    },
+    {
+      "id": 8,
+      "operation": "cancel",
+      "http_status": 200,
+      "outcome": "succeeded",
+      "duration_ms": 268
+    },
+    {
+      "id": 9,
+      "operation": "status",
+      "http_status": 200,
+      "outcome": "succeeded",
+      "duration_ms": 149
+    }
+  ],
+  "charge_request": {
+    "payment_type": "bank_transfer",
+    "transaction_details": {
+      "order_id": "AUDIT-LOG-RETEST-20261113085034-P000001",
+      "gross_amount": 93000
+    },
+    "bank_transfer": {
+      "bank": "bca"
+    }
+  },
+  "charge_response": {
+    "status_code": "201",
+    "status_message": "Success, Bank Transfer transaction is created",
+    "transaction_id": "019bce6a-0ec8-4e79-ac3a-43c95eec5d74",
+    "order_id": "AUDIT-LOG-RETEST-20261113085034-P000001",
+    "merchant_id": "G079477377",
+    "gross_amount": "93000.00",
+    "currency": "IDR",
+    "payment_type": "bank_transfer",
+    "transaction_time": "2026-11-13 08:50:34",
+    "transaction_status": "pending",
+    "fraud_status": "accept",
+    "va_numbers": [
+      {
+        "bank": "bca",
+        "va_number": "77377672406831709074349"
+      }
+    ],
+    "expiry_time": "2026-11-14 08:50:34"
+  }
+}

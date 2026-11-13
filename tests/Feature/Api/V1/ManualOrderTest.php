@@ -21,12 +21,13 @@ use Illuminate\Support\Facades\Http;
 use Laravel\Sanctum\Sanctum;
 use Mockery;
 use Spatie\Permission\Models\Role;
+use Tests\Concerns\WithCheckoutToken;
 use Tests\Concerns\WithCheckoutWarehouse;
 use Tests\TestCase;
 
 class ManualOrderTest extends TestCase
 {
-    use RefreshDatabase, WithCheckoutWarehouse;
+    use RefreshDatabase, WithCheckoutToken, WithCheckoutWarehouse;
 
     protected function setUp(): void
     {
@@ -69,7 +70,7 @@ class ManualOrderTest extends TestCase
 
     private function createOrder(string $key = 'manual-order')
     {
-        return $this->postJson('/api/v1/orders', ['shipping_address' => $this->address()], ['Idempotency-Key' => $key]);
+        return $this->postJson('/api/v1/orders', $this->checkoutPayload(['shipping_address' => $this->address()]), ['Idempotency-Key' => $key]);
     }
 
     private function admin(): User
@@ -95,7 +96,7 @@ class ManualOrderTest extends TestCase
             ->assertJsonPath('data.payment_required', true)
             ->assertJsonPath('data.shipping.service', 'MANUAL')
             ->assertJsonPath('data.total', '40000.00');
-        $response = $this->postJson('/api/v1/orders', ['address_id' => $addressId], ['Idempotency-Key' => 'manual-flow'])
+        $response = $this->postJson('/api/v1/orders', $this->checkoutPayload(['address_id' => $addressId]), ['Idempotency-Key' => 'manual-flow'])
             ->assertCreated()->assertJsonPath('data.status', 'pending_payment')
             ->assertJsonPath('data.simulation', false)->assertJsonPath('data.payment_provider', 'manual')
             ->assertJsonPath('data.payment_required', true)->assertJsonPath('data.paid_at', null)
@@ -222,10 +223,10 @@ class ManualOrderTest extends TestCase
     {
         Sanctum::actingAs(User::factory()->create(), ['customer-api']);
         $this->addProduct();
-        $this->postJson('/api/v1/orders', [
+        $this->postJson('/api/v1/orders', $this->checkoutPayload([
             'shipping_address' => $this->address(), 'status' => 'paid', 'payment_provider' => 'simulation',
             'simulation' => true, 'paid_at' => now()->toIso8601String(), 'shipping_fee' => 0,
-        ], ['Idempotency-Key' => 'tampered'])->assertCreated()
+        ]), ['Idempotency-Key' => 'tampered'])->assertCreated()
             ->assertJsonPath('data.status', 'pending_payment')->assertJsonPath('data.payment_provider', 'manual')
             ->assertJsonPath('data.paid_at', null)->assertJsonPath('data.total', '40000.00');
     }

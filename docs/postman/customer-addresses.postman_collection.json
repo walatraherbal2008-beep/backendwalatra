@@ -2,7 +2,7 @@
   "info": {
     "name": "Walatra - Alamat Customer dan Lokasi Everpro",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "description": "Koleksi sesuai docs/api/customer-addresses.md. Isi collection variables base_url dan customer_token. Jalankan folder 01 berurutan untuk mengisi ID wilayah dari hasil pertama, lalu gunakan request alamat pada folder 02. Pilihan wilayah dapat diubah pada Variables. ID mentah disimpan sebagai string dan di-encode pada query. Endpoint Everpro bersifat publik; token Everpro ditangani backend. Request Hapus alamat menghapus ID pada address_id. Mengubah alamat utama memengaruhi penanda alamat lain. Tidak ada request checkout atau pembuatan order dalam koleksi ini."
+    "description": "Koleksi sesuai docs/api/customer-addresses.md. Isi collection variables base_url dan customer_token. Jalankan folder 01 berurutan untuk mengisi ID wilayah dari hasil pertama, lalu gunakan request alamat pada folder 02. Pilihan wilayah dapat diubah pada Variables. ID mentah disimpan sebagai string dan di-encode pada query. Endpoint Everpro bersifat publik; token Everpro ditangani backend. Request Hapus alamat menghapus ID pada address_id. Mengubah alamat utama memengaruhi penanda alamat lain. Tidak ada request checkout atau pembuatan order dalam koleksi ini. Pengaturan URL: base_url wajib mencakup /api/v1 tanpa slash terakhir, misalnya http://127.0.0.1:8000/api/v1. Jika Environment aktif memiliki variable dengan nama sama, nilainya menimpa Collection, termasuk ID/token yang diisi otomatis; samakan nilainya atau hapus duplikat Environment. Panduan: docs/api/postman-setup.md."
   },
   "auth": {
     "type": "bearer",

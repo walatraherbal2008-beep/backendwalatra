@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\AddCartItemRequest;
+use App\Http\Requests\Api\V1\CartSelectionRequest;
 use App\Http\Requests\Api\V1\UpdateCartItemRequest;
 use App\Http\Resources\Api\V1\CartResource;
 use App\Models\Cart;
@@ -12,6 +13,8 @@ use App\Models\ProductVariant;
 use App\Models\StoreBundleListing;
 use App\Models\StoreProductListing;
 use App\Models\User;
+use App\Support\CartItemAvailability;
+use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -19,12 +22,13 @@ use Illuminate\Validation\ValidationException;
 
 class CartController extends Controller
 {
-    public function show(Request $request): CartResource
+    public function show(CartSelectionRequest $request): CartResource
     {
-        return (new CartResource($this->cart($request)->load($this->cartRelations())))->additional([
-            'success' => true,
-            'message' => 'Cart berhasil diambil.',
-        ]);
+        return (new CartResource($this->cart($request)->load($this->cartRelations())))
+            ->withSelection($request->validated('cart_item_ids', []))->additional([
+                'success' => true,
+                'message' => 'Cart berhasil diambil.',
+            ]);
     }
 
     public function store(AddCartItemRequest $request): CartResource
@@ -156,6 +160,12 @@ class CartController extends Controller
 
             $cart = $this->cart($request);
             $cartItem = $cart->items()->whereKey($item)->firstOrFail();
+            if (! CartItemAvailability::available($cartItem)) {
+                throw new HttpResponseException(response()->json([
+                    'success' => false, 'code' => 'STALE_CART',
+                    'message' => 'Barang tidak tersedia. Silakan hapus item dari cart.', 'errors' => null, 'data' => null,
+                ], 409));
+            }
             $cartItem->update(['quantity' => $request->integer('quantity')]);
 
             return (new CartResource($cart->fresh()->load($this->cartRelations())))->additional([
@@ -213,12 +223,19 @@ class CartController extends Controller
             'items' => fn ($query) => $query
                 ->orderByRaw('COALESCE(last_added_at, created_at) DESC')
                 ->orderByDesc('id'),
+            'items.variant' => fn ($query) => $query->withTrashed(),
+            'items.variant.product' => fn ($query) => $query->withTrashed(),
+            'items.listing' => fn ($query) => $query->withTrashed(),
+            'items.bundleListing' => fn ($query) => $query->withTrashed(),
+            'items.bundleListing.bundle' => fn ($query) => $query->withTrashed(),
+            'items.bundleListing.bundle.items.variant' => fn ($query) => $query->withTrashed(),
+            'items.bundleListing.bundle.items.variant.product' => fn ($query) => $query->withTrashed(),
             'items.variant.product.media',
             'items.variant.media',
             'items.listing.media',
             'items.bundleListing.media',
-            'items.listing.store',
-            'items.bundleListing.store',
+            'items.listing.store.owner.roles',
+            'items.bundleListing.store.owner.roles',
             'items.bundleListing.bundle.items.variant.product.media',
             'items.bundleListing.bundle.items.variant.media',
         ];

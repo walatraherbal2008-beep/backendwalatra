@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="1455" viewBox="0 0 1000 1455">
+<rect width="100%" height="100%" fill="white"/>
+<text x="35" y="45" font-family="DejaVu Sans, sans-serif" font-size="27" font-weight="bold" fill="#172b3a">03. Pembayaran dan notifikasi Midtrans</text>
+<text x="35" y="79" font-family="DejaVu Sans, sans-serif" font-size="16" font-weight="normal" fill="#172b3a">Webhook diterima tidak langsung berarti order sudah lunas.</text>
+<rect x="35" y="115" width="600" height="112" rx="8" fill="#edf7f1" stroke="#297149" stroke-width="1.5"/>
+<text x="53" y="145" font-family="DejaVu Sans, sans-serif" font-size="20" font-weight="bold" fill="#172b3a">POST /orders/{id}/payment</text>
+<text x="53" y="173" font-family="DejaVu Sans, sans-serif" font-size="18" font-weight="normal" fill="#172b3a">Backend periksa order, deadline, key, dan lock.</text>
+<text x="53" y="197" font-family="DejaVu Sans, sans-serif" font-size="18" font-weight="normal" fill="#172b3a">Catat payment_requests serta order_payments.</text>
+<path d="M335,227 L335,273" stroke="#42576b" stroke-width="2"/><polygon points="335,273 329,263 341,263" fill="#42576b"/>
+<rect x="35" y="273" width="600" height="112" rx="8" fill="#f0f6ff" stroke="#265a99" stroke-width="1.5"/>
+<text x="53" y="303" font-family="DejaVu Sans, sans-serif" font-size="20" font-weight="bold" fill="#172b3a">Backend -&gt; Midtrans: POST /v2/charge</text>
+<text x="53" y="331" font-family="DejaVu Sans, sans-serif" font-size="18" font-weight="normal" fill="#172b3a">Gunakan provider_order_id khusus tiap attempt.</text>
+<text x="53" y="355" font-family="DejaVu Sans, sans-serif" font-size="18" font-weight="normal" fill="#172b3a">Server Key tetap berada di backend.</text>
+<path d="M335,385 L335,431" stroke="#42576b" stroke-width="2"/><polygon points="335,431 329,421 341,421" fill="#42576b"/>
+<rect x="35" y="431" width="600" height="112" rx="8" fill="#edf7f1" stroke="#297149" stroke-width="1.5"/>
+<text x="53" y="461" font-family="DejaVu Sans, sans-serif" font-size="20" font-weight="bold" fill="#172b3a">Simpan dan kirim instruksi bayar</text>
+<text x="53" y="489" font-family="DejaVu Sans, sans-serif" font-size="18" font-weight="normal" fill="#172b3a">VA: bank + va_number; QRIS: qr_code_url.</text>
+<text x="53" y="513" font-family="DejaVu Sans, sans-serif" font-size="18" font-weight="normal" fill="#172b3a">Metode Mandiri memakai bill_key + biller_code.</text>
+<path d="M335,543 L335,589" stroke="#42576b" stroke-width="2"/><polygon points="335,589 329,579 341,579" fill="#42576b"/>
+<rect x="35" y="589" width="600" height="112" rx="8" fill="#f0f6ff" stroke="#265a99" stroke-width="1.5"/>
+<text x="53" y="619" font-family="DejaVu Sans, sans-serif" font-size="20" font-weight="bold" fill="#172b3a">Customer membayar -&gt; Midtrans</text>
+<text x="53" y="647" font-family="DejaVu Sans, sans-serif" font-size="18" font-weight="normal" fill="#172b3a">Frontend dapat GET order / payment.</text>
+<text x="53" y="671" font-family="DejaVu Sans, sans-serif" font-size="18" font-weight="normal" fill="#172b3a">GET membaca database, tanpa sinkronisasi provider.</text>
+<path d="M335,701 L335,747" stroke="#42576b" stroke-width="2"/><polygon points="335,747 329,737 341,737" fill="#42576b"/>
+<rect x="35" y="747" width="600" height="112" rx="8" fill="#edf7f1" stroke="#297149" stroke-width="1.5"/>
+<text x="53" y="777" font-family="DejaVu Sans, sans-serif" font-size="20" font-weight="bold" fill="#172b3a">Midtrans -&gt; POST /payments/midtrans/webhook</text>
+<text x="53" y="805" font-family="DejaVu Sans, sans-serif" font-size="18" font-weight="normal" fill="#172b3a">Validasi SHA-512 dan deduplikasi notifikasi.</text>
+<text x="53" y="829" font-family="DejaVu Sans, sans-serif" font-size="18" font-weight="normal" fill="#172b3a">Simpan payment_notifications; respons HTTP 200.</text>
+<path d="M335,859 L335,905" stroke="#42576b" stroke-width="2"/><polygon points="335,905 329,895 341,895" fill="#42576b"/>
+<rect x="35" y="905" width="600" height="112" rx="8" fill="#f0f6ff" stroke="#265a99" stroke-width="1.5"/>
+<text x="53" y="935" font-family="DejaVu Sans, sans-serif" font-size="20" font-weight="bold" fill="#172b3a">Worker payments memproses notifikasi</text>
+<text x="53" y="963" font-family="DejaVu Sans, sans-serif" font-size="18" font-weight="normal" fill="#172b3a">Cari attempt melalui provider_order_id.</text>
+<text x="53" y="987" font-family="DejaVu Sans, sans-serif" font-size="18" font-weight="normal" fill="#172b3a">Backend GET /v2/{provider_order_id}/status.</text>
+<path d="M335,1017 L335,1063" stroke="#42576b" stroke-width="2"/><polygon points="335,1063 329,1053 341,1053" fill="#42576b"/>
+<rect x="35" y="1063" width="600" height="112" rx="8" fill="#f0f6ff" stroke="#265a99" stroke-width="1.5"/>
+<text x="53" y="1093" font-family="DejaVu Sans, sans-serif" font-size="20" font-weight="bold" fill="#172b3a">Validasi hasil resmi dari Midtrans</text>
+<text x="53" y="1121" font-family="DejaVu Sans, sans-serif" font-size="18" font-weight="normal" fill="#172b3a">Cocokkan identitas, nominal, mata uang, metode.</text>
+<text x="53" y="1145" font-family="DejaVu Sans, sans-serif" font-size="18" font-weight="normal" fill="#172b3a">Periksa status pembayaran dan fraud.</text>
+<path d="M335,1175 L335,1221" stroke="#42576b" stroke-width="2"/><polygon points="335,1221 329,1211 341,1211" fill="#42576b"/>
+<rect x="35" y="1221" width="600" height="112" rx="8" fill="#edf7f1" stroke="#297149" stroke-width="1.5"/>
+<text x="53" y="1251" font-family="DejaVu Sans, sans-serif" font-size="20" font-weight="bold" fill="#172b3a">Update order dan riwayat di database</text>
+<text x="53" y="1279" font-family="DejaVu Sans, sans-serif" font-size="18" font-weight="normal" fill="#172b3a">Normal: pending_payment menjadi paid.</text>
+<text x="53" y="1303" font-family="DejaVu Sans, sans-serif" font-size="18" font-weight="normal" fill="#172b3a">Kasus khusus: payment_review / refunded.</text>
+<rect x="665" y="115" width="300" height="136" rx="8" fill="#fff7e5" stroke="#926714" stroke-width="1.5"/>
+<text x="683" y="145" font-family="DejaVu Sans, sans-serif" font-size="18" font-weight="bold" fill="#172b3a">Request bersamaan</text>
+<text x="683" y="173" font-family="DejaVu Sans, sans-serif" font-size="16" font-weight="normal" fill="#172b3a">HTTP 202:</text>
+<text x="683" y="197" font-family="DejaVu Sans, sans-serif" font-size="16" font-weight="normal" fill="#172b3a">PAYMENT_PROCESSING.</text>
+<text x="683" y="221" font-family="DejaVu Sans, sans-serif" font-size="16" font-weight="normal" fill="#172b3a">Baca ulang status.</text>
+<rect x="665" y="273" width="300" height="136" rx="8" fill="#fff0ef" stroke="#a3302a" stroke-width="1.5"/>
+<text x="683" y="303" font-family="DejaVu Sans, sans-serif" font-size="18" font-weight="bold" fill="#172b3a">Charge timeout</text>
+<text x="683" y="331" font-family="DejaVu Sans, sans-serif" font-size="16" font-weight="normal" fill="#172b3a">Attempt dapat unknown.</text>
+<text x="683" y="355" font-family="DejaVu Sans, sans-serif" font-size="16" font-weight="normal" fill="#172b3a">Retry key yang sama.</text>
+<text x="683" y="379" font-family="DejaVu Sans, sans-serif" font-size="16" font-weight="normal" fill="#172b3a">Jangan checkout ulang.</text>
+<rect x="665" y="748" width="300" height="136" rx="8" fill="#fff7e5" stroke="#926714" stroke-width="1.5"/>
+<text x="683" y="778" font-family="DejaVu Sans, sans-serif" font-size="18" font-weight="bold" fill="#172b3a">Worker wajib aktif</text>
+<text x="683" y="806" font-family="DejaVu Sans, sans-serif" font-size="16" font-weight="normal" fill="#172b3a">Queue: payments.</text>
+<text x="683" y="830" font-family="DejaVu Sans, sans-serif" font-size="16" font-weight="normal" fill="#172b3a">Scheduler setiap menit:</text>
+<text x="683" y="854" font-family="DejaVu Sans, sans-serif" font-size="16" font-weight="normal" fill="#172b3a">payments:reconcile.</text>
+<rect x="665" y="905" width="300" height="136" rx="8" fill="#fff0ef" stroke="#a3302a" stroke-width="1.5"/>
+<text x="683" y="935" font-family="DejaVu Sans, sans-serif" font-size="18" font-weight="bold" fill="#172b3a">Refresh punya efek lain</text>
+<text x="683" y="963" font-family="DejaVu Sans, sans-serif" font-size="16" font-weight="normal" fill="#172b3a">Attempt unknown / creating</text>
+<text x="683" y="987" font-family="DejaVu Sans, sans-serif" font-size="16" font-weight="normal" fill="#172b3a">yang belum ada di provider</text>
+<text x="683" y="1011" font-family="DejaVu Sans, sans-serif" font-size="16" font-weight="normal" fill="#172b3a">dapat di-charge ulang.</text>
+<rect x="665" y="1220" width="300" height="136" rx="8" fill="#fff7e5" stroke="#926714" stroke-width="1.5"/>
+<text x="683" y="1250" font-family="DejaVu Sans, sans-serif" font-size="18" font-weight="bold" fill="#172b3a">Perlu pemeriksaan</text>
+<text x="683" y="1278" font-family="DejaVu Sans, sans-serif" font-size="16" font-weight="normal" fill="#172b3a">Pembayaran ganda, terlambat,</text>
+<text x="683" y="1302" font-family="DejaVu Sans, sans-serif" font-size="16" font-weight="normal" fill="#172b3a">attempt lama, atau reversal.</text>
+<text x="683" y="1326" font-family="DejaVu Sans, sans-serif" font-size="16" font-weight="normal" fill="#172b3a">Jangan otomatis kirim barang.</text>
+<text x="35" y="1435" font-family="DejaVu Sans, sans-serif" font-size="13" font-weight="normal" fill="#172b3a">Audit backend Walatra | 12 November 2026 | Catatan mengikuti implementasi saat audit</text>
+</svg>

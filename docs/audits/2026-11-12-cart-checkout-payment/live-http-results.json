@@ -1,0 +1,1255 @@
+{
+  "run": "20261112-100024",
+  "base_url": "http://127.0.0.1:8000/api/v1",
+  "otp_issue_url": "http://127.0.0.1:8011/api/v1",
+  "checks": [
+    {
+      "name": "Cart tanpa login ditolak",
+      "passed": true,
+      "detail": {
+        "http": 401,
+        "expected": 401,
+        "seconds": 0.019
+      }
+    },
+    {
+      "name": "Utama request OTP",
+      "passed": true,
+      "detail": {
+        "http": 200,
+        "expected": 200,
+        "seconds": 0.212
+      }
+    },
+    {
+      "name": "OTP salah ditolak",
+      "passed": true,
+      "detail": {
+        "http": 422,
+        "expected": 422,
+        "seconds": 0.198
+      }
+    },
+    {
+      "name": "Utama verify OTP",
+      "passed": true,
+      "detail": {
+        "http": 200,
+        "expected": 200,
+        "seconds": 0.203
+      }
+    },
+    {
+      "name": "OTP yang sudah dipakai ditolak",
+      "passed": true,
+      "detail": {
+        "http": 422,
+        "expected": 422,
+        "seconds": 0.027
+      }
+    },
+    {
+      "name": "Profil setelah login",
+      "passed": true,
+      "detail": {
+        "http": 200,
+        "expected": 200,
+        "seconds": 0.031
+      }
+    },
+    {
+      "name": "Lengkapi profil customer",
+      "passed": true,
+      "detail": {
+        "http": 200,
+        "expected": 200,
+        "seconds": 0.031
+      }
+    },
+    {
+      "name": "Cart awal kosong",
+      "passed": true,
+      "detail": {
+        "http": 200,
+        "expected": 200,
+        "seconds": 0.033
+      }
+    },
+    {
+      "name": "Pembanding request OTP",
+      "passed": true,
+      "detail": {
+        "http": 200,
+        "expected": 200,
+        "seconds": 0.206
+      }
+    },
+    {
+      "name": "Pembanding verify OTP",
+      "passed": true,
+      "detail": {
+        "http": 200,
+        "expected": 200,
+        "seconds": 0.203
+      }
+    },
+    {
+      "name": "Alamat akun pembanding",
+      "passed": true,
+      "detail": {
+        "http": 201,
+        "expected": 201,
+        "seconds": 0.039
+      }
+    },
+    {
+      "name": "Daftar provinsi Everpro",
+      "passed": true,
+      "detail": {
+        "http": 200,
+        "expected": 200,
+        "seconds": 0.158
+      }
+    },
+    {
+      "name": "Daftar kota Everpro",
+      "passed": true,
+      "detail": {
+        "http": 200,
+        "expected": 200,
+        "seconds": 0.149
+      }
+    },
+    {
+      "name": "Daftar kecamatan Everpro",
+      "passed": true,
+      "detail": {
+        "http": 200,
+        "expected": 200,
+        "seconds": 0.168
+      }
+    },
+    {
+      "name": "Daftar kelurahan Everpro",
+      "passed": true,
+      "detail": {
+        "http": 200,
+        "expected": 200,
+        "seconds": 0.141
+      }
+    },
+    {
+      "name": "Tambah alamat checkout",
+      "passed": true,
+      "detail": {
+        "http": 201,
+        "expected": 201,
+        "seconds": 0.041
+      }
+    },
+    {
+      "name": "Daftar alamat",
+      "passed": true,
+      "detail": {
+        "http": 200,
+        "expected": 200,
+        "seconds": 0.027
+      }
+    },
+    {
+      "name": "Ubah alamat",
+      "passed": true,
+      "detail": {
+        "http": 200,
+        "expected": 200,
+        "seconds": 0.032
+      }
+    },
+    {
+      "name": "Alamat akun lain tidak bisa diubah",
+      "passed": true,
+      "detail": {
+        "http": 404,
+        "expected": 404,
+        "seconds": 0.027
+      }
+    },
+    {
+      "name": "Baca katalog produk",
+      "passed": true,
+      "detail": {
+        "http": 200,
+        "expected": 200,
+        "seconds": 0.052
+      }
+    },
+    {
+      "name": "Baca katalog bundle",
+      "passed": true,
+      "detail": {
+        "http": 200,
+        "expected": 200,
+        "seconds": 0.039
+      }
+    },
+    {
+      "name": "Tambah produk quantity 97",
+      "passed": true,
+      "detail": {
+        "http": 200,
+        "expected": 200,
+        "seconds": 0.044
+      }
+    },
+    {
+      "name": "Tambah berulang dibatasi 99",
+      "passed": true,
+      "detail": {
+        "http": 200,
+        "expected": 200,
+        "seconds": 0.042
+      }
+    },
+    {
+      "name": "Quantity respons server sama dengan 99",
+      "passed": true
+    },
+    {
+      "name": "Quantity 100 ditolak",
+      "passed": true,
+      "detail": {
+        "http": 422,
+        "expected": 422,
+        "seconds": 0.026
+      }
+    },
+    {
+      "name": "Ganti quantity menjadi 2",
+      "passed": true,
+      "detail": {
+        "http": 200,
+        "expected": 200,
+        "seconds": 0.04
+      }
+    },
+    {
+      "name": "Tambah bundle ke cart gabungan",
+      "passed": true,
+      "detail": {
+        "http": 200,
+        "expected": 200,
+        "seconds": 0.048
+      }
+    },
+    {
+      "name": "Tambah produk yang tidak akan checkout",
+      "passed": true,
+      "detail": {
+        "http": 200,
+        "expected": 200,
+        "seconds": 0.047
+      }
+    },
+    {
+      "name": "Ringkasan pilihan produk dan bundle",
+      "passed": true,
+      "detail": {
+        "http": 200,
+        "expected": 200,
+        "seconds": 0.038
+      }
+    },
+    {
+      "name": "Ringkasan hanya 2 baris dan quantity 3",
+      "passed": true,
+      "detail": {
+        "cart_item_ids": [
+          65,
+          66
+        ],
+        "line_count": 2,
+        "total_items": 3,
+        "subtotal": "486000.00",
+        "unavailable_item_ids": []
+      }
+    },
+    {
+      "name": "Cart tetap berisi item tidak dicentang",
+      "passed": true
+    },
+    {
+      "name": "Pilihan cart duplikat ditolak",
+      "passed": true,
+      "detail": {
+        "http": 422,
+        "expected": 422,
+        "seconds": 0.026
+      }
+    },
+    {
+      "name": "Item akun lain tidak bisa diedit",
+      "passed": true,
+      "detail": {
+        "http": 404,
+        "expected": 404,
+        "seconds": 0.032
+      }
+    },
+    {
+      "name": "Pilihan item akun lain ditolak",
+      "passed": true,
+      "detail": {
+        "http": 422,
+        "expected": 422,
+        "seconds": 0.032
+      }
+    },
+    {
+      "name": "Daftar titik pengiriman",
+      "passed": true,
+      "detail": {
+        "http": 200,
+        "expected": 200,
+        "seconds": 0.281
+      }
+    },
+    {
+      "name": "Tambah barang milik fixture audit",
+      "passed": true,
+      "detail": {
+        "http": 200,
+        "expected": 200,
+        "seconds": 0.055
+      }
+    },
+    {
+      "name": "Preview fixture sebelum perubahan harga",
+      "passed": true,
+      "detail": {
+        "http": 200,
+        "expected": 200,
+        "seconds": 0.523
+      }
+    },
+    {
+      "name": "Harga berubah sesudah preview ditolak",
+      "passed": true,
+      "detail": {
+        "http": 409,
+        "expected": 409,
+        "seconds": 0.484
+      }
+    },
+    {
+      "name": "Preview ulang menampilkan perubahan harga",
+      "passed": true,
+      "detail": {
+        "http": 200,
+        "expected": 200,
+        "seconds": 0.442
+      }
+    },
+    {
+      "name": "price_changed true pada harga baru",
+      "passed": true
+    },
+    {
+      "name": "Cart tetap terbuka setelah listing dihapus",
+      "passed": true,
+      "detail": {
+        "http": 200,
+        "expected": 200,
+        "seconds": 0.043
+      }
+    },
+    {
+      "name": "Barang terhapus ditandai Tidak tersedia",
+      "passed": true
+    },
+    {
+      "name": "Quantity barang terhapus ditolak",
+      "passed": true,
+      "detail": {
+        "http": 409,
+        "expected": 409,
+        "seconds": 0.028
+      }
+    },
+    {
+      "name": "Tambah listing terhapus ditolak",
+      "passed": true,
+      "detail": {
+        "http": 422,
+        "expected": 422,
+        "seconds": 0.032
+      }
+    },
+    {
+      "name": "Preview barang terhapus ditolak",
+      "passed": true,
+      "detail": {
+        "http": 409,
+        "expected": 409,
+        "seconds": 0.037
+      }
+    },
+    {
+      "name": "Order barang terhapus ditolak",
+      "passed": true,
+      "detail": {
+        "http": 409,
+        "expected": 409,
+        "seconds": 0.042
+      }
+    },
+    {
+      "name": "Barang terhapus dapat dihapus dari cart",
+      "passed": true,
+      "detail": {
+        "http": 200,
+        "expected": 200,
+        "seconds": 0.034
+      }
+    },
+    {
+      "name": "Order baru tanpa token preview ditolak",
+      "passed": true,
+      "detail": {
+        "http": 422,
+        "expected": 422,
+        "seconds": 0.029
+      }
+    },
+    {
+      "name": "Order baru dengan token rusak ditolak",
+      "passed": true,
+      "detail": {
+        "http": 422,
+        "expected": 422,
+        "seconds": 0.417
+      }
+    },
+    {
+      "name": "Preview alamat akun lain ditolak",
+      "passed": true,
+      "detail": {
+        "http": 404,
+        "expected": 404,
+        "seconds": 0.571
+      }
+    },
+    {
+      "name": "Preview checkout produk dan bundle nyata",
+      "passed": true,
+      "detail": {
+        "http": 200,
+        "expected": 200,
+        "seconds": 0.567
+      }
+    },
+    {
+      "name": "Preview sesuai ringkasan dan gratis ongkir",
+      "passed": true
+    },
+    {
+      "name": "Ubah quantity setelah preview",
+      "passed": true,
+      "detail": {
+        "http": 200,
+        "expected": 200,
+        "seconds": 0.046
+      }
+    },
+    {
+      "name": "Token preview lama ditolak setelah quantity berubah",
+      "passed": true,
+      "detail": {
+        "http": 409,
+        "expected": 409,
+        "seconds": 0.387
+      }
+    },
+    {
+      "name": "Kembalikan quantity sesuai pembelian",
+      "passed": true,
+      "detail": {
+        "http": 200,
+        "expected": 200,
+        "seconds": 0.058
+      }
+    },
+    {
+      "name": "Preview final sebelum konfirmasi order",
+      "passed": true,
+      "detail": {
+        "http": 200,
+        "expected": 200,
+        "seconds": 1.595
+      }
+    },
+    {
+      "name": "Buat order dari produk dan bundle",
+      "passed": true,
+      "detail": {
+        "http": 201,
+        "expected": 201,
+        "seconds": 0.475
+      }
+    },
+    {
+      "name": "Order pending_payment tanpa VA sebelum buat pembayaran",
+      "passed": true,
+      "detail": {
+        "order": "WAL-GLNI2S33X33F",
+        "total": "486000.00"
+      }
+    },
+    {
+      "name": "Order memiliki snapshot produk dan bundle",
+      "passed": true
+    },
+    {
+      "name": "Snapshot alamat dan gudang tersimpan",
+      "passed": true
+    },
+    {
+      "name": "Retry key sama tanpa token mengembalikan order lama",
+      "passed": true,
+      "detail": {
+        "http": 200,
+        "expected": 200,
+        "seconds": 0.049
+      }
+    },
+    {
+      "name": "Retry mengembalikan ID order yang sama",
+      "passed": true
+    },
+    {
+      "name": "Cart sesudah checkout sebagian",
+      "passed": true,
+      "detail": {
+        "http": 200,
+        "expected": 200,
+        "seconds": 0.033
+      }
+    },
+    {
+      "name": "Hanya item belum dibeli tersisa",
+      "passed": true
+    },
+    {
+      "name": "Daftar order customer",
+      "passed": true,
+      "detail": {
+        "http": 200,
+        "expected": 200,
+        "seconds": 0.03
+      }
+    },
+    {
+      "name": "Detail order customer",
+      "passed": true,
+      "detail": {
+        "http": 200,
+        "expected": 200,
+        "seconds": 0.029
+      }
+    },
+    {
+      "name": "Customer lain tidak bisa membaca order",
+      "passed": true,
+      "detail": {
+        "http": 404,
+        "expected": 404,
+        "seconds": 0.032
+      }
+    },
+    {
+      "name": "Daftar metode pembayaran",
+      "passed": true,
+      "detail": {
+        "http": 200,
+        "expected": 200,
+        "seconds": 0.026
+      }
+    },
+    {
+      "name": "Pembayaran belum diterbitkan",
+      "passed": true,
+      "detail": {
+        "http": 200,
+        "expected": 200,
+        "seconds": 0.026
+      }
+    },
+    {
+      "name": "Batalkan order audit yang belum dibayar",
+      "passed": true,
+      "detail": {
+        "http": 200,
+        "expected": 200,
+        "seconds": 0.054
+      }
+    },
+    {
+      "name": "Order audit berhasil cancelled",
+      "passed": true
+    },
+    {
+      "name": "Hapus alamat setelah snapshot order dibuat",
+      "passed": true,
+      "detail": {
+        "http": 200,
+        "expected": 200,
+        "seconds": 0.031
+      }
+    },
+    {
+      "name": "Snapshot order tetap ada setelah alamat dihapus",
+      "passed": true,
+      "detail": {
+        "http": 200,
+        "expected": 200,
+        "seconds": 0.029
+      }
+    },
+    {
+      "name": "Snapshot alamat order tidak bergantung pada alamat customer",
+      "passed": true
+    },
+    {
+      "name": "Kosongkan cart akun uji",
+      "passed": true,
+      "detail": {
+        "http": 200,
+        "expected": 200,
+        "seconds": 0.032
+      }
+    },
+    {
+      "name": "Verifikasi cart akhir kosong",
+      "passed": true,
+      "detail": {
+        "http": 200,
+        "expected": 200,
+        "seconds": 0.028
+      }
+    },
+    {
+      "name": "Cart akhir kosong",
+      "passed": true
+    },
+    {
+      "name": "Hapus alamat akun pembanding",
+      "passed": true,
+      "detail": {
+        "http": 200,
+        "expected": 200,
+        "seconds": 0.032
+      }
+    },
+    {
+      "name": "Logout akun uji 1",
+      "passed": true,
+      "detail": {
+        "http": 200,
+        "expected": 200,
+        "seconds": 0.03
+      }
+    },
+    {
+      "name": "Token akun uji 1 sesudah logout ditolak",
+      "passed": true,
+      "detail": {
+        "http": 401,
+        "expected": 401,
+        "seconds": 0.025
+      }
+    },
+    {
+      "name": "Logout akun uji 2",
+      "passed": true,
+      "detail": {
+        "http": 200,
+        "expected": 200,
+        "seconds": 0.03
+      }
+    },
+    {
+      "name": "Token akun uji 2 sesudah logout ditolak",
+      "passed": true,
+      "detail": {
+        "http": 401,
+        "expected": 401,
+        "seconds": 0.024
+      }
+    }
+  ],
+  "orders": [
+    {
+      "id": 85,
+      "order_number": "WAL-GLNI2S33X33F",
+      "total": "486000.00",
+      "status_at_creation": "pending_payment",
+      "final_status": "cancelled"
+    }
+  ],
+  "limits": [
+    "Pengiriman WhatsApp OTP dilewati pada proses issue port 8011; verify dan request lain memakai server port 8000.",
+    "Tidak membuat charge atau menguji settlement pembayaran pada audit checkout ini."
+  ],
+  "passed": 82,
+  "failed": 0,
+  "fixture_cleanup_ok": true,
+  "database_verification": {
+    "orders": [
+      {
+        "id": 85,
+        "order_number": "WAL-GLNI2S33X33F",
+        "status": "cancelled",
+        "total": "486000.00",
+        "items": 2,
+        "payment_attempts": 0,
+        "images": [
+          {
+            "id": 123,
+            "exists": true
+          },
+          {
+            "id": 124,
+            "exists": true
+          }
+        ]
+      }
+    ],
+    "tokens_remaining": 0,
+    "addresses_remaining": 0,
+    "cart_items_remaining": 0,
+    "audit_fixture_remaining": 0
+  },
+  "environment_checks": [
+    {
+      "name": "URL gambar publik dari API",
+      "passed": false,
+      "http": 404,
+      "code": "ERR_NGROK_3200",
+      "reason": "Domain ngrok pada APP_URL offline"
+    },
+    {
+      "name": "Berkas gambar melalui server lokal",
+      "passed": true,
+      "http": 200,
+      "content_type": "image/jpeg"
+    }
+  ],
+  "samples": {
+    "created_order": {
+      "data": {
+        "id": 85,
+        "order_number": "WAL-GLNI2S33X33F",
+        "status": "pending_payment",
+        "payment_provider": "midtrans",
+        "simulation": false,
+        "payment_required": true,
+        "payment_integration": "core_api",
+        "payment_due_at": "2026-11-13T10:00:33+07:00",
+        "payment": null,
+        "payment_instructions": null,
+        "paid_at": null,
+        "currency": "IDR",
+        "subtotal": "486000.00",
+        "shipping_gross_fee": "0.00",
+        "shipping_subsidy": "0.00",
+        "shipping_fee": "0.00",
+        "shipping_service": "FREE",
+        "total": "486000.00",
+        "shipping_address": {
+          "label": "Audit Utama",
+          "name": "Audit Cart Live 20261112-100024",
+          "phone": "62899900438038",
+          "province": "Jawa Barat",
+          "province_id": "SdLQ8KONbg==",
+          "province_name": "Jawa Barat",
+          "city": "Bandung Barat",
+          "city_id": "S8u307WCKtg=",
+          "city_name": "Bandung Barat",
+          "district": null,
+          "district_id": "SM6jvJaNOtiR",
+          "district_name": "Batujajar",
+          "sub_district_id": "Qsqup-zBDMKRLLs=",
+          "sub_district_name": "Bojonghaleuang",
+          "postal_code": "40561",
+          "address": "Alamat audit API, bukan tujuan pengiriman nyata",
+          "address_note": "Catatan audit HTTP",
+          "latitude": null,
+          "longitude": null
+        },
+        "shipping_origin": {
+          "warehouse_code": "5504027954349",
+          "warehouse_name": "TASIKMALAYA",
+          "address": "gudang herbal tamansari",
+          "postal_code": "46196",
+          "coordinates": "-7.366010843848928, 108.22806304350148"
+        },
+        "stock_mode": "unlimited",
+        "items": [
+          {
+            "id": 90,
+            "type": "product",
+            "image_url": "https://494e-2405-8180-801-4279-9c19-ecbe-98a5-17c7.ngrok-free.app/storage/order-item-images/bcd634ae-c4a9-4123-9fa4-29a8766a0872/01M6QPGQ4FBPGZDPZ31VSRG8ZD.jpg",
+            "sku": "SKU-WAL-KELOREENA-50",
+            "product_name": "Keloreena",
+            "variant_name": "50 Kapsul",
+            "bundle_components": null,
+            "store_name": "Toko Simulasi Order",
+            "quantity": 2,
+            "unit_price": "93000.00",
+            "subtotal": "186000.00"
+          },
+          {
+            "id": 91,
+            "type": "bundle",
+            "image_url": "https://494e-2405-8180-801-4279-9c19-ecbe-98a5-17c7.ngrok-free.app/storage/order-item-images/69eb1d40-5721-4a17-89d8-ca057fe74421/01M6QGPJTKA1DDFKXQ65JTSPAF.png",
+            "sku": "BUNDLE-BND-4JEDDTQQ",
+            "product_name": "Paket Herbal Sendi dan Otot",
+            "variant_name": "Bundle",
+            "bundle_components": [
+              {
+                "variant_id": 135,
+                "sku": "SKU-WAL-SENDIFIT-50",
+                "product_name": "Sendifit",
+                "variant_name": "50 Kapsul",
+                "quantity": 1
+              },
+              {
+                "variant_id": 138,
+                "sku": "SKU-WAL-OIL-FIT-50",
+                "product_name": "Kapsul Oil Fit",
+                "variant_name": "50 Kapsul",
+                "quantity": 1
+              },
+              {
+                "variant_id": 132,
+                "sku": "SKU-WAL-KELOREENA-50",
+                "product_name": "Keloreena",
+                "variant_name": "50 Kapsul",
+                "quantity": 1
+              }
+            ],
+            "store_name": "Toko Simulasi Order",
+            "quantity": 1,
+            "unit_price": "300000.00",
+            "subtotal": "300000.00"
+          }
+        ],
+        "created_at": "2026-11-12T10:00:33+07:00"
+      },
+      "success": true,
+      "message": "Order berhasil dibuat."
+    },
+    "checkout_preview": {
+      "success": true,
+      "message": "Order dapat diajukan. Stok belum diverifikasi.",
+      "data": {
+        "checkout_token": "[REDACTED]",
+        "price_changed": true,
+        "price_changes": [
+          {
+            "cart_item_id": 68,
+            "type": "product",
+            "previous_unit_price": "15000.00",
+            "current_unit_price": "19000.00"
+          }
+        ],
+        "selection": {
+          "cart_item_ids": [
+            68
+          ],
+          "line_count": 1,
+          "total_items": 1,
+          "subtotal": "19000.00",
+          "unavailable_item_ids": []
+        },
+        "simulation": false,
+        "payment_required": true,
+        "payment_provider": "midtrans",
+        "stock_mode": "unlimited",
+        "shipping_origin": {
+          "warehouse_code": "5504027954349",
+          "warehouse_name": "TASIKMALAYA",
+          "address": "gudang herbal tamansari",
+          "postal_code": "46196",
+          "coordinates": "-7.366010843848928, 108.22806304350148"
+        },
+        "stock_verification": "pending_manual",
+        "checkout_available": true,
+        "items": [
+          {
+            "cart_item_id": 68,
+            "type": "product",
+            "image_url": null,
+            "sku": "AUDIT-CART-D60966F6",
+            "quantity": 1,
+            "unit_price": "19000.00",
+            "subtotal": "19000.00"
+          }
+        ],
+        "subtotal": "19000.00",
+        "shipping": {
+          "service": "FREE",
+          "eta_days": null,
+          "gross_fee": "0.00",
+          "subsidy": "0.00",
+          "fee": "0.00",
+          "subsidy_rule_id": null
+        },
+        "total": "19000.00"
+      }
+    },
+    "cart_unavailable": {
+      "data": {
+        "id": 13,
+        "items": [
+          {
+            "id": 68,
+            "type": "product",
+            "is_available": false,
+            "availability_message": "Tidak tersedia",
+            "image_url": null,
+            "listing_id": 45,
+            "bundle_listing_id": null,
+            "variant_id": 146,
+            "product": {
+              "id": 118,
+              "name": "Produk Herbal temporibus",
+              "slug": "produk-herbal-temporibus-283"
+            },
+            "bundle": null,
+            "store": {
+              "id": 11,
+              "name": "AUDIT-CART-D60966F6",
+              "slug": "harber-abbott-and-carter-herbal"
+            },
+            "variant": {
+              "id": 146,
+              "name": "100 Kapsul",
+              "sku": "AUDIT-CART-D60966F6"
+            },
+            "quantity": 1,
+            "unit_price": "15000.00",
+            "subtotal": "15000.00"
+          },
+          {
+            "id": 67,
+            "type": "product",
+            "is_available": true,
+            "availability_message": null,
+            "image_url": "https://494e-2405-8180-801-4279-9c19-ecbe-98a5-17c7.ngrok-free.app/storage/108/01M6QGSCQ3E17E8SMFRPWRTX3N.png",
+            "listing_id": 43,
+            "bundle_listing_id": null,
+            "variant_id": 144,
+            "product": {
+              "id": 116,
+              "name": "Etaku Goat Milk",
+              "slug": "etaku-goat-milk"
+            },
+            "bundle": null,
+            "store": {
+              "id": 9,
+              "name": "Toko Simulasi Order",
+              "slug": "toko-simulasi-order"
+            },
+            "variant": {
+              "id": 144,
+              "name": "1 Box 200 gram",
+              "sku": "SKU-WAL-ETAKU-200G"
+            },
+            "quantity": 1,
+            "unit_price": "80000.00",
+            "subtotal": "80000.00"
+          },
+          {
+            "id": 66,
+            "type": "bundle",
+            "is_available": true,
+            "availability_message": null,
+            "image_url": "https://494e-2405-8180-801-4279-9c19-ecbe-98a5-17c7.ngrok-free.app/storage/99/01M6QGPJTKA1DDFKXQ65JTSPAF.png",
+            "listing_id": null,
+            "bundle_listing_id": 11,
+            "variant_id": null,
+            "product": null,
+            "bundle": {
+              "id": 23,
+              "name": "Paket Herbal Sendi dan Otot",
+              "slug": "paket-herbal-sendi-dan-otot",
+              "items": [
+                {
+                  "product": {
+                    "id": 107,
+                    "name": "Sendifit",
+                    "slug": "sendifit",
+                    "product_code": "PRD-WAL-3ILVJOHM"
+                  },
+                  "variant": {
+                    "id": 135,
+                    "name": "50 Kapsul",
+                    "sku": "SKU-WAL-SENDIFIT-50",
+                    "image_url": null,
+                    "price": "120000.00",
+                    "weight_grams": 100
+                  },
+                  "quantity": 1
+                },
+                {
+                  "product": {
+                    "id": 110,
+                    "name": "Kapsul Oil Fit",
+                    "slug": "kapsul-oil-fit",
+                    "product_code": "PRD-WAL-PQ1VGYCW"
+                  },
+                  "variant": {
+                    "id": 138,
+                    "name": "50 Kapsul",
+                    "sku": "SKU-WAL-OIL-FIT-50",
+                    "image_url": null,
+                    "price": "120000.00",
+                    "weight_grams": 100
+                  },
+                  "quantity": 1
+                },
+                {
+                  "product": {
+                    "id": 105,
+                    "name": "Keloreena",
+                    "slug": "keloreena",
+                    "product_code": "PRD-WAL-EHRLNUHO"
+                  },
+                  "variant": {
+                    "id": 132,
+                    "name": "50 Kapsul",
+                    "sku": "SKU-WAL-KELOREENA-50",
+                    "image_url": "https://494e-2405-8180-801-4279-9c19-ecbe-98a5-17c7.ngrok-free.app/storage/109/01M6QPGQ4FBPGZDPZ31VSRG8ZD.jpg",
+                    "price": "93000.00",
+                    "weight_grams": 100
+                  },
+                  "quantity": 1
+                }
+              ]
+            },
+            "store": {
+              "id": 9,
+              "name": "Toko Simulasi Order",
+              "slug": "toko-simulasi-order"
+            },
+            "variant": null,
+            "quantity": 1,
+            "unit_price": "300000.00",
+            "subtotal": "300000.00"
+          },
+          {
+            "id": 65,
+            "type": "product",
+            "is_available": true,
+            "availability_message": null,
+            "image_url": "https://494e-2405-8180-801-4279-9c19-ecbe-98a5-17c7.ngrok-free.app/storage/109/01M6QPGQ4FBPGZDPZ31VSRG8ZD.jpg",
+            "listing_id": 32,
+            "bundle_listing_id": null,
+            "variant_id": 132,
+            "product": {
+              "id": 105,
+              "name": "Keloreena",
+              "slug": "keloreena"
+            },
+            "bundle": null,
+            "store": {
+              "id": 9,
+              "name": "Toko Simulasi Order",
+              "slug": "toko-simulasi-order"
+            },
+            "variant": {
+              "id": 132,
+              "name": "50 Kapsul",
+              "sku": "SKU-WAL-KELOREENA-50"
+            },
+            "quantity": 2,
+            "unit_price": "93000.00",
+            "subtotal": "186000.00"
+          }
+        ],
+        "total_items": 5,
+        "subtotal": "581000.00",
+        "selection": {
+          "cart_item_ids": [
+            68
+          ],
+          "line_count": 0,
+          "total_items": 0,
+          "subtotal": "0.00",
+          "unavailable_item_ids": [
+            68
+          ]
+        }
+      },
+      "success": true,
+      "message": "Cart berhasil diambil."
+    },
+    "cart_selection": {
+      "data": {
+        "id": 13,
+        "items": [
+          {
+            "id": 67,
+            "type": "product",
+            "is_available": true,
+            "availability_message": null,
+            "image_url": "https://494e-2405-8180-801-4279-9c19-ecbe-98a5-17c7.ngrok-free.app/storage/108/01M6QGSCQ3E17E8SMFRPWRTX3N.png",
+            "listing_id": 43,
+            "bundle_listing_id": null,
+            "variant_id": 144,
+            "product": {
+              "id": 116,
+              "name": "Etaku Goat Milk",
+              "slug": "etaku-goat-milk"
+            },
+            "bundle": null,
+            "store": {
+              "id": 9,
+              "name": "Toko Simulasi Order",
+              "slug": "toko-simulasi-order"
+            },
+            "variant": {
+              "id": 144,
+              "name": "1 Box 200 gram",
+              "sku": "SKU-WAL-ETAKU-200G"
+            },
+            "quantity": 1,
+            "unit_price": "80000.00",
+            "subtotal": "80000.00"
+          },
+          {
+            "id": 66,
+            "type": "bundle",
+            "is_available": true,
+            "availability_message": null,
+            "image_url": "https://494e-2405-8180-801-4279-9c19-ecbe-98a5-17c7.ngrok-free.app/storage/99/01M6QGPJTKA1DDFKXQ65JTSPAF.png",
+            "listing_id": null,
+            "bundle_listing_id": 11,
+            "variant_id": null,
+            "product": null,
+            "bundle": {
+              "id": 23,
+              "name": "Paket Herbal Sendi dan Otot",
+              "slug": "paket-herbal-sendi-dan-otot",
+              "items": [
+                {
+                  "product": {
+                    "id": 107,
+                    "name": "Sendifit",
+                    "slug": "sendifit",
+                    "product_code": "PRD-WAL-3ILVJOHM"
+                  },
+                  "variant": {
+                    "id": 135,
+                    "name": "50 Kapsul",
+                    "sku": "SKU-WAL-SENDIFIT-50",
+                    "image_url": null,
+                    "price": "120000.00",
+                    "weight_grams": 100
+                  },
+                  "quantity": 1
+                },
+                {
+                  "product": {
+                    "id": 110,
+                    "name": "Kapsul Oil Fit",
+                    "slug": "kapsul-oil-fit",
+                    "product_code": "PRD-WAL-PQ1VGYCW"
+                  },
+                  "variant": {
+                    "id": 138,
+                    "name": "50 Kapsul",
+                    "sku": "SKU-WAL-OIL-FIT-50",
+                    "image_url": null,
+                    "price": "120000.00",
+                    "weight_grams": 100
+                  },
+                  "quantity": 1
+                },
+                {
+                  "product": {
+                    "id": 105,
+                    "name": "Keloreena",
+                    "slug": "keloreena",
+                    "product_code": "PRD-WAL-EHRLNUHO"
+                  },
+                  "variant": {
+                    "id": 132,
+                    "name": "50 Kapsul",
+                    "sku": "SKU-WAL-KELOREENA-50",
+                    "image_url": "https://494e-2405-8180-801-4279-9c19-ecbe-98a5-17c7.ngrok-free.app/storage/109/01M6QPGQ4FBPGZDPZ31VSRG8ZD.jpg",
+                    "price": "93000.00",
+                    "weight_grams": 100
+                  },
+                  "quantity": 1
+                }
+              ]
+            },
+            "store": {
+              "id": 9,
+              "name": "Toko Simulasi Order",
+              "slug": "toko-simulasi-order"
+            },
+            "variant": null,
+            "quantity": 1,
+            "unit_price": "300000.00",
+            "subtotal": "300000.00"
+          },
+          {
+            "id": 65,
+            "type": "product",
+            "is_available": true,
+            "availability_message": null,
+            "image_url": "https://494e-2405-8180-801-4279-9c19-ecbe-98a5-17c7.ngrok-free.app/storage/109/01M6QPGQ4FBPGZDPZ31VSRG8ZD.jpg",
+            "listing_id": 32,
+            "bundle_listing_id": null,
+            "variant_id": 132,
+            "product": {
+              "id": 105,
+              "name": "Keloreena",
+              "slug": "keloreena"
+            },
+            "bundle": null,
+            "store": {
+              "id": 9,
+              "name": "Toko Simulasi Order",
+              "slug": "toko-simulasi-order"
+            },
+            "variant": {
+              "id": 132,
+              "name": "50 Kapsul",
+              "sku": "SKU-WAL-KELOREENA-50"
+            },
+            "quantity": 2,
+            "unit_price": "93000.00",
+            "subtotal": "186000.00"
+          }
+        ],
+        "total_items": 4,
+        "subtotal": "566000.00",
+        "selection": {
+          "cart_item_ids": [
+            65,
+            66
+          ],
+          "line_count": 2,
+          "total_items": 3,
+          "subtotal": "486000.00",
+          "unavailable_item_ids": []
+        }
+      },
+      "success": true,
+      "message": "Cart berhasil diambil."
+    }
+  }
+}

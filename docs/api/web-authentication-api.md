@@ -67,10 +67,12 @@ email dan password tidak digunakan untuk customer.
 ## Konfigurasi dasar
 
 ```text
-Base URL: http://103.247.8.168/api/v1
+Base URL lokal: http://127.0.0.1:8000/api/v1
 Content-Type: application/json
 Accept: application/json
 ```
+
+Untuk server publik, ganti domain dengan backend yang aktif dan pertahankan prefix `/api/v1`. Di Postman, Environment aktif dapat menimpa variable Collection. Lihat [pengaturan Postman](postman-setup.md).
 
 Untuk endpoint yang membutuhkan login, kirim token pada setiap request:
 

@@ -16,12 +16,13 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Laravel\Sanctum\Sanctum;
+use Tests\Concerns\WithCheckoutToken;
 use Tests\Concerns\WithCheckoutWarehouse;
 use Tests\TestCase;
 
 class OrderTest extends TestCase
 {
-    use RefreshDatabase, WithCheckoutWarehouse;
+    use RefreshDatabase, WithCheckoutToken, WithCheckoutWarehouse;
 
     public function test_order_requires_idempotency_key_and_warehouse_availability(): void
     {
@@ -54,7 +55,7 @@ class OrderTest extends TestCase
         $this->postJson('/api/v1/orders', $payload)
             ->assertUnprocessable();
 
-        $this->postJson('/api/v1/orders', $payload, [
+        $this->postJson('/api/v1/orders', $this->checkoutPayload($payload), [
             'Idempotency-Key' => 'order-test-1',
         ])->assertStatus(503)
             ->assertJsonPath('success', false);
@@ -141,7 +142,7 @@ class OrderTest extends TestCase
         ];
         $headers = ['Idempotency-Key' => 'order-idempotent-1'];
 
-        $first = $this->postJson('/api/v1/orders', $payload, $headers)
+        $first = $this->postJson('/api/v1/orders', $this->checkoutPayload($payload), $headers)
             ->assertCreated()
             ->assertJsonPath('data.status', 'pending_payment')
             ->assertJsonPath('data.total', '40000.00')
@@ -155,7 +156,7 @@ class OrderTest extends TestCase
             ->assertCreated()
             ->assertJsonPath('data.payment.va_number', '123456789');
 
-        $this->postJson('/api/v1/orders', $payload, $headers)
+        $this->postJson('/api/v1/orders', $this->checkoutPayload($payload), $headers)
             ->assertOk()
             ->assertJsonPath('data.id', $first->json('data.id'));
 
@@ -235,7 +236,7 @@ class OrderTest extends TestCase
             'is_default' => true,
         ]);
 
-        $this->postJson('/api/v1/orders', ['address_id' => $address->id], [
+        $this->postJson('/api/v1/orders', $this->checkoutPayload(['address_id' => $address->id]), [
             'Idempotency-Key' => 'order-location-snapshot-1',
         ])->assertCreated()
             ->assertJsonPath('data.shipping_address.province_id', '32')
@@ -378,7 +379,7 @@ class OrderTest extends TestCase
             'quantity' => 3,
         ])->assertOk();
 
-        $response = $this->postJson('/api/v1/orders', [
+        $response = $this->postJson('/api/v1/orders', $this->checkoutPayload([
             'shipping_address' => [
                 'name' => 'Member Walatra',
                 'phone' => '628123456789',
@@ -387,7 +388,7 @@ class OrderTest extends TestCase
                 'province' => 'Jawa Barat',
                 'postal_code' => '40123',
             ],
-        ], ['Idempotency-Key' => 'bundle-order-1'])
+        ]), ['Idempotency-Key' => 'bundle-order-1'])
             ->assertCreated()
             ->assertJsonPath('data.items.0.type', 'bundle')
             ->assertJsonPath('data.items.0.bundle_components.0.sku', 'SKU-BUNDLE-COMPONENT');

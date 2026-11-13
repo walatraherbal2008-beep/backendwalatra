@@ -1,5 +1,7 @@
 # API Checkout Order
 
+Postman: `base_url` lokal harus `http://127.0.0.1:8000/api/v1`. Endpoint ditambahkan setelah nilai ini. Environment aktif dapat menimpa variable Collection; lihat [pengaturan Postman](postman-setup.md).
+
 Base URL: `/api/v1`, misalnya `http://127.0.0.1:8000/api/v1` pada server lokal.
 
 Semua endpoint di bawah memerlukan akun customer aktif dan token dengan ability `customer-api`:
@@ -63,6 +65,15 @@ Respons `200`, contoh satu produk:
     "checkout_token": "<token-preview-dari-server>",
     "price_changed": false,
     "price_changes": [],
+    "selection": {
+      "cart_item_ids": [
+        12
+      ],
+      "line_count": 1,
+      "total_items": 1,
+      "subtotal": "155000.00",
+      "unavailable_item_ids": []
+    },
     "simulation": false,
     "payment_required": true,
     "payment_provider": "midtrans",
@@ -105,6 +116,33 @@ Token preview berlaku **15 menit**, terikat pada akun, pilihan item, quantity, h
 
 Preview dapat dipanggil tanpa alamat, tetapi `shipping` dan `total` bernilai `null`. Sertakan alamat agar memperoleh total lengkap sebelum membuat order.
 
+### Fungsi checkout_token untuk frontend
+
+`checkout_token` membuktikan bahwa backend sudah menerbitkan preview untuk akun dan isi checkout tertentu. Token wajib untuk order baru agar order tidak dibuat dari pilihan, jumlah, harga, atau gudang yang berbeda dari preview. Token tidak membuktikan user sudah menekan tombol setuju; frontend tetap harus menampilkan ringkasan dan meminta konfirmasi user.
+
+Contoh: user melihat harga Rp93.000 pada preview, lalu harga berubah sebelum order dibuat. Backend menolak token lama dengan `409 CHECKOUT_CHANGED`. Frontend mengambil preview baru dan menampilkan harga terbaru sebelum user mengonfirmasi kembali.
+
+Alur frontend:
+
+1. Kirim pilihan `cart_item_ids` dan alamat ke `POST /checkout/preview`.
+2. Tampilkan item, harga, ongkir, total, dan `price_changes` jika ada. Simpan `data.checkout_token` sebagai state sementara halaman checkout.
+3. Ketika user mengonfirmasi pembelian, kirim token tersebut bersama pilihan dan alamat ke `POST /orders`, dengan header `Idempotency-Key`.
+4. Jika pilihan, quantity, atau alamat diubah, buang token yang sedang disimpan dan panggil preview lagi sebelum mengaktifkan konfirmasi order. Gunakan hasil preview terbaru bila beberapa request selesai tidak berurutan.
+5. Jika token kedaluwarsa atau backend melaporkan perubahan checkout, ambil preview baru, tampilkan ringkasan terbaru, dan minta konfirmasi kembali. Jangan otomatis membuat order dengan harga baru tanpa persetujuan user.
+
+User tidak perlu melihat atau mengetik token. Frontend tidak membuat, mengubah, atau menafsirkan isi token; salin nilai persis dari respons. Token tidak boleh digunakan untuk akun lain dan tidak perlu disimpan permanen.
+
+| Hasil dari backend | Tindakan frontend |
+|---|---|
+| `422` pada `checkout_token` | Token tidak ada/tidak valid/milik akun lain; ambil preview dari akun aktif. |
+| `409 CHECKOUT_EXPIRED` | Masa berlaku 15 menit habis; ambil preview baru. |
+| `409 CHECKOUT_CHANGED` | Pilihan, jumlah, harga, atau kode gudang berubah; ambil preview baru dan minta konfirmasi. |
+| Request order timeout | Pertahankan `Idempotency-Key` dan payload; retry dengan key yang sama agar tidak membuat order ganda. |
+
+**Bedakan tiga nilai:** Bearer token mengautentikasi customer; `checkout_token` memeriksa kesesuaian isi checkout; `Idempotency-Key` mencegah retry menghasilkan order tambahan. Token checkout bukan token pembayaran dan tidak menerbitkan VA/QRIS.
+
+**Batas perlindungan saat ini:** token memuat keterikatan akun, ID pilihan item, quantity, harga, dan kode gudang, tetapi belum mengikat alamat, ongkir, atau komposisi bundle. Karena itu frontend tetap perlu meminta preview ulang setelah perubahan alamat. Token tidak mengunci harga di database, mereservasi stok, atau menjamin stok fisik tersedia. Ketentuan ini berlaku pada mode manual maupun Midtrans; simulasi yang diaktifkan juga membutuhkan preview untuk order baru.
+
 ## 2. Membuat order
 
 `POST /orders`
@@ -129,7 +167,7 @@ Idempotency-Key: checkout-customer-1-attempt-1
 | `address_id` | Integer positif; alamat harus milik customer. Wajib jika tidak menggunakan `shipping_address` |
 | `shipping_address` | Alternatif alamat langsung; wajib jika tidak menggunakan `address_id` |
 | `cart_item_ids` | Opsional; jika dikirim wajib array tidak kosong, integer positif unik, dan milik cart customer |
-| `checkout_token` | Opsional pada validasi API; jika dikirim wajib string tidak kosong maksimal 4.096 karakter. Kirim token preview agar perubahan pilihan/harga dapat dideteksi |
+| `checkout_token` | Wajib untuk order baru, string tidak kosong maksimal 4.096 karakter, berasal dari preview. Tidak diperlukan lagi untuk retry key yang sudah menghasilkan order |
 
 Jika `address_id` dan `shipping_address` dikirim bersamaan, alamat tersimpan dari `address_id` digunakan. Contoh alternatif tanpa alamat tersimpan:
 
@@ -277,7 +315,7 @@ VA berasal dari Midtrans, disimpan bersama percobaan pembayaran, lalu dikirim se
 
 Jika permintaan pembayaran timeout setelah order dibuat, lanjutkan pengecekan/retry pembayaran pada **order yang sama**. Gunakan key pembayaran yang sama; jangan mengulangi checkout dengan key baru.
 
-Detail pergantian metode, penerbitan QR kedaluwarsa, format QR, dan webhook tersedia pada [API pembayaran Midtrans Core](midtrans-core-payments.md).
+Saat mengganti metode, gunakan key baru untuk permintaan pergantian dan pertahankan key tersebut saat retry. Tunggu sampai backend mengembalikan percobaan baru; jika respons `202 PAYMENT_PROCESSING`, jangan membayar instruksi lama atau meminta metode lain. Detail pergantian metode, penerbitan QR kedaluwarsa, format QR, dan webhook tersedia pada [API pembayaran Midtrans Core](midtrans-core-payments.md).
 
 ## 4. Membaca status dan membatalkan order
 
@@ -309,7 +347,7 @@ Pembayaran terverifikasi melalui webhook/refresh dapat memperbarui order menjadi
 | `401` / `403` | Periksa token, ability, dan status akun |
 | `404` | Order atau alamat tidak ditemukan/milik akun lain |
 | `422` | Periksa key, alamat, pilihan item, atau token preview tidak valid; cart kosong juga menghasilkan `422` |
-| `409 PRICE_CHANGED` | Harga berubah pada checkout tanpa token; tinjau preview baru |
+| `422` pada `checkout_token` | Token wajib untuk order baru; token tidak valid harus diganti melalui preview baru |
 | `409 CHECKOUT_CHANGED` | Pilihan, quantity, harga, atau kode gudang berubah sejak preview; ambil token baru |
 | `409 CHECKOUT_EXPIRED` | Token preview melewati 15 menit; buat preview baru |
 | `409 STALE_CART` | Barang tidak lagi tersedia saat pembuatan order |
@@ -331,3 +369,11 @@ Tidak semua respons error memiliki `code`; baca juga `message` dan `errors` jika
 - `stock_mode: unlimited` berarti jumlah stok fisik belum membatasi checkout. `stock_verification: pending_manual` pada preview merupakan status pemeriksaan stok, bukan metode pembayaran manual.
 - Semua varian produk dan komponen bundle terpilih wajib memiliki penetapan gudang. Tasikmalaya dipilih jika sesuai penetapan/prioritas server; customer tidak mengirim gudang dan belum ada pemilihan berdasarkan jarak.
 - Order manual lama tetap memakai alur pembayaran manual. Dokumen ini berfokus pada order baru dengan `payment_provider: midtrans`.
+
+## Ringkasan pilihan cart
+
+Preview mengembalikan `selection` berisi `cart_item_ids`, `line_count`, `total_items`, `subtotal`, dan `unavailable_item_ids`. Hitungan hanya mencakup item terpilih dan harga preview sudah diperbarui dari master. Jumlah paket bundle dihitung sebagai quantity bundle, bukan quantity komponen.
+
+Untuk ringkasan sementara tanpa menghubungi gudang, gunakan `GET /cart?cart_item_ids[]=12&cart_item_ids[]=15`; harga di GET masih harga tersimpan di cart. Preview tetap wajib sebelum order baru. Retry order yang sudah berhasil memakai key yang sama dapat dikembalikan tanpa token, atau dengan token yang sudah kedaluwarsa.
+
+Contoh request berurutan tersedia pada [Postman cart dan checkout](../postman/cart-checkout.postman_collection.json).

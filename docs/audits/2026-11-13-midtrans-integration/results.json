@@ -1,0 +1,270 @@
+{
+  "date": "2026-11-13",
+  "base_url": "http://127.0.0.1:8000/api/v1",
+  "environment": "sandbox",
+  "gateway": "MidtransPaymentGateway",
+  "server_key_configured": true,
+  "app_url": "http://127.0.0.1:8000",
+  "live_passed": 31,
+  "live_failed": 0,
+  "checks": [
+    {
+      "name": "Katalog aktif",
+      "passed": true,
+      "detail": {
+        "http": 200,
+        "expected": 200
+      }
+    },
+    {
+      "name": "bca_va tambah cart",
+      "passed": true,
+      "detail": {
+        "http": 200,
+        "expected": 200
+      }
+    },
+    {
+      "name": "bca_va preview",
+      "passed": true,
+      "detail": {
+        "http": 200,
+        "expected": 200
+      }
+    },
+    {
+      "name": "bca_va buat order",
+      "passed": true,
+      "detail": {
+        "http": 201,
+        "expected": 201
+      }
+    },
+    {
+      "name": "bca_va charge sandbox",
+      "passed": true,
+      "detail": {
+        "http": 201,
+        "expected": 201
+      }
+    },
+    {
+      "name": "bca_va instruksi tersedia",
+      "passed": true,
+      "detail": {
+        "payment_id": 37,
+        "state": "pending"
+      }
+    },
+    {
+      "name": "bca_va retry pembayaran",
+      "passed": true,
+      "detail": {
+        "http": 200,
+        "expected": 200
+      }
+    },
+    {
+      "name": "bca_va retry memakai payment yang sama",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "bca_va baca pembayaran tersimpan",
+      "passed": true,
+      "detail": {
+        "http": 200,
+        "expected": 200
+      }
+    },
+    {
+      "name": "bca_va instruksi tersimpan",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "bca_va sinkronisasi Midtrans",
+      "passed": true,
+      "detail": {
+        "http": 200,
+        "expected": 200
+      }
+    },
+    {
+      "name": "bca_va provider masih pending",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "bca_va batalkan transaksi sandbox",
+      "passed": true,
+      "detail": {
+        "http": 200,
+        "expected": 200
+      }
+    },
+    {
+      "name": "bca_va status akhir cancelled",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "qris tambah cart",
+      "passed": true,
+      "detail": {
+        "http": 200,
+        "expected": 200
+      }
+    },
+    {
+      "name": "qris preview",
+      "passed": true,
+      "detail": {
+        "http": 200,
+        "expected": 200
+      }
+    },
+    {
+      "name": "qris buat order",
+      "passed": true,
+      "detail": {
+        "http": 201,
+        "expected": 201
+      }
+    },
+    {
+      "name": "qris charge sandbox",
+      "passed": true,
+      "detail": {
+        "http": 201,
+        "expected": 201
+      }
+    },
+    {
+      "name": "qris instruksi tersedia",
+      "passed": true,
+      "detail": {
+        "payment_id": 38,
+        "state": "pending"
+      }
+    },
+    {
+      "name": "qris retry pembayaran",
+      "passed": true,
+      "detail": {
+        "http": 200,
+        "expected": 200
+      }
+    },
+    {
+      "name": "qris retry memakai payment yang sama",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "qris baca pembayaran tersimpan",
+      "passed": true,
+      "detail": {
+        "http": 200,
+        "expected": 200
+      }
+    },
+    {
+      "name": "qris instruksi tersimpan",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "qris sinkronisasi Midtrans",
+      "passed": true,
+      "detail": {
+        "http": 200,
+        "expected": 200
+      }
+    },
+    {
+      "name": "qris provider masih pending",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "QRIS proxy gambar PNG nyata",
+      "passed": true,
+      "detail": {
+        "http": 200,
+        "expected": 200
+      }
+    },
+    {
+      "name": "QRIS valid PNG",
+      "passed": true,
+      "detail": {
+        "bytes": 66929
+      }
+    },
+    {
+      "name": "qris batalkan transaksi sandbox",
+      "passed": true,
+      "detail": {
+        "http": 200,
+        "expected": 200
+      }
+    },
+    {
+      "name": "qris status akhir cancelled",
+      "passed": true,
+      "detail": null
+    },
+    {
+      "name": "Webhook signature palsu ditolak",
+      "passed": true,
+      "detail": {
+        "http": 403,
+        "expected": 403
+      }
+    },
+    {
+      "name": "Logout token audit",
+      "passed": true,
+      "detail": {
+        "http": 200,
+        "expected": 200
+      }
+    }
+  ],
+  "database_and_provider_verification": {
+    "orders": [
+      {
+        "order_id": 87,
+        "order_number": "WAL-G2WNPWPB3Z3B",
+        "status": "cancelled",
+        "attempts": 1,
+        "environment": "sandbox",
+        "method": "bca_va",
+        "provider_status": "cancel",
+        "amount": "93000.00"
+      },
+      {
+        "order_id": 88,
+        "order_number": "WAL-NZKENHYB6O8B",
+        "status": "cancelled",
+        "attempts": 1,
+        "environment": "sandbox",
+        "method": "qris",
+        "provider_status": "cancel",
+        "amount": "93000.00"
+      }
+    ],
+    "tokens_remaining": 0,
+    "cart_items_remaining": 0
+  },
+  "automated_tests": {
+    "passed": 27,
+    "assertions": 234
+  },
+  "limits": [
+    "Tidak menguji pembayaran/settlement atau pengiriman webhook dari internet.",
+    "Tidak menemukan worker payments untuk backend ini; worker aktif memakai default,otp.",
+    "Jadwal payments:reconcile terdaftar, tetapi cron pengguna dan proses schedule:work tidak ditemukan pada pemeriksaan ini."
+  ]
+}

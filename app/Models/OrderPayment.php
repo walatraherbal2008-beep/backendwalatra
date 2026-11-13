@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class OrderPayment extends Model
 {
@@ -23,5 +24,10 @@ class OrderPayment extends Model
     public function isActive(): bool
     {
         return in_array($this->state, ['creating', 'unknown', 'pending', 'cancelling'], true);
+    }
+
+    public function communicationLogs(): HasMany
+    {
+        return $this->hasMany(PaymentCommunicationLog::class)->latest('id');
     }
 }

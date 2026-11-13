@@ -77,16 +77,14 @@ class CheckoutPricingTest extends TestCase
         $this->assertDatabaseCount('cart_items', 0);
     }
 
-    public function test_unreviewed_price_changes_reject_repeated_order_attempts(): void
+    public function test_missing_preview_token_rejects_repeated_order_attempts(): void
     {
         [$item, $variant] = $this->addProduct();
         $variant->update(['price' => 17000]);
         $payload = $this->payload([$item->id]);
         for ($attempt = 0; $attempt < 2; $attempt++) {
             $this->postJson('/api/v1/orders', $payload, ['Idempotency-Key' => 'no-confirmation'])
-                ->assertStatus(409)->assertJsonPath('code', 'PRICE_CHANGED')
-                ->assertJsonPath('data.price_changes.0.previous_unit_price', '15000.00')
-                ->assertJsonPath('data.price_changes.0.current_unit_price', '17000.00');
+                ->assertUnprocessable()->assertJsonValidationErrors('checkout_token');
         }
         $this->assertSame('15000.00', $item->fresh()->unit_price);
         $this->assertDatabaseCount('orders', 0);

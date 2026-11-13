@@ -1,6 +1,8 @@
 # Alur API Cart dan Checkout
 
-Panduan integrasi frontend untuk menambahkan produk dan bundle ke satu cart, memilih barang yang dibeli, meninjau harga terbaru, lalu membuat order. Mengikuti implementasi backend pada 9 November 2026.
+Postman: `base_url` lokal harus `http://127.0.0.1:8000/api/v1`. Endpoint ditambahkan setelah nilai ini. Environment aktif dapat menimpa variable Collection; lihat [pengaturan Postman](postman-setup.md).
+
+Panduan integrasi frontend untuk menambahkan produk dan bundle ke satu cart, memilih barang yang dibeli, meninjau harga terbaru, lalu membuat order. Diperbarui mengikuti implementasi dan audit HTTP pada 12 November 2026.
 
 Alur operasional memakai Midtrans Core API dan gratis ongkir: order baru berstatus `pending_payment`, ongkir `0.00`, dan pembayaran diverifikasi backend melalui Midtrans. Lihat [API pembayaran Midtrans](midtrans-core-payments.md) untuk VA, QRIS, dan webhook. Stok sementara dianggap tidak membatasi checkout. Titik pengiriman dipilih dari penetapan gudang pada varian; detail pengaturannya tersedia di [manajemen gudang](../warehouse-management.md).
 
@@ -255,11 +257,21 @@ Contoh respons 200 jika harga belum berubah:
 ```json
 {
   "success": true,
-  "message": "Order dapat diajukan. Stok dan pembayaran akan diverifikasi admin.",
+  "message": "Order dapat diajukan. Stok belum diverifikasi.",
   "data": {
     "checkout_token": "<TOKEN_PREVIEW_DARI_SERVER>",
     "price_changed": false,
     "price_changes": [],
+    "selection": {
+      "cart_item_ids": [
+        12,
+        15
+      ],
+      "line_count": 2,
+      "total_items": 3,
+      "subtotal": "70000.00",
+      "unavailable_item_ids": []
+    },
     "simulation": false,
     "payment_required": true,
     "payment_provider": "midtrans",
@@ -337,6 +349,19 @@ Frontend menampilkan harga dan total terbaru untuk ditinjau user. Setelah user s
 
 Token tidak membekukan harga di database atau mereservasi stok. Jika harga, quantity, pilihan, atau gudang asal berubah sesudah preview, backend meminta preview baru saat pembuatan order.
 
+### Mengapa frontend perlu checkout_token?
+
+Token adalah bukti preview yang diterbitkan backend untuk akun dan isi checkout tertentu. Order baru wajib menggunakannya agar backend dapat menolak pilihan, quantity, harga, atau kode gudang yang sudah berbeda dari preview. Contohnya, harga Rp93.000 berubah setelah preview: order ditolak dengan `CHECKOUT_CHANGED`, lalu frontend perlu menampilkan preview baru dan meminta user mengonfirmasi kembali.
+
+Frontend menyimpan token sementara setelah preview, menampilkan ringkasannya, lalu mengirim token asli ketika user menekan konfirmasi order. User tidak perlu melihat atau mengisi token. Jangan menganggap token sebagai bukti user sudah menyetujui harga; konfirmasi tersebut tetap ditangani frontend.
+
+- Buang token ketika pilihan, quantity, atau alamat berubah, lalu ambil preview baru. Pastikan respons preview lama yang terlambat tidak menggantikan hasil terbaru.
+- Token berlaku 15 menit. `CHECKOUT_EXPIRED` atau `CHECKOUT_CHANGED` memerlukan preview baru dan konfirmasi ulang. Token tidak ada, rusak, atau milik akun lain menghasilkan 422 pada field `checkout_token`.
+- Token belum mengikat alamat, ongkir, atau komposisi bundle. Preview ulang setelah perubahan alamat adalah tanggung jawab alur frontend; jangan mengasumsikan backend akan menolak token hanya karena alamat berubah.
+- Bearer token digunakan untuk login; `checkout_token` untuk memeriksa isi checkout; `Idempotency-Key` untuk mencegah order ganda saat retry. Jika request order timeout, pertahankan key dan payload yang sama.
+
+Rincian penanganan tersedia pada [fungsi checkout_token untuk frontend](checkout-orders.md#fungsi-checkout_token-untuk-frontend).
+
 ## 8. Konfirmasi dan buat order
 
 `POST /orders`
@@ -357,7 +382,7 @@ Untuk melanjutkan contoh utama dua item dengan total Rp70.000:
 }
 ```
 
-Kirim pilihan serta alamat yang sudah ditinjau user. `checkout_token` wajib menggunakan nilai asli dari respons preview, bukan teks placeholder di atas. Jika token dikirim, harus string tidak kosong maksimal 4.096 karakter. `Idempotency-Key` wajib tidak kosong dan maksimal 100 karakter.
+Kirim pilihan serta alamat yang sudah ditinjau user. `checkout_token` wajib menggunakan nilai asli dari respons preview, bukan teks placeholder di atas. Token wajib untuk order baru, berupa string tidak kosong maksimal 4.096 karakter. `Idempotency-Key` wajib tidak kosong dan maksimal 100 karakter.
 
 Jika memakai alamat langsung, contoh body alternatif:
 
@@ -427,11 +452,11 @@ Order yang sudah dibuat mempertahankan snapshot harga dan jumlah, meskipun data 
 - Backend mengembalikan order lama untuk key yang sama, bukan menggantinya dengan pilihan baru. Gunakan key baru untuk pembelian berbeda atau pengajuan baru yang telah ditinjau ulang.
 - Tambah produk/bundle, ubah quantity, hapus item, kosongkan cart, dan create order diproses bergantian per user. Snapshot order konsisten dengan item yang dihapus. Item yang baru ditambahkan sesudah checkout selesai tetap berada di cart; `PATCH` ke ID item yang sudah dibeli menghasilkan 404.
 
-Untuk kompatibilitas, `checkout_token` masih opsional. Request tanpa token diterima jika harga cart belum berubah; jika harga berbeda, backend mengembalikan `409 PRICE_CHANGED`. Integrasi frontend baru sebaiknya selalu melalui preview dan mengirim token setelah user menyetujui total.
+`checkout_token` wajib untuk setiap order baru pada semua mode pembayaran. Request tanpa token menghasilkan 422 pada field `checkout_token`. Retry key order yang sudah berhasil tetap mengembalikan order lama walaupun token kedaluwarsa atau tidak disertakan; key tidak boleh dipakai untuk pembelian baru.
 
 ## 9. Tangani respons gagal
 
-Tidak semua endpoint memakai envelope error yang sama. Gunakan HTTP status sebagai dasar penanganan dan periksa `code` jika tersedia. Khusus preview, respons cart kosong dan barang nonaktif dapat hanya berisi `success` serta `message`.
+Tidak semua endpoint memakai envelope error yang sama. Gunakan HTTP status sebagai dasar penanganan dan periksa `code` jika tersedia. Khusus preview, respons cart kosong dapat hanya berisi `success` serta `message`; barang tidak tersedia menyertakan `code: STALE_CART`.
 
 | HTTP / kode | Penyebab | Tindakan frontend |
 |---|---|---|
@@ -441,7 +466,7 @@ Tidak semua endpoint memakai envelope error yang sama. Gunakan HTTP status sebag
 | 422 `VALIDATION_ERROR` | Quantity, pilihan item, alamat, atau format token tidak valid | Tampilkan `errors` pada field terkait |
 | 422 pada cart kosong | Tidak ada item untuk checkout | Arahkan ke cart/katalog |
 | 409 `STALE_CART` pada order | Item terpilih tidak aktif/tidak tersedia | Muat ulang cart dan perbarui pilihan |
-| 409 `PRICE_CHANGED` | Order tanpa token memakai harga cart yang sudah berbeda | Panggil preview, tampilkan harga terbaru, konfirmasikan token |
+| 422 `VALIDATION_ERROR` pada `checkout_token` | Order baru tanpa token preview atau token tidak valid | Panggil preview dan kirim token asli dari respons |
 | 409 `CHECKOUT_CHANGED` | Isi pilihan, quantity, harga, atau gudang asal berbeda dari preview bertoken | Buat preview baru dan minta persetujuan user |
 | 409 `WAREHOUSE_NOT_ASSIGNED` | Varian produk atau komponen bundle belum ditetapkan ke gudang | Tampilkan pesan server; admin perlu mengatur varian |
 | 409 `WAREHOUSE_MISMATCH` | Tidak ada satu gudang bersama untuk seluruh barang terpilih | Ubah pilihan barang atau perbaiki penetapan gudang |
@@ -485,7 +510,7 @@ Token rusak atau milik akun lain menghasilkan 422 pada `checkout_token`; jangan 
 3. Muat ulang `GET /cart` agar tampilan sesuai sisa barang yang belum dibeli.
 4. Baca status order kembali setelah pembayaran; webhook dan endpoint refresh memverifikasi status melalui Midtrans. `paid` berarti pembayaran sudah dikonfirmasi; bukan otomatis status pengiriman.
 
-Daftar pesanan tersedia melalui `GET /orders`. User dapat membatalkan order yang masih `pending_payment` melalui `POST /orders/{order}/cancel`; order yang sudah dibayar tidak dapat dibatalkan melalui endpoint customer tersebut. Pembatalan tidak otomatis mengembalikan item ke cart. Lihat [API pembayaran Midtrans](midtrans-core-payments.md). Order manual lama tetap menggunakan [konfirmasi admin](manual-orders.md).
+Daftar pesanan tersedia melalui `GET /orders`. User dapat membatalkan order yang masih `pending_payment` melalui `POST /orders/{order}/cancel`; order yang sudah dibayar tidak dapat dibatalkan melalui endpoint customer tersebut. Pembatalan tidak otomatis mengembalikan item ke cart. Lihat [API pembayaran Midtrans](midtrans-core-payments.md). Order manual lama tetap menggunakan [konfirmasi admin melalui menu Pesanan](../store-transactions.md).
 
 ## 11. Ringkasan implementasi frontend
 
@@ -546,3 +571,15 @@ FREE_SHIPPING_ENABLED=true
 - `CHECKOUT_STOCK_MODE=external`: memakai kontrak pemeriksaan/reservasi stok yang tersedia. Kontrak saat ini mengirim SKU dan quantity; integrasi alokasi stok per kode gudang masih perlu dilengkapi saat API stok gudang siap.
 
 Saat `external` digunakan bersama pembayaran manual, konfirmasi lunas admin mengonfirmasi reservasi yang tercatat; pembatalan melepasnya. Pada `unlimited`, reservasi tidak dibuat sehingga tidak ada panggilan tersebut.
+
+## Ringkasan pilihan dan barang tidak tersedia
+
+`GET /cart?cart_item_ids[]=12&cart_item_ids[]=15` tetap mengembalikan seluruh item, dengan ringkasan tambahan `selection`: `cart_item_ids`, `line_count`, `total_items`, `subtotal`, dan `unavailable_item_ids`. Tanpa pilihan, ringkasan GET kosong/nol. Total lama di tingkat cart tetap mencakup seluruh isi cart. Pilihan tidak disimpan; pengelompokan per toko memakai `items[].store`.
+
+Item cart memiliki `is_available` dan `availability_message`. Barang yang dihapus/nonaktif tetap dapat dilihat dan dihapus, tetapi tidak dapat diubah quantity-nya atau dibeli. Identitas/gambar yang tidak ditemukan bernilai `null`. Ringkasan pilihan hanya menghitung barang tersedia; jika `unavailable_item_ids` tidak kosong, perbaiki pilihan sebelum preview.
+
+Preview menyediakan `selection` dengan struktur yang sama, memakai harga terbaru dari master. Pilihan preview yang dihilangkan tetap berarti seluruh cart, berbeda dengan ringkasan GET tanpa pilihan yang kosong. Quantity bundle adalah jumlah paket, bukan jumlah komponen.
+
+Endpoint tambah menjumlahkan quantity hingga maksimal 99; PATCH mengganti quantity. Gunakan quantity dari respons, cegah klik ganda selama request berjalan, dan muat ulang GET dengan pilihan saat ini setelah mutasi. Tidak ada idempotency baru pada tambah cart.
+
+Koleksi siap impor: [Postman cart dan checkout](../postman/cart-checkout.postman_collection.json).

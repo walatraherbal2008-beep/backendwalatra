@@ -19,12 +19,13 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 use Mockery;
 use Spatie\Permission\Models\Role;
+use Tests\Concerns\WithCheckoutToken;
 use Tests\Concerns\WithCheckoutWarehouse;
 use Tests\TestCase;
 
 class CheckoutShippingOriginTest extends TestCase
 {
-    use RefreshDatabase, WithCheckoutWarehouse;
+    use RefreshDatabase, WithCheckoutToken, WithCheckoutWarehouse;
 
     private User $customer;
 
@@ -78,7 +79,7 @@ class CheckoutShippingOriginTest extends TestCase
 
     private function createOrder(string $key = 'origin-checkout', array $extra = [])
     {
-        return $this->postJson('/api/v1/orders', $this->payload($extra), ['Idempotency-Key' => $key]);
+        return $this->postJson('/api/v1/orders', $this->checkoutPayload($this->payload($extra)), ['Idempotency-Key' => $key]);
     }
 
     private function twoWarehouses(): void

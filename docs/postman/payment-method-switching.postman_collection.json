@@ -1,0 +1,328 @@
+{
+  "info": {
+    "name": "Walatra - Payment Method Switching",
+    "description": "Uji alur pembayaran dan pergantian metode Midtrans Core pada order yang sama. Isi customer_token dan order_id dari order milik customer yang masih pending_payment. Jalankan Buat pembayaran awal (VA) jika order belum memiliki pembayaran; jika sudah ada pembayaran aktif, langsung jalankan Ganti metode pembayaran. Untuk ganti metode gunakan switch_method dan switch_idempotency_key yang baru. Bila respons 202 PAYMENT_PROCESSING, jangan bayar instruksi lama, jangan mengganti switch_method, dan retry request dengan metode serta key yang sama. Snapshot hanya membaca database. Refresh memanggil Get Status Midtrans dan tidak membuat charge. Server Key Midtrans tidak diperlukan dan jangan disimpan di Postman. base_url harus berakhir /api/v1; Environment dengan variable sama menimpa Collection.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{customer_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:8000/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "customer_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "order_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "payment_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "initial_method",
+      "value": "bca_va",
+      "type": "string"
+    },
+    {
+      "key": "initial_idempotency_key",
+      "value": "payment-order-501-initial-01",
+      "type": "string"
+    },
+    {
+      "key": "switch_method",
+      "value": "qris",
+      "type": "string"
+    },
+    {
+      "key": "switch_idempotency_key",
+      "value": "switch-order-501-qris-01",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Metode pembayaran tersedia",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/payment-methods"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP status in [200]\", function () { pm.expect([200]).to.include(pm.response.code); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Buat pembayaran awal (VA)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Idempotency-Key",
+            "value": "{{initial_idempotency_key}}"
+          }
+        ],
+        "url": "{{base_url}}/orders/{{order_id}}/payment",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"method\": \"{{initial_method}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP status in [200, 201, 202, 409, 503]\", function () { pm.expect([200, 201, 202, 409, 503]).to.include(pm.response.code); });",
+              "if (pm.response.code === 202) {",
+              "  pm.test(\"202 menandakan pergantian masih diproses\", function () { pm.expect(pm.response.json().code).to.eql(\"PAYMENT_PROCESSING\"); });",
+              "  pm.test(\"Belum ada instruksi pembayaran baru\", function () { pm.expect(pm.response.json().data).to.eql(null); });",
+              "}",
+              "if ([200, 201].includes(pm.response.code)) {",
+              "  const payment = pm.response.json().data?.payment;",
+              "  if (payment?.id) pm.collectionVariables.set(\"payment_id\", String(payment.id));",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Ganti metode pembayaran",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Idempotency-Key",
+            "value": "{{switch_idempotency_key}}"
+          }
+        ],
+        "url": "{{base_url}}/orders/{{order_id}}/payment",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"method\": \"{{switch_method}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP status in [200, 201, 202, 409, 503]\", function () { pm.expect([200, 201, 202, 409, 503]).to.include(pm.response.code); });",
+              "if (pm.response.code === 202) {",
+              "  pm.test(\"202 menandakan pergantian masih diproses\", function () { pm.expect(pm.response.json().code).to.eql(\"PAYMENT_PROCESSING\"); });",
+              "  pm.test(\"Belum ada instruksi pembayaran baru\", function () { pm.expect(pm.response.json().data).to.eql(null); });",
+              "}",
+              "if ([200, 201].includes(pm.response.code)) {",
+              "  const payment = pm.response.json().data?.payment;",
+              "  if (payment?.id) pm.collectionVariables.set(\"payment_id\", String(payment.id));",
+              "}",
+              "if ([200, 201].includes(pm.response.code)) {",
+              "  pm.test(\"Metode pembayaran sesuai: switch_method\", function () { pm.expect(pm.response.json().data.payment.method).to.eql(pm.collectionVariables.get(\"switch_method\")); });",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Retry pergantian (metode dan key sama)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Idempotency-Key",
+            "value": "{{switch_idempotency_key}}"
+          }
+        ],
+        "url": "{{base_url}}/orders/{{order_id}}/payment",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"method\": \"{{switch_method}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP status in [200, 201, 202, 409, 503]\", function () { pm.expect([200, 201, 202, 409, 503]).to.include(pm.response.code); });",
+              "if (pm.response.code === 202) {",
+              "  pm.test(\"202 menandakan pergantian masih diproses\", function () { pm.expect(pm.response.json().code).to.eql(\"PAYMENT_PROCESSING\"); });",
+              "  pm.test(\"Belum ada instruksi pembayaran baru\", function () { pm.expect(pm.response.json().data).to.eql(null); });",
+              "}",
+              "if ([200, 201].includes(pm.response.code)) {",
+              "  const payment = pm.response.json().data?.payment;",
+              "  if (payment?.id) pm.collectionVariables.set(\"payment_id\", String(payment.id));",
+              "}",
+              "if ([200, 201].includes(pm.response.code)) {",
+              "  pm.test(\"Metode pembayaran sesuai: switch_method\", function () { pm.expect(pm.response.json().data.payment.method).to.eql(pm.collectionVariables.get(\"switch_method\")); });",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Snapshot pembayaran (database)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/orders/{{order_id}}/payment"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP status in [200]\", function () { pm.expect([200]).to.include(pm.response.code); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Refresh status Midtrans (tanpa charge)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/orders/{{order_id}}/payment/refresh"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP status in [200, 202, 503]\", function () { pm.expect([200, 202, 503]).to.include(pm.response.code); });",
+              "if ([200, 201].includes(pm.response.code)) {",
+              "  const payment = pm.response.json().data?.payment;",
+              "  if (payment?.id) pm.collectionVariables.set(\"payment_id\", String(payment.id));",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Detail order dan status pembayaran",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/orders/{{order_id}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"HTTP status in [200]\", function () { pm.expect([200]).to.include(pm.response.code); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Ambil gambar QRIS (percobaan aktif)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "image/png"
+          }
+        ],
+        "url": "{{base_url}}/orders/{{order_id}}/payments/{{payment_id}}/qr-code",
+        "description": "Berhasil mengembalikan PNG jika payment_id adalah percobaan QRIS aktif yang masih dapat dibayar. Respons 410 berarti QR kedaluwarsa atau tidak aktif."
+      }
+    }
+  ]
+}

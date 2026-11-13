@@ -21,12 +21,13 @@ use Mockery;
 use RuntimeException;
 use Spatie\MediaLibrary\MediaCollections\Filesystem;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
+use Tests\Concerns\WithCheckoutToken;
 use Tests\Concerns\WithCheckoutWarehouse;
 use Tests\TestCase;
 
 class VariantImageTest extends TestCase
 {
-    use RefreshDatabase, WithCheckoutWarehouse;
+    use RefreshDatabase, WithCheckoutToken, WithCheckoutWarehouse;
 
     protected function setUp(): void
     {
@@ -131,7 +132,7 @@ class VariantImageTest extends TestCase
         $bundleListing = $this->bundle($variant);
         $bundleSource = $this->photo($bundleListing);
         $originalBytes = Storage::disk('public')->get($source->getPathRelativeToRoot());
-        $response = $this->postJson('/api/v1/orders', $this->payload(), ['Idempotency-Key' => 'photo-history'])->assertCreated();
+        $response = $this->postJson('/api/v1/orders', $this->checkoutPayload($this->payload()), ['Idempotency-Key' => 'photo-history'])->assertCreated();
         $order = Order::findOrFail($response->json('data.id'));
         $snapshots = $order->items->map(fn ($item) => $item->getFirstMedia('image'));
         $this->assertCount(2, $snapshots->filter());
@@ -148,7 +149,7 @@ class VariantImageTest extends TestCase
         $this->getJson('/api/v1/orders/'.$order->id)->assertOk()->assertJsonPath('data.items.0.image_url', $url);
         $this->getJson('/api/v1/orders')->assertOk()->assertJsonPath('data.0.items.0.image_url', $url);
         $mediaCount = Media::count();
-        $this->postJson('/api/v1/orders', $this->payload(), ['Idempotency-Key' => 'photo-history'])->assertOk()
+        $this->postJson('/api/v1/orders', $this->checkoutPayload($this->payload()), ['Idempotency-Key' => 'photo-history'])->assertOk()
             ->assertJsonPath('data.items.0.image_url', $url);
         $this->assertSame($mediaCount, Media::count());
         $this->assertDatabaseCount('orders', 1);
@@ -162,7 +163,7 @@ class VariantImageTest extends TestCase
         $missing = $this->photo($second, 'image');
         Storage::disk('public')->delete($missing->getPathRelativeToRoot());
         $before = Storage::disk('public')->allFiles();
-        $this->postJson('/api/v1/orders', $this->payload(), ['Idempotency-Key' => 'missing-source'])->assertStatus(500);
+        $this->postJson('/api/v1/orders', $this->checkoutPayload($this->payload()), ['Idempotency-Key' => 'missing-source'])->assertStatus(500);
         $this->assertDatabaseCount('orders', 0);
         $this->assertDatabaseCount('order_items', 0);
         $this->assertDatabaseCount('cart_items', 2);
@@ -179,9 +180,9 @@ class VariantImageTest extends TestCase
         [$unselected] = $this->product();
         $missing = $this->photo($unselected, 'image');
         Storage::disk('public')->delete($missing->getPathRelativeToRoot());
-        $this->postJson('/api/v1/orders', [
+        $this->postJson('/api/v1/orders', $this->checkoutPayload([
             ...$this->payload(), 'cart_item_ids' => [$selectedItem->id],
-        ], ['Idempotency-Key' => 'selected-photo'])->assertCreated()->assertJsonCount(1, 'data.items');
+        ]), ['Idempotency-Key' => 'selected-photo'])->assertCreated()->assertJsonCount(1, 'data.items');
         $this->assertDatabaseCount('cart_items', 1);
         $this->assertDatabaseHas('cart_items', ['product_variant_id' => $unselected->id]);
         $this->assertSame(1, Media::where('model_type', OrderItem::class)->count());
@@ -199,7 +200,7 @@ class VariantImageTest extends TestCase
         $warehouse->shouldReceive('release')->once()->with('photo-reservation');
         $this->app->instance(WarehouseStockProvider::class, $warehouse);
 
-        $this->postJson('/api/v1/orders', $this->payload(), ['Idempotency-Key' => 'release-stock-photo'])->assertStatus(500);
+        $this->postJson('/api/v1/orders', $this->checkoutPayload($this->payload()), ['Idempotency-Key' => 'release-stock-photo'])->assertStatus(500);
         $this->assertDatabaseCount('orders', 0);
         $this->assertDatabaseCount('cart_items', 1);
     }
@@ -216,7 +217,7 @@ class VariantImageTest extends TestCase
         });
         $this->app->instance(Filesystem::class, $filesystem);
 
-        $this->postJson('/api/v1/orders', $this->payload(), ['Idempotency-Key' => 'partial-write'])->assertStatus(500);
+        $this->postJson('/api/v1/orders', $this->checkoutPayload($this->payload()), ['Idempotency-Key' => 'partial-write'])->assertStatus(500);
         $this->assertDatabaseCount('orders', 0);
         $this->assertDatabaseCount('cart_items', 1);
         $this->assertDatabaseCount('media', 1);
@@ -226,7 +227,7 @@ class VariantImageTest extends TestCase
     public function test_order_without_photos_and_old_orders_return_null(): void
     {
         $this->product();
-        $created = $this->postJson('/api/v1/orders', $this->payload(), ['Idempotency-Key' => 'no-photo'])->assertCreated()
+        $created = $this->postJson('/api/v1/orders', $this->checkoutPayload($this->payload()), ['Idempotency-Key' => 'no-photo'])->assertCreated()
             ->assertJsonPath('data.items.0.image_url', null);
         $this->getJson('/api/v1/orders/'.$created->json('data.id'))->assertOk()->assertJsonPath('data.items.0.image_url', null);
         $this->assertSame(0, Media::where('model_type', OrderItem::class)->count());

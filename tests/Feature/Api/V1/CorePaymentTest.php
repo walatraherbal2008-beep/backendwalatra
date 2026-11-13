@@ -6,6 +6,7 @@ use App\Jobs\ProcessMidtransNotification;
 use App\Jobs\ReconcileOrderPayment;
 use App\Models\Order;
 use App\Models\OrderPayment;
+use App\Models\PaymentCommunicationLog;
 use App\Models\PaymentNotification;
 use App\Models\User;
 use App\Services\Payments\OrderPayments;
@@ -331,6 +332,49 @@ class CorePaymentTest extends TestCase
         $this->setStatus($old, 'cancel');
         $this->pay($order, 'qris', 'switch-key')->assertCreated();
         $this->assertDatabaseCount('order_payments', 2);
+    }
+
+    public function test_switch_does_not_recharge_an_unknown_attempt_when_midtrans_status_is_not_found(): void
+    {
+        $order = $this->order();
+        Http::fake(fn () => throw new ConnectionException('timeout'));
+        $this->pay($order)->assertStatus(503);
+        $old = $order->fresh()->activePayment;
+        $this->assertSame('unknown', $old->state);
+        $this->fakeMidtrans();
+        unset($this->remote[$old->provider_order_id]);
+
+        $this->pay($order, 'qris', 'switch-unknown')->assertStatus(202)
+            ->assertJsonPath('code', 'PAYMENT_PROCESSING');
+        $this->assertDatabaseCount('order_payments', 1);
+        $this->assertSame('unknown', $old->fresh()->state);
+        $this->assertSame(1, PaymentCommunicationLog::where('order_payment_id', $old->id)->where('operation', 'charge')->count());
+
+        // The timed-out charge may have reached Midtrans despite its missing status response.
+        $this->remote[$old->provider_order_id] = [
+            'order_id' => $old->provider_order_id, 'transaction_id' => 'trx-'.md5($old->provider_order_id),
+            'currency' => 'IDR', 'gross_amount' => '30000.00', 'status_code' => '201',
+            'transaction_status' => 'pending', 'fraud_status' => 'accept', 'payment_type' => 'bank_transfer',
+            'va_numbers' => [['bank' => 'bca', 'va_number' => '123456789']],
+        ];
+
+        $this->pay($order, 'qris', 'switch-unknown')->assertCreated()->assertJsonPath('data.payment.method', 'qris');
+        $this->assertSame('cancelled', $old->fresh()->state);
+        $this->assertDatabaseCount('order_payments', 2);
+    }
+
+    public function test_refresh_does_not_reissue_an_unknown_charge_when_status_is_not_found(): void
+    {
+        $order = $this->order();
+        Http::fake(fn () => throw new ConnectionException('timeout'));
+        $this->pay($order)->assertStatus(503);
+        $payment = $order->fresh()->activePayment;
+        $this->fakeMidtrans();
+        unset($this->remote[$payment->provider_order_id]);
+
+        $this->refresh($order)->assertOk()->assertJsonPath('data.payment.state', 'unknown');
+        $this->assertSame(1, PaymentCommunicationLog::where('order_payment_id', $payment->id)->where('operation', 'charge')->count());
+        $this->assertSame('unknown', $payment->fresh()->state);
     }
 
     public function test_paid_refund_is_synchronized_and_qr_fetch_does_not_send_server_key(): void

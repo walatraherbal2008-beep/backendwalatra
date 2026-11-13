@@ -1,0 +1,43 @@
+{
+  "reference": "AUDIT-LOG-20261113083437-P000001",
+  "provider_status": "cancel",
+  "logs": [
+    {
+      "id": 1,
+      "operation": "charge",
+      "http_status": 200,
+      "outcome": "succeeded",
+      "duration_ms": 385,
+      "has_request": true,
+      "has_response": true
+    },
+    {
+      "id": 2,
+      "operation": "status",
+      "http_status": 200,
+      "outcome": "succeeded",
+      "duration_ms": 149,
+      "has_request": false,
+      "has_response": true
+    },
+    {
+      "id": 3,
+      "operation": "cancel",
+      "http_status": 200,
+      "outcome": "succeeded",
+      "duration_ms": 241,
+      "has_request": false,
+      "has_response": true
+    },
+    {
+      "id": 4,
+      "operation": "status",
+      "http_status": 200,
+      "outcome": "succeeded",
+      "duration_ms": 167,
+      "has_request": false,
+      "has_response": true
+    }
+  ],
+  "linked_order_log_count": 1
+}

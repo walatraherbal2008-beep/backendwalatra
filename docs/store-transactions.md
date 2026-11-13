@@ -34,7 +34,7 @@ Lingkungan mengikuti pembayaran aktif yang tersimpan. Order Midtrans tanpa pemba
 
 ## Detail dan tindakan
 
-Klik **Detail** atau baris order untuk membuka slide-over. Susunan detail memakai Section dan RepeatableEntry bawaan Filament, meliputi customer, semua barang/toko, subtotal toko terpilih, tagihan, seluruh percobaan pembayaran, VA/billing, pengiriman, serta riwayat status. Payload mentah dan signature tidak ditampilkan. Riwayat lengkap dimuat ketika detail dibuka agar polling daftar tetap ringan.
+Klik **Detail** atau baris order untuk membuka slide-over. Susunan detail memakai Section dan RepeatableEntry bawaan Filament, meliputi customer, semua barang/toko, subtotal toko terpilih, tagihan, seluruh percobaan pembayaran, VA/billing, pengiriman, serta riwayat status. Bagian **Payload pembayaran tersimpan** menampilkan request awal dan respons terakhir melalui CodeEntry; kredensial dan signature disaring. Tautan riwayat membuka [Log Pembayaran](payment-communication-logs.md) yang difilter untuk percobaan tersebut. Riwayat lengkap dimuat ketika detail dibuka agar polling daftar tetap ringan.
 
 Tindakan tersedia pada tabel serta slide-over:
 

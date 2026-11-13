@@ -20,12 +20,13 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Laravel\Sanctum\Sanctum;
 use Mockery;
+use Tests\Concerns\WithCheckoutToken;
 use Tests\Concerns\WithCheckoutWarehouse;
 use Tests\TestCase;
 
 class OrderSimulationTest extends TestCase
 {
-    use RefreshDatabase, WithCheckoutWarehouse;
+    use RefreshDatabase, WithCheckoutToken, WithCheckoutWarehouse;
 
     protected function setUp(): void
     {
@@ -70,7 +71,7 @@ class OrderSimulationTest extends TestCase
 
     private function createOrder(string $key = 'simulation-order')
     {
-        return $this->postJson('/api/v1/orders', ['shipping_address' => $this->address()], [
+        return $this->postJson('/api/v1/orders', $this->checkoutPayload(['shipping_address' => $this->address()]), [
             'Idempotency-Key' => $key,
         ]);
     }
@@ -98,7 +99,7 @@ class OrderSimulationTest extends TestCase
             ->assertJsonPath('data.shipping.fee', '0.00')
             ->assertJsonPath('data.total', '30000.00');
 
-        $order = $this->postJson('/api/v1/orders', ['address_id' => $address], [
+        $order = $this->postJson('/api/v1/orders', $this->checkoutPayload(['address_id' => $address]), [
             'Idempotency-Key' => 'simulation-full-flow',
         ])->assertCreated()
             ->assertJsonPath('data.status', 'paid')

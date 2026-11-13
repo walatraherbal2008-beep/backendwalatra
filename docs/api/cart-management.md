@@ -1,5 +1,7 @@
 # API Manajemen Cart
 
+Postman: `base_url` lokal harus `http://127.0.0.1:8000/api/v1`. Endpoint ditambahkan setelah nilai ini. Environment aktif dapat menimpa variable Collection; lihat [pengaturan Postman](postman-setup.md).
+
 Panduan integrasi API keranjang belanja untuk frontend web dan aplikasi Android. Dokumen ini mencakup operasi cart saja; checkout dan pembuatan order dijelaskan di [API Cart dan Checkout](cart-checkout.md).
 
 ## Ringkasan
@@ -43,6 +45,8 @@ Harga dikirim sebagai string desimal dalam rupiah, misalnya `"15000.00"`. Backen
 
 `GET /cart`
 
+Pilihan sementara dapat dikirim melalui `GET /cart?cart_item_ids[]=12&cart_item_ids[]=15`. Respons tetap berisi seluruh cart; parameter tersebut hanya menentukan ringkasan `data.selection`. Pilihan tidak disimpan ke akun dan tidak memanggil API gudang.
+
 Respons `200` berisi produk dan bundle dalam satu daftar `data.items`. Item yang terakhir ditambahkan tampil lebih dulu. Cart kosong tetap menghasilkan respons `200` dengan `items: []`, `total_items: 0`, dan `subtotal: "0.00"`.
 
 Contoh respons:
@@ -57,6 +61,8 @@ Contoh respons:
       {
         "id": 12,
         "type": "product",
+        "is_available": true,
+        "availability_message": null,
         "image_url": "https://api.example.com/storage/123/varian.png",
         "listing_id": 101,
         "bundle_listing_id": null,
@@ -71,7 +77,14 @@ Contoh respons:
       }
     ],
     "total_items": 2,
-    "subtotal": "30000.00"
+    "subtotal": "30000.00",
+    "selection": {
+      "cart_item_ids": [],
+      "line_count": 0,
+      "total_items": 0,
+      "subtotal": "0.00",
+      "unavailable_item_ids": []
+    }
   }
 }
 ```
@@ -79,6 +92,24 @@ Contoh respons:
 `total_items` menjumlahkan quantity semua baris, bukan jumlah baris cart. `subtotal` adalah jumlah `quantity × unit_price` untuk seluruh isi cart. Nilai tersebut merangkum isi cart saat respons dibuat; hitung ulang dari respons baru setelah ada perubahan.
 
 Objek item selalu memiliki `type`, `listing_id`, `bundle_listing_id`, `variant_id`, `product`, `bundle`, `store`, dan `variant`; field yang tidak sesuai jenis item bernilai `null`. Produk mempunyai `product` dan `variant`; bundle mempunyai `bundle` berisi informasi bundle serta komponen-komponennya. `image_url` dapat bernilai `null`.
+
+### Barang tidak tersedia
+
+Listing, produk, varian, atau bundle yang dihapus secara soft delete tetap ditampilkan selama identitasnya masih tersedia. Item diberi `is_available: false` dan `availability_message: "Tidak tersedia"`. Hal yang sama berlaku ketika barang atau toko dinonaktifkan, toko tidak memenuhi syarat marketplace, maupun komponen bundle tidak tersedia. Objek yang tidak ditemukan dapat bernilai `null`, termasuk objek produk/varian komponen bundle. Barang tidak dihapus otomatis dari cart; user tetap dapat menghapusnya, tetapi tidak dapat mengubah quantity atau membelinya.
+
+### Ringkasan barang terpilih
+
+| Field `selection` | Arti |
+|---|---|
+| `cart_item_ids` | Seluruh ID yang dikirim sebagai pilihan sementara. |
+| `line_count` | Jumlah baris terpilih yang tersedia. |
+| `total_items` | Jumlah quantity barang terpilih yang tersedia; quantity bundle dihitung sebagai jumlah paket. |
+| `subtotal` | Total harga tersimpan di cart × quantity untuk pilihan yang tersedia. |
+| `unavailable_item_ids` | ID terpilih yang tidak tersedia dan dikeluarkan dari perhitungan ringkasan. |
+
+Tanpa pilihan, ringkasan kosong/nol. ID harus berupa array berurutan berisi integer positif unik milik cart user; format salah, ID asing, atau tidak ditemukan menghasilkan 422. `total_items` dan `subtotal` di luar `selection` tetap menghitung seluruh cart, termasuk item yang tidak tersedia. Ringkasan GET cart belum merupakan harga final; preview menghitung ulang harga master terbaru. Item tidak tersedia yang masih dipilih akan ditolak oleh preview.
+
+Respons POST/PATCH juga menyediakan `selection` kosong. Untuk memperbarui ringkasan pilihan yang sedang aktif, panggil GET cart lagi dengan kumpulan ID yang masih dipilih.
 
 ### URL gambar dan urutan sumber
 
@@ -233,6 +264,8 @@ Respons sukses `200`:
 - Untuk menampilkan jumlah pada ikon cart, gunakan `data.total_items`. Untuk ringkasan nilai barang, gunakan `data.subtotal`.
 - Gunakan ID cart item sebagai key stabil pada daftar UI. Jangan gunakan indeks array.
 - Request tambah yang timeout belum tentu gagal diproses server. Muat ulang `GET /cart` sebelum mencoba tambah lagi agar quantity tidak bertambah dua kali.
+- Nonaktifkan tombol tambah selama request berjalan. Endpoint tambah tidak menyediakan deduplikasi/idempotency baru: dua request yang berhasil tetap berarti dua penambahan, dengan total quantity maksimal 99. Angka tampilan harus mengikuti quantity dari respons server.
+- Centang per item/per toko menghasilkan kumpulan ID cart item. Kirim ke GET cart untuk ringkasan pilihan, lalu ke preview. Order baru wajib membawa `checkout_token` dari preview yang sudah disetujui user; lihat [alur checkout](cart-checkout.md).
 - Jangan mengasumsikan cart yang tersimpan di perangkat adalah sumber utama. Muat cart dari server setelah login atau saat aplikasi kembali aktif, lalu sinkronkan perubahan berdasarkan respons API.
 - Produk dan bundle berada di daftar yang sama. Jika tampilan perlu dikelompokkan per toko, kelompokkan berdasarkan `store.id` di aplikasi.
 
@@ -243,6 +276,7 @@ Respons sukses `200`:
 | `401` | Token tidak ada, tidak valid, atau kedaluwarsa | Jalankan penanganan sesi sesuai implementasi autentikasi aplikasi |
 | `403` | Akun tidak memenuhi syarat akses, misalnya tidak aktif | Tampilkan pesan akses dan arahkan pengguna sesuai alur aplikasi |
 | `404` | Item untuk operasi `PATCH` tidak ditemukan di cart pengguna | Muat ulang cart dan sinkronkan tampilan |
+| `409 STALE_CART` | Quantity item tidak tersedia tidak boleh diubah | Hapus item tersebut atau muat ulang cart |
 | `422` | Payload tidak valid atau listing/varian/bundle tidak tersedia | Tampilkan validasi yang dikembalikan server; muat ulang katalog bila item sudah tidak tersedia |
 
 Format error validasi Laravel umumnya memiliki `message` dan objek `errors`, misalnya:

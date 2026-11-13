@@ -17,6 +17,7 @@ use App\Services\Marketplace\CheckoutShippingOrigin;
 use App\Services\Marketplace\OrderImageSnapshots;
 use App\Services\Payments\OrderPayments;
 use App\Services\Shipping\ShippingCostCalculator;
+use App\Support\CartItemAvailability;
 use App\Support\CheckoutShipping;
 use App\Support\CheckoutSimulation;
 use App\Support\CheckoutStock;
@@ -153,6 +154,12 @@ class OrderController extends Controller
             ]);
         }
 
+        if (! $request->filled('checkout_token')) {
+            throw ValidationException::withMessages([
+                'checkout_token' => 'Preview checkout wajib dilakukan sebelum membuat order. Kirim checkout_token dari preview.',
+            ]);
+        }
+
         $shippingAddress = $request->validated('shipping_address');
 
         if ($request->filled('address_id')) {
@@ -190,8 +197,8 @@ class OrderController extends Controller
                 'items.variant.media',
                 'items.listing.media',
                 'items.bundleListing.media',
-                'items.listing.store',
-                'items.bundleListing.store',
+                'items.listing.store.owner.roles',
+                'items.bundleListing.store.owner.roles',
                 'items.bundleListing.bundle.items.variant.product.media',
                 'items.bundleListing.bundle.items.variant.media',
             ])
@@ -209,7 +216,7 @@ class OrderController extends Controller
             ], 422);
         }
 
-        if ($cart->items->contains(fn (CartItem $item): bool => ! $this->cartItemIsAvailable($item))) {
+        if ($cart->items->contains(fn (CartItem $item): bool => ! CartItemAvailability::available($item))) {
             return response()->json([
                 'success' => false,
                 'message' => 'Sebagian item cart sudah tidak tersedia. Silakan perbarui cart.',
@@ -345,22 +352,6 @@ class OrderController extends Controller
             'success' => true,
             'message' => 'Order berhasil dibuat.',
         ]);
-    }
-
-    private function cartItemIsAvailable(CartItem $item): bool
-    {
-        if ($item->isBundle()) {
-            return $item->bundleListing?->status === 'active'
-                && $item->bundleListing->store?->isEligibleForMarketplace()
-                && $item->bundleListing->bundle?->status === 'active'
-                && $item->bundleListing->bundle->isPurchasable();
-        }
-
-        return $item->listing?->status === 'active'
-            && $item->listing->store?->isEligibleForMarketplace()
-            && $item->listing->product?->status === 'active'
-            && $item->variant?->status === 'active'
-            && $item->variant->product?->status === 'active';
     }
 
     /** @param Collection<int, CartItem> $items */

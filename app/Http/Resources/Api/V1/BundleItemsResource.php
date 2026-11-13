@@ -10,20 +10,20 @@ class BundleItemsResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'product' => [
+            'product' => $this->variant?->product ? [
                 'id' => $this->variant->product->id,
                 'name' => $this->variant->product->name,
                 'slug' => $this->variant->product->slug,
                 'product_code' => $this->variant->product->product_code,
-            ],
-            'variant' => [
+            ] : null,
+            'variant' => $this->variant ? [
                 'id' => $this->variant->id,
                 'name' => $this->variant->name,
                 'sku' => $this->variant->sku,
                 'image_url' => $this->variant->getFirstMediaUrl('image') ?: null,
                 'price' => $this->variant->price,
                 'weight_grams' => $this->variant->weight_grams,
-            ],
+            ] : null,
             'quantity' => $this->quantity,
         ];
     }

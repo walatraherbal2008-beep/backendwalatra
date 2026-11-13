@@ -5,14 +5,17 @@ namespace App\Filament\Resources\Orders\Tables;
 use App\Filament\Resources\Orders\Actions\OrderActions;
 use App\Filament\Resources\Orders\Pages\ManageOrders;
 use App\Filament\Resources\Orders\Schemas\OrderInfolist;
+use App\Filament\Resources\PaymentCommunicationLogs\PaymentCommunicationLogResource;
 use App\Models\Order;
 use App\Models\Store;
 use App\Services\Marketplace\StoreTransactionReport;
 use App\Support\PaymentMethods;
+use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
 use Filament\Actions\ViewAction;
 use Filament\Forms\Components\DatePicker;
 use Filament\Schemas\Schema;
+use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
@@ -24,6 +27,7 @@ class OrdersTable
     public static function configure(Table $table): Table
     {
         return $table->columns([
+            TextColumn::make('row_number')->label('No.')->rowIndex()->alignCenter(),
             TextColumn::make('order_number')->label('Pesanan / customer')->searchable()->copyable()->weight('semibold')->wrap()
                 ->description(fn (Order $record): string => ($record->user?->name ?? 'Belum melengkapi nama').' · '.$record->created_at->timezone('Asia/Jakarta')->format('d M Y H:i').' WIB'),
             TextColumn::make('user.name')->label('Customer')->searchable()->placeholder('Belum melengkapi nama')->wrap()->toggleable(isToggledHiddenByDefault: true),
@@ -79,7 +83,12 @@ class OrdersTable
             ViewAction::make()->label('Detail')->slideOver()->modalWidth('4xl')
                 ->schema(fn (Schema $schema): Schema => OrderInfolist::configure($schema))
                 ->extraModalFooterActions(OrderActions::operational()),
-            ActionGroup::make(OrderActions::operational())->label('Tindakan')->iconButton()->color('gray'),
+            ActionGroup::make([
+                Action::make('viewPaymentLogs')->label('Lihat log pesanan')->icon(Heroicon::OutlinedCodeBracket)
+                    ->authorize(fn (): bool => PaymentCommunicationLogResource::canAccess())
+                    ->url(fn (Order $record): string => PaymentCommunicationLogResource::getUrl('index', ['filters' => ['order' => ['value' => $record->id]]])),
+                ...OrderActions::operational(),
+            ])->label('Tindakan')->iconButton()->color('gray'),
         ])->recordActionsColumnLabel('Tindakan')
             ->defaultSort(fn (Builder $query): Builder => $query->orderByDesc('orders.created_at')->orderByDesc('orders.id'))->recordAction('view')->paginationPageOptions([10, 25, 50])
             ->emptyStateHeading('Belum ada pesanan sesuai filter')

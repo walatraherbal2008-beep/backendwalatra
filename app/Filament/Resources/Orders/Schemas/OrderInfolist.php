@@ -3,6 +3,8 @@
 namespace App\Filament\Resources\Orders\Schemas;
 
 use App\Filament\Resources\Orders\Pages\ManageOrders;
+use App\Filament\Resources\PaymentCommunicationLogs\PaymentCommunicationLogResource;
+use App\Filament\Resources\PaymentCommunicationLogs\Schemas\PaymentAuditEntries;
 use App\Models\Order;
 use App\Services\Marketplace\StoreTransactionReport;
 use App\Support\PaymentMethods;
@@ -63,6 +65,12 @@ class OrderInfolist
                     TextEntry::make('response_payload.biller_code')->label('Mandiri biller code')->placeholder('-'),
                     TextEntry::make('paid_at')->label('Lunas (WIB)')->dateTime('d M Y H:i', timezone: 'Asia/Jakarta')->placeholder('-'),
                     TextEntry::make('last_synced_at')->label('Disinkronkan (WIB)')->dateTime('d M Y H:i', timezone: 'Asia/Jakarta')->placeholder('-'),
+                    TextEntry::make('communication_logs')->label('Riwayat komunikasi')
+                        ->state('Lihat log komunikasi Midtrans')
+                        ->url(fn ($record): string => PaymentCommunicationLogResource::getUrl('index', ['filters' => ['payment' => ['value' => $record->id]]]))
+                        ->columnSpanFull(),
+                    Section::make('Payload pembayaran tersimpan')->description('Request penerbitan dan respons terakhir tersimpan, bukan seluruh riwayat komunikasi.')
+                        ->collapsible()->collapsed()->columnSpanFull()->schema(PaymentAuditEntries::payloads()),
                 ])->columns(['default' => 1, 'md' => 2])->columnSpanFull(),
             ])->columns(['default' => 1, 'md' => 2]),
             Section::make('Pengiriman')->columnSpanFull()->schema([

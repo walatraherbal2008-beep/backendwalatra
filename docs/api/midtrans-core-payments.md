@@ -1,8 +1,12 @@
 # API Pembayaran Midtrans Core
 
+Postman: `base_url` lokal harus `http://127.0.0.1:8000/api/v1`. Endpoint ditambahkan setelah nilai ini. Environment aktif dapat menimpa variable Collection; lihat [pengaturan Postman](postman-setup.md).
+
 Base URL: `/api/v1`. Endpoint customer memakai `Authorization: Bearer <customer_token>` dengan ability `customer-api` dan akun aktif. Kirim `Accept: application/json` dan `Content-Type: application/json` untuk request JSON. Server Key hanya disimpan backend.
 
 ## Alur pembayaran
+
+Komunikasi charge, Get Status, dan cancel dicatat terpisah untuk audit request/respons, HTTP status, serta waktunya. Superadmin dapat melihatnya melalui menu **Log Pembayaran** atau tautan dari detail Pesanan. Lihat [log komunikasi pembayaran](../payment-communication-logs.md). Fitur ini tidak menambahkan field pada respons API customer.
 
 1. Buat order melalui [cart dan checkout](cart-checkout.md). Order baru menggunakan `payment_provider: midtrans`, `payment_integration: core_api`, dan status `pending_payment`.
 2. Ambil metode pembayaran, lalu buat instruksi pembayaran pada order tersebut.
@@ -80,11 +84,15 @@ Respons `201` jika membuat percobaan baru, atau `200` jika menggunakan percobaan
 ```
 
 - Retry request yang sama memakai key yang sama. Key lama mengembalikan percobaan lama, termasuk jika sudah kedaluwarsa.
-- Mengganti metode atau menerbitkan QR yang sudah kedaluwarsa memakai key baru pada order yang sama. Backend memastikan transaksi lama berakhir sebelum menerbitkan penggantinya.
+- Mengganti metode atau menerbitkan QR yang sudah kedaluwarsa memakai key baru pada order yang sama. Backend memastikan transaksi lama berakhir sebelum menerbitkan penggantinya. Jika status transaksi lama belum dapat dipastikan, respons `202 PAYMENT_PROCESSING` dan charge baru tidak dibuat.
 - Key baru dengan metode yang sama masih memakai instruksi aktif jika belum kedaluwarsa.
 - Key yang sama dengan metode berbeda menghasilkan `409 IDEMPOTENCY_CONFLICT`.
-- `202 PAYMENT_PROCESSING` berarti operasi belum selesai; `data` bernilai `null`. Baca snapshot/refresh, lalu retry dengan key yang sama. Jangan membuat order lain untuk mengatasi timeout.
+- Jika charge awal timeout dan status Midtrans belum ditemukan (`state: unknown`), `POST /orders/{order}/payment/refresh` hanya memeriksa status; endpoint ini tidak mengirim charge baru. Retry eksplisit request pembayaran semula dengan key yang sama dapat memulihkan percobaan tersebut.
+- `202 PAYMENT_PROCESSING` berarti pergantian metode atau pembatalan lama belum terkonfirmasi; `data` bernilai `null`. Baca snapshot dengan `GET /orders/{order}/payment`, lalu ulangi request pergantian dengan metode dan key yang sama. Jangan meminta metode lain dengan key baru atau membayar instruksi lama selama status belum jelas.
+- Jika pembayaran lama terdeteksi lunas saat pergantian berlangsung, order menjadi `paid` dan percobaan baru tidak dibuat. Jika konfirmasi lunas datang terlambat setelah metode baru diterbitkan, order ditandai `payment_review` agar admin memeriksa kemungkinan pembayaran ganda.
 - Field `payment_token` dan `payment_url` dipertahankan dengan nilai `null`; integrasi ini memakai Core API.
+
+Panduan langkah demi langkah dan koleksi khusus Postman tersedia pada [Pergantian Metode Pembayaran](payment-method-switching.md).
 
 ## Membaca dan menyinkronkan pembayaran
 
@@ -111,10 +119,10 @@ Ambil URL dari `payment.qr_code_url`, tetap sertakan Bearer token. Respons berha
 
 Route bernama `payments.midtrans.webhook`. Endpoint publik tanpa Bearer token dan tanpa CSRF form web. Autentikasi notifikasi menggunakan signature Midtrans; frontend tidak perlu memanggil endpoint ini.
 
-URL untuk tunnel pengembangan saat ini:
+Contoh Notification URL, ganti `DOMAIN-BACKEND-AKTIF` dengan domain/tunnel HTTPS yang sedang berjalan:
 
 ```text
-https://423c-2405-8180-801-4279-8cb9-eb3c-d369-76a9.ngrok-free.app/api/v1/payments/midtrans/webhook
+https://DOMAIN-BACKEND-AKTIF/api/v1/payments/midtrans/webhook
 ```
 
 Pasang URL lengkap tersebut pada **Payment Notification URL** di dashboard **Midtrans Sandbox**, lalu simpan. Ketika domain tunnel berubah, perbarui pengaturan dashboard. Domain production nantinya menggunakan path yang sama. `APP_URL` tidak otomatis mengubah konfigurasi dashboard Midtrans.
@@ -190,4 +198,4 @@ Pada server, jalankan cron `* * * * *` untuk `php artisan schedule:run` dari dir
 
 Pembuatan instruksi dibatasi 10 request/menit per customer/order, refresh 12 request/menit. Batas ini tidak diterapkan pada route webhook publik.
 
-Referensi: [Core API](https://docs.midtrans.com/reference/core-api-overview), [HTTP Notification](https://docs.midtrans.com/docs/https-notification-webhooks). Koleksi request tersedia di [Postman](../postman/midtrans-core-payments.postman_collection.json).
+Referensi: [Core API](https://docs.midtrans.com/reference/core-api-overview), [HTTP Notification](https://docs.midtrans.com/docs/https-notification-webhooks). Koleksi request umum tersedia di [Postman](../postman/midtrans-core-payments.postman_collection.json); koleksi skenario ganti metode tersedia di [Payment Method Switching](../postman/payment-method-switching.postman_collection.json).

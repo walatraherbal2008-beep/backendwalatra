@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="1300" viewBox="0 0 1000 1300">
+<rect width="100%" height="100%" fill="white"/>
+<text x="35" y="45" font-family="DejaVu Sans, sans-serif" font-size="27" font-weight="bold" fill="#172b3a">02. Validasi dan penyimpanan saat checkout</text>
+<text x="35" y="79" font-family="DejaVu Sans, sans-serif" font-size="16" font-weight="normal" fill="#172b3a">Jika validasi gagal, order tidak dibuat dan item cart tetap tersedia.</text>
+<rect x="35" y="115" width="600" height="112" rx="8" fill="#f0f6ff" stroke="#265a99" stroke-width="1.5"/>
+<text x="53" y="145" font-family="DejaVu Sans, sans-serif" font-size="20" font-weight="bold" fill="#172b3a">Baca cart milik customer</text>
+<text x="53" y="173" font-family="DejaVu Sans, sans-serif" font-size="18" font-weight="normal" fill="#172b3a">Pilihan checkout harus dari cart sendiri.</text>
+<text x="53" y="197" font-family="DejaVu Sans, sans-serif" font-size="18" font-weight="normal" fill="#172b3a">Tanpa pilihan checkout berarti seluruh cart.</text>
+<path d="M335,227 L335,273" stroke="#42576b" stroke-width="2"/><polygon points="335,273 329,263 341,263" fill="#42576b"/>
+<rect x="35" y="273" width="600" height="112" rx="8" fill="#f0f6ff" stroke="#265a99" stroke-width="1.5"/>
+<text x="53" y="303" font-family="DejaVu Sans, sans-serif" font-size="20" font-weight="bold" fill="#172b3a">Periksa ketersediaan dan harga master</text>
+<text x="53" y="331" font-family="DejaVu Sans, sans-serif" font-size="18" font-weight="normal" fill="#172b3a">Produk: listing + toko + produk + varian aktif.</text>
+<text x="53" y="355" font-family="DejaVu Sans, sans-serif" font-size="18" font-weight="normal" fill="#172b3a">Bundle: listing + master + komponen tersedia.</text>
+<path d="M335,385 L335,431" stroke="#42576b" stroke-width="2"/><polygon points="335,431 329,421 341,421" fill="#42576b"/>
+<rect x="35" y="431" width="600" height="112" rx="8" fill="#f0f6ff" stroke="#265a99" stroke-width="1.5"/>
+<text x="53" y="461" font-family="DejaVu Sans, sans-serif" font-size="20" font-weight="bold" fill="#172b3a">Tentukan satu titik pengiriman bersama</text>
+<text x="53" y="489" font-family="DejaVu Sans, sans-serif" font-size="18" font-weight="normal" fill="#172b3a">Cari irisan gudang seluruh varian terpilih.</text>
+<text x="53" y="513" font-family="DejaVu Sans, sans-serif" font-size="18" font-weight="normal" fill="#172b3a">Termasuk setiap varian komponen bundle.</text>
+<path d="M335,543 L335,589" stroke="#42576b" stroke-width="2"/><polygon points="335,589 329,579 341,579" fill="#42576b"/>
+<rect x="35" y="589" width="600" height="112" rx="8" fill="#f0f6ff" stroke="#265a99" stroke-width="1.5"/>
+<text x="53" y="619" font-family="DejaVu Sans, sans-serif" font-size="20" font-weight="bold" fill="#172b3a">Validasi checkout_token dan hitung total</text>
+<text x="53" y="647" font-family="DejaVu Sans, sans-serif" font-size="18" font-weight="normal" fill="#172b3a">Token mengikat user, item, jumlah, harga, gudang.</text>
+<text x="53" y="671" font-family="DejaVu Sans, sans-serif" font-size="18" font-weight="normal" fill="#172b3a">Ongkir gratis: shipping_fee = 0.</text>
+<path d="M335,701 L335,747" stroke="#42576b" stroke-width="2"/><polygon points="335,747 329,737 341,737" fill="#42576b"/>
+<rect x="35" y="747" width="600" height="112" rx="8" fill="#f0f6ff" stroke="#265a99" stroke-width="1.5"/>
+<text x="53" y="777" font-family="DejaVu Sans, sans-serif" font-size="20" font-weight="bold" fill="#172b3a">Periksa / reservasi stok jika external</text>
+<text x="53" y="805" font-family="DejaVu Sans, sans-serif" font-size="18" font-weight="normal" fill="#172b3a">Mode unlimited melewati check dan reserve.</text>
+<text x="53" y="829" font-family="DejaVu Sans, sans-serif" font-size="18" font-weight="normal" fill="#172b3a">Tetap membutuhkan titik pengiriman yang valid.</text>
+<path d="M335,859 L335,905" stroke="#42576b" stroke-width="2"/><polygon points="335,905 329,895 341,895" fill="#42576b"/>
+<rect x="35" y="905" width="600" height="112" rx="8" fill="#edf7f1" stroke="#297149" stroke-width="1.5"/>
+<text x="53" y="935" font-family="DejaVu Sans, sans-serif" font-size="20" font-weight="bold" fill="#172b3a">Transaksi database + salinan foto</text>
+<text x="53" y="963" font-family="DejaVu Sans, sans-serif" font-size="18" font-weight="normal" fill="#172b3a">orders + order_items + media + status_histories.</text>
+<text x="53" y="987" font-family="DejaVu Sans, sans-serif" font-size="18" font-weight="normal" fill="#172b3a">status pending_payment untuk alur Midtrans.</text>
+<path d="M335,1017 L335,1063" stroke="#42576b" stroke-width="2"/><polygon points="335,1063 329,1053 341,1053" fill="#42576b"/>
+<rect x="35" y="1063" width="600" height="112" rx="8" fill="#edf7f1" stroke="#297149" stroke-width="1.5"/>
+<text x="53" y="1093" font-family="DejaVu Sans, sans-serif" font-size="20" font-weight="bold" fill="#172b3a">Commit dan kembalikan order</text>
+<text x="53" y="1121" font-family="DejaVu Sans, sans-serif" font-size="18" font-weight="normal" fill="#172b3a">Hapus hanya cart_items yang masuk order.</text>
+<text x="53" y="1145" font-family="DejaVu Sans, sans-serif" font-size="18" font-weight="normal" fill="#172b3a">Item lainnya tetap berada dalam cart.</text>
+<rect x="665" y="115" width="300" height="136" rx="8" fill="#fff7e5" stroke="#926714" stroke-width="1.5"/>
+<text x="683" y="145" font-family="DejaVu Sans, sans-serif" font-size="18" font-weight="bold" fill="#172b3a">Cart barang terhapus</text>
+<text x="683" y="173" font-family="DejaVu Sans, sans-serif" font-size="16" font-weight="normal" fill="#172b3a">Tetap terbaca dan bisa dihapus.</text>
+<text x="683" y="197" font-family="DejaVu Sans, sans-serif" font-size="16" font-weight="normal" fill="#172b3a">Ditandai Tidak tersedia.</text>
+<text x="683" y="221" font-family="DejaVu Sans, sans-serif" font-size="16" font-weight="normal" fill="#172b3a">Tidak bisa dibeli.</text>
+<rect x="665" y="273" width="300" height="136" rx="8" fill="#fff7e5" stroke="#926714" stroke-width="1.5"/>
+<text x="683" y="303" font-family="DejaVu Sans, sans-serif" font-size="18" font-weight="bold" fill="#172b3a">409: tinjau ulang</text>
+<text x="683" y="331" font-family="DejaVu Sans, sans-serif" font-size="16" font-weight="normal" fill="#172b3a">Barang tidak tersedia,</text>
+<text x="683" y="355" font-family="DejaVu Sans, sans-serif" font-size="16" font-weight="normal" fill="#172b3a">harga atau token berubah,</text>
+<text x="683" y="379" font-family="DejaVu Sans, sans-serif" font-size="16" font-weight="normal" fill="#172b3a">gudang tidak cocok.</text>
+<rect x="665" y="430" width="300" height="136" rx="8" fill="#fff7e5" stroke="#926714" stroke-width="1.5"/>
+<text x="683" y="460" font-family="DejaVu Sans, sans-serif" font-size="18" font-weight="bold" fill="#172b3a">Bukan jarak terdekat</text>
+<text x="683" y="488" font-family="DejaVu Sans, sans-serif" font-size="16" font-weight="normal" fill="#172b3a">Belum menghitung jarak.</text>
+<text x="683" y="512" font-family="DejaVu Sans, sans-serif" font-size="16" font-weight="normal" fill="#172b3a">Lebih dari satu gudang:</text>
+<text x="683" y="536" font-family="DejaVu Sans, sans-serif" font-size="16" font-weight="normal" fill="#172b3a">butuh preferensi server.</text>
+<rect x="665" y="590" width="300" height="136" rx="8" fill="#fff0ef" stroke="#a3302a" stroke-width="1.5"/>
+<text x="683" y="620" font-family="DejaVu Sans, sans-serif" font-size="18" font-weight="bold" fill="#172b3a">Batas token saat ini</text>
+<text x="683" y="648" font-family="DejaVu Sans, sans-serif" font-size="16" font-weight="normal" fill="#172b3a">Token belum mengikat</text>
+<text x="683" y="672" font-family="DejaVu Sans, sans-serif" font-size="16" font-weight="normal" fill="#172b3a">alamat, ongkir, maupun</text>
+<text x="683" y="696" font-family="DejaVu Sans, sans-serif" font-size="16" font-weight="normal" fill="#172b3a">komposisi bundle.</text>
+<rect x="665" y="905" width="300" height="136" rx="8" fill="#fff7e5" stroke="#926714" stroke-width="1.5"/>
+<text x="683" y="935" font-family="DejaVu Sans, sans-serif" font-size="18" font-weight="bold" fill="#172b3a">Foto gagal disalin</text>
+<text x="683" y="963" font-family="DejaVu Sans, sans-serif" font-size="16" font-weight="normal" fill="#172b3a">Rollback order dan item.</text>
+<text x="683" y="987" font-family="DejaVu Sans, sans-serif" font-size="16" font-weight="normal" fill="#172b3a">Bersihkan salinan baru.</text>
+<text x="683" y="1011" font-family="DejaVu Sans, sans-serif" font-size="16" font-weight="normal" fill="#172b3a">Cart tetap tersedia.</text>
+<text x="35" y="1280" font-family="DejaVu Sans, sans-serif" font-size="13" font-weight="normal" fill="#172b3a">Audit backend Walatra | 12 November 2026 | Catatan mengikuti implementasi saat audit</text>
+</svg>

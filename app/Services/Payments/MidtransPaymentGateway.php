@@ -26,21 +26,35 @@ class MidtransPaymentGateway implements PaymentGateway
             ->connectTimeout(3)->timeout((int) config('services.midtrans.timeout', 10));
     }
 
-    private function send(string $method, string $path, array $payload = [], bool $allowNotFound = false): ?array
+    private function send(string $method, string $path, string $operation, ?string $providerId, array $payload = [], bool $allowNotFound = false): ?array
     {
+        $logger = app(PaymentCommunicationLogger::class);
+        $started = hrtime(true);
+        $log = $logger->start($method, $this->baseUrl().$path, $operation, $providerId, $payload);
         try {
             $options = $method === 'GET' ? [] : ($payload === [] ? ['body' => ''] : ['json' => $payload]);
             $response = $this->request()->send($method, $path, $options);
-        } catch (Throwable) {
+        } catch (Throwable $exception) {
+            $logger->finish($log, $started, [
+                'outcome' => 'connection_error', 'error_type' => get_class($exception),
+                'error_message' => 'Midtrans tidak dapat dihubungi atau request belum dapat dikirim.',
+            ]);
             // Do not propagate request exceptions: they can contain payment credentials or customer data.
             throw new PaymentGatewayUnavailableException('Midtrans tidak dapat dihubungi. Status transaksi perlu disinkronkan.');
         }
         $body = $response->json();
-        if ($allowNotFound && ($response->status() === 404 || (is_array($body) && (string) ($body['status_code'] ?? '') === '404'))) {
+        $notFound = $allowNotFound && ($response->status() === 404 || (is_array($body) && (string) ($body['status_code'] ?? '') === '404'));
+        $invalid = $response->failed() || $response->redirect() || ! is_array($body)
+            || ! in_array((string) ($body['status_code'] ?? ''), ['200', '201', '202', '407'], true);
+        $logger->finish($log, $started, [
+            'http_status' => $response->status(), 'response_payload' => is_array($body) ? $body : null,
+            'response_body' => is_array($body) ? null : $response->body(),
+            'outcome' => $notFound ? 'not_found' : ($invalid ? 'failed' : 'succeeded'),
+        ]);
+        if ($notFound) {
             return null;
         }
-        if ($response->failed() || $response->redirect() || ! is_array($body)
-            || ! in_array((string) ($body['status_code'] ?? ''), ['200', '201', '202', '407'], true)) {
+        if ($invalid) {
             throw new PaymentGatewayUnavailableException('Midtrans belum mengonfirmasi transaksi. Silakan sinkronkan status pembayaran.');
         }
 
@@ -49,17 +63,17 @@ class MidtransPaymentGateway implements PaymentGateway
 
     public function charge(array $payload): array
     {
-        return $this->send('POST', '/v2/charge', $payload);
+        return $this->send('POST', '/v2/charge', 'charge', $payload['transaction_details']['order_id'] ?? null, $payload);
     }
 
     public function status(string $providerOrderId): ?array
     {
-        return $this->send('GET', '/v2/'.rawurlencode($providerOrderId).'/status', allowNotFound: true);
+        return $this->send('GET', '/v2/'.rawurlencode($providerOrderId).'/status', 'status', $providerOrderId, allowNotFound: true);
     }
 
     public function cancel(string $providerOrderId): array
     {
-        return $this->send('POST', '/v2/'.rawurlencode($providerOrderId).'/cancel');
+        return $this->send('POST', '/v2/'.rawurlencode($providerOrderId).'/cancel', 'cancel', $providerOrderId);
     }
 
     public function qrImage(string $url): string

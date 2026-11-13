@@ -15,12 +15,13 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 use Mockery;
+use Tests\Concerns\WithCheckoutToken;
 use Tests\Concerns\WithCheckoutWarehouse;
 use Tests\TestCase;
 
 class SelectedCheckoutTest extends TestCase
 {
-    use RefreshDatabase, WithCheckoutWarehouse;
+    use RefreshDatabase, WithCheckoutToken, WithCheckoutWarehouse;
 
     protected function setUp(): void
     {
@@ -78,7 +79,7 @@ class SelectedCheckoutTest extends TestCase
             ->assertJsonPath('data.shipping.subsidy_rule_id', null)->assertJsonPath('data.total', '70000.00');
         $this->assertDatabaseCount('cart_items', 3);
 
-        $response = $this->postJson('/api/v1/orders', $payload, ['Idempotency-Key' => 'selected-mixed'])->assertCreated()
+        $response = $this->postJson('/api/v1/orders', $this->checkoutPayload($payload), ['Idempotency-Key' => 'selected-mixed'])->assertCreated()
             ->assertJsonCount(2, 'data.items')->assertJsonPath('data.subtotal', '70000.00')
             ->assertJsonPath('data.shipping_gross_fee', '0.00')->assertJsonPath('data.shipping_subsidy', '0.00')
             ->assertJsonPath('data.shipping_fee', '0.00')->assertJsonPath('data.shipping_service', 'FREE')
@@ -88,7 +89,7 @@ class SelectedCheckoutTest extends TestCase
         $order = Order::findOrFail($response->json('data.id'));
         $this->assertEqualsCanonicalizing(['product', 'bundle'], $order->items->pluck('item_type')->all());
 
-        $this->postJson('/api/v1/orders', $payload, ['Idempotency-Key' => 'selected-mixed'])->assertOk()
+        $this->postJson('/api/v1/orders', $this->checkoutPayload($payload), ['Idempotency-Key' => 'selected-mixed'])->assertOk()
             ->assertJsonPath('data.id', $order->id);
         $this->assertDatabaseCount('orders', 1);
         $this->assertDatabaseCount('cart_items', 1);
@@ -102,7 +103,7 @@ class SelectedCheckoutTest extends TestCase
         $this->postJson('/api/v1/checkout/preview', $payload)->assertOk()
             ->assertJsonCount(1, 'data.items')->assertJsonPath('data.items.0.cart_item_id', $productId)
             ->assertJsonPath('data.total', '30000.00');
-        $this->postJson('/api/v1/orders', $payload, ['Idempotency-Key' => 'product-only'])->assertCreated()
+        $this->postJson('/api/v1/orders', $this->checkoutPayload($payload), ['Idempotency-Key' => 'product-only'])->assertCreated()
             ->assertJsonCount(1, 'data.items')->assertJsonPath('data.items.0.type', 'product');
         $this->assertDatabaseHas('cart_items', ['id' => $bundleId]);
         $this->assertDatabaseCount('cart_items', 1);
@@ -115,7 +116,7 @@ class SelectedCheckoutTest extends TestCase
         $payload = ['cart_item_ids' => [$bundleId], 'shipping_address' => $this->address()];
         $this->postJson('/api/v1/checkout/preview', $payload)->assertOk()
             ->assertJsonPath('data.items.0.cart_item_id', $bundleId)->assertJsonPath('data.total', '40000.00');
-        $this->postJson('/api/v1/orders', $payload, ['Idempotency-Key' => 'bundle-only'])->assertCreated()
+        $this->postJson('/api/v1/orders', $this->checkoutPayload($payload), ['Idempotency-Key' => 'bundle-only'])->assertCreated()
             ->assertJsonCount(1, 'data.items')->assertJsonPath('data.items.0.type', 'bundle');
         $this->assertDatabaseHas('cart_items', ['id' => $productId]);
         $this->assertDatabaseCount('cart_items', 1);
@@ -147,7 +148,7 @@ class SelectedCheckoutTest extends TestCase
         $listing->update(['status' => 'inactive']);
         $payload = ['cart_item_ids' => [$id], 'shipping_address' => $this->address()];
         $this->postJson('/api/v1/checkout/preview', $payload)->assertStatus(409);
-        $this->postJson('/api/v1/orders', $payload, ['Idempotency-Key' => 'stale-selection'])->assertStatus(409);
+        $this->postJson('/api/v1/orders', $this->checkoutPayload($payload), ['Idempotency-Key' => 'stale-selection'])->assertStatus(409);
         $this->assertDatabaseCount('orders', 0);
         $this->assertDatabaseCount('cart_items', 1);
     }
@@ -156,7 +157,7 @@ class SelectedCheckoutTest extends TestCase
     {
         $this->addProduct();
         $this->addBundle();
-        $this->postJson('/api/v1/orders', ['shipping_address' => $this->address()], ['Idempotency-Key' => 'whole-cart'])
+        $this->postJson('/api/v1/orders', $this->checkoutPayload(['shipping_address' => $this->address()]), ['Idempotency-Key' => 'whole-cart'])
             ->assertCreated()->assertJsonCount(2, 'data.items')->assertJsonPath('data.total', '70000.00')
             ->assertJsonPath('data.shipping_fee', '0.00');
         $this->assertDatabaseCount('cart_items', 0);
@@ -174,7 +175,7 @@ class SelectedCheckoutTest extends TestCase
         $this->app->instance(WarehouseStockProvider::class, $warehouse);
         $payload = ['cart_item_ids' => [$id], 'shipping_address' => $this->address()];
         $this->postJson('/api/v1/checkout/preview', $payload)->assertOk()->assertJsonPath('data.shipping.fee', '0.00');
-        $this->postJson('/api/v1/orders', $payload, ['Idempotency-Key' => 'integrated-selected'])->assertCreated()
+        $this->postJson('/api/v1/orders', $this->checkoutPayload($payload), ['Idempotency-Key' => 'integrated-selected'])->assertCreated()
             ->assertJsonPath('data.total', '30000.00')->assertJsonPath('data.shipping_fee', '0.00');
         $this->assertDatabaseCount('cart_items', 1);
     }

@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="1455" viewBox="0 0 1000 1455">
+<rect width="100%" height="100%" fill="white"/>
+<text x="35" y="45" font-family="DejaVu Sans, sans-serif" font-size="27" font-weight="bold" fill="#172b3a">01. Alur pembelian dari cart sampai lunas</text>
+<text x="35" y="79" font-family="DejaVu Sans, sans-serif" font-size="16" font-weight="normal" fill="#172b3a">Semua endpoint customer memakai Bearer token dan prefix /api/v1.</text>
+<rect x="35" y="115" width="600" height="112" rx="8" fill="#f0f6ff" stroke="#265a99" stroke-width="1.5"/>
+<text x="53" y="145" font-family="DejaVu Sans, sans-serif" font-size="20" font-weight="bold" fill="#172b3a">Customer memilih produk atau bundle</text>
+<text x="53" y="173" font-family="DejaVu Sans, sans-serif" font-size="18" font-weight="normal" fill="#172b3a">Gunakan listing toko dan varian yang tersedia.</text>
+<text x="53" y="197" font-family="DejaVu Sans, sans-serif" font-size="18" font-weight="normal" fill="#172b3a">Produk dan bundle masuk ke satu cart.</text>
+<path d="M335,227 L335,273" stroke="#42576b" stroke-width="2"/><polygon points="335,273 329,263 341,263" fill="#42576b"/>
+<rect x="35" y="273" width="600" height="112" rx="8" fill="#edf7f1" stroke="#297149" stroke-width="1.5"/>
+<text x="53" y="303" font-family="DejaVu Sans, sans-serif" font-size="20" font-weight="bold" fill="#172b3a">POST /cart/items</text>
+<text x="53" y="331" font-family="DejaVu Sans, sans-serif" font-size="18" font-weight="normal" fill="#172b3a">Backend validasi barang dan toko.</text>
+<text x="53" y="355" font-family="DejaVu Sans, sans-serif" font-size="18" font-weight="normal" fill="#172b3a">Simpan carts + cart_items; item sama dijumlahkan.</text>
+<path d="M335,385 L335,431" stroke="#42576b" stroke-width="2"/><polygon points="335,431 329,421 341,421" fill="#42576b"/>
+<rect x="35" y="431" width="600" height="112" rx="8" fill="#f0f6ff" stroke="#265a99" stroke-width="1.5"/>
+<text x="53" y="461" font-family="DejaVu Sans, sans-serif" font-size="20" font-weight="bold" fill="#172b3a">GET /cart lalu pilih item dan alamat</text>
+<text x="53" y="489" font-family="DejaVu Sans, sans-serif" font-size="18" font-weight="normal" fill="#172b3a">Kirim pilihan ke GET cart untuk ringkasan.</text>
+<text x="53" y="513" font-family="DejaVu Sans, sans-serif" font-size="18" font-weight="normal" fill="#172b3a">Tanpa pilihan, ringkasan GET kosong.</text>
+<path d="M335,543 L335,589" stroke="#42576b" stroke-width="2"/><polygon points="335,589 329,579 341,579" fill="#42576b"/>
+<rect x="35" y="589" width="600" height="112" rx="8" fill="#f0f6ff" stroke="#265a99" stroke-width="1.5"/>
+<text x="53" y="619" font-family="DejaVu Sans, sans-serif" font-size="20" font-weight="bold" fill="#172b3a">POST /checkout/preview</text>
+<text x="53" y="647" font-family="DejaVu Sans, sans-serif" font-size="18" font-weight="normal" fill="#172b3a">Periksa harga, gudang, stok, dan ongkir.</text>
+<text x="53" y="671" font-family="DejaVu Sans, sans-serif" font-size="18" font-weight="normal" fill="#172b3a">Kembalikan total serta checkout_token.</text>
+<path d="M335,701 L335,747" stroke="#42576b" stroke-width="2"/><polygon points="335,747 329,737 341,737" fill="#42576b"/>
+<rect x="35" y="747" width="600" height="112" rx="8" fill="#edf7f1" stroke="#297149" stroke-width="1.5"/>
+<text x="53" y="777" font-family="DejaVu Sans, sans-serif" font-size="20" font-weight="bold" fill="#172b3a">POST /orders + Idempotency-Key</text>
+<text x="53" y="805" font-family="DejaVu Sans, sans-serif" font-size="18" font-weight="normal" fill="#172b3a">Wajib token preview valid untuk order baru.</text>
+<text x="53" y="829" font-family="DejaVu Sans, sans-serif" font-size="18" font-weight="normal" fill="#172b3a">Simpan snapshot lalu hapus item terpilih.</text>
+<path d="M335,859 L335,905" stroke="#42576b" stroke-width="2"/><polygon points="335,905 329,895 341,895" fill="#42576b"/>
+<rect x="35" y="905" width="600" height="112" rx="8" fill="#f0f6ff" stroke="#265a99" stroke-width="1.5"/>
+<text x="53" y="935" font-family="DejaVu Sans, sans-serif" font-size="20" font-weight="bold" fill="#172b3a">POST /orders/{id}/payment</text>
+<text x="53" y="963" font-family="DejaVu Sans, sans-serif" font-size="18" font-weight="normal" fill="#172b3a">Pilih metode; pakai key pembayaran tersendiri.</text>
+<text x="53" y="987" font-family="DejaVu Sans, sans-serif" font-size="18" font-weight="normal" fill="#172b3a">Backend charge Midtrans lalu simpan VA / QRIS.</text>
+<path d="M335,1017 L335,1063" stroke="#42576b" stroke-width="2"/><polygon points="335,1063 329,1053 341,1053" fill="#42576b"/>
+<rect x="35" y="1063" width="600" height="112" rx="8" fill="#f0f6ff" stroke="#265a99" stroke-width="1.5"/>
+<text x="53" y="1093" font-family="DejaVu Sans, sans-serif" font-size="20" font-weight="bold" fill="#172b3a">Customer membayar VA atau QRIS</text>
+<text x="53" y="1121" font-family="DejaVu Sans, sans-serif" font-size="18" font-weight="normal" fill="#172b3a">Order tetap pending_payment selama menunggu.</text>
+<text x="53" y="1145" font-family="DejaVu Sans, sans-serif" font-size="18" font-weight="normal" fill="#172b3a">Frontend membaca status dari backend.</text>
+<path d="M335,1175 L335,1221" stroke="#42576b" stroke-width="2"/><polygon points="335,1221 329,1211 341,1211" fill="#42576b"/>
+<rect x="35" y="1221" width="600" height="112" rx="8" fill="#edf7f1" stroke="#297149" stroke-width="1.5"/>
+<text x="53" y="1251" font-family="DejaVu Sans, sans-serif" font-size="20" font-weight="bold" fill="#172b3a">Webhook -&gt; queue -&gt; verifikasi Midtrans</text>
+<text x="53" y="1279" font-family="DejaVu Sans, sans-serif" font-size="18" font-weight="normal" fill="#172b3a">Periksa transaksi lalu update order menjadi paid.</text>
+<text x="53" y="1303" font-family="DejaVu Sans, sans-serif" font-size="18" font-weight="normal" fill="#172b3a">Simpan hasil pembayaran dan riwayat status.</text>
+<rect x="665" y="430" width="300" height="136" rx="8" fill="#fff7e5" stroke="#926714" stroke-width="1.5"/>
+<text x="683" y="460" font-family="DejaVu Sans, sans-serif" font-size="18" font-weight="bold" fill="#172b3a">Preview belum order</text>
+<text x="683" y="488" font-family="DejaVu Sans, sans-serif" font-size="16" font-weight="normal" fill="#172b3a">Token berlaku 15 menit.</text>
+<text x="683" y="512" font-family="DejaVu Sans, sans-serif" font-size="16" font-weight="normal" fill="#172b3a">Tidak mereservasi stok.</text>
+<text x="683" y="536" font-family="DejaVu Sans, sans-serif" font-size="16" font-weight="normal" fill="#172b3a">Jika pilihan berubah,</text>
+<text x="683" y="560" font-family="DejaVu Sans, sans-serif" font-size="16" font-weight="normal" fill="#172b3a">buat preview baru.</text>
+<rect x="665" y="747" width="300" height="136" rx="8" fill="#fff7e5" stroke="#926714" stroke-width="1.5"/>
+<text x="683" y="777" font-family="DejaVu Sans, sans-serif" font-size="18" font-weight="bold" fill="#172b3a">Order belum punya VA</text>
+<text x="683" y="805" font-family="DejaVu Sans, sans-serif" font-size="16" font-weight="normal" fill="#172b3a">Respons awal: payment null.</text>
+<text x="683" y="829" font-family="DejaVu Sans, sans-serif" font-size="16" font-weight="normal" fill="#172b3a">VA / QRIS diterbitkan</text>
+<text x="683" y="853" font-family="DejaVu Sans, sans-serif" font-size="16" font-weight="normal" fill="#172b3a">di langkah pembayaran.</text>
+<rect x="665" y="1060" width="300" height="136" rx="8" fill="#fff7e5" stroke="#926714" stroke-width="1.5"/>
+<text x="683" y="1090" font-family="DejaVu Sans, sans-serif" font-size="17" font-weight="bold" fill="#172b3a">Lunas bukan sudah dikirim</text>
+<text x="683" y="1118" font-family="DejaVu Sans, sans-serif" font-size="16" font-weight="normal" fill="#172b3a">paid hanya konfirmasi bayar.</text>
+<text x="683" y="1142" font-family="DejaVu Sans, sans-serif" font-size="16" font-weight="normal" fill="#172b3a">Pengiriman dan nomor resi</text>
+<text x="683" y="1166" font-family="DejaVu Sans, sans-serif" font-size="16" font-weight="normal" fill="#172b3a">berada di luar flow ini.</text>
+<text x="35" y="1435" font-family="DejaVu Sans, sans-serif" font-size="13" font-weight="normal" fill="#172b3a">Audit backend Walatra | 12 November 2026 | Catatan mengikuti implementasi saat audit</text>
+</svg>

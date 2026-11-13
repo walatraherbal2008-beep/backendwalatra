@@ -1,0 +1,375 @@
+{
+  "info": {
+    "name": "Walatra - Cart dan Checkout",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Jalankan request secara manual sesuai urutan. Isi customer_token, ID listing/varian/bundle, dan address_id. Backend menyimpan cart, bukan checkbox. Tinjau preview sebelum membuat order; collection runner tidak mewakili persetujuan user. Request di folder opsional mengubah/menghapus cart. base_url sudah mencakup /api/v1. Client lama tanpa token checkout perlu diperbarui. Pembayaran ada di koleksi Midtrans Core Payments. Pengaturan URL: base_url wajib mencakup /api/v1 tanpa slash terakhir, misalnya http://127.0.0.1:8000/api/v1. Jika Environment aktif memiliki variable dengan nama sama, nilainya menimpa Collection, termasuk ID/token yang diisi otomatis; samakan nilainya atau hapus duplikat Environment. Panduan: docs/api/postman-setup.md."
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{customer_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:8000/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "customer_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "listing_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "variant_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "bundle_listing_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "product_cart_item_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "bundle_cart_item_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "address_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "checkout_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "order_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "order_idempotency_key",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Alur cart sampai order",
+      "item": [
+        {
+          "name": "1. Tambah produk",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/cart/items",
+            "description": "Isi ID katalog aktif. Quantity dijumlahkan; tidak ada idempotency tambah cart. Gunakan quantity dari respons.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"product\",\n  \"listing_id\": \"{{listing_id}}\",\n  \"variant_id\": \"{{variant_id}}\",\n  \"quantity\": 2\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const data = pm.response.json().data;",
+                  "  const item = data.items.find(i => i.type === 'product' && String(i.listing_id) === pm.variables.get('listing_id') && String(i.variant_id) === pm.variables.get('variant_id'));",
+                  "  if (item) pm.collectionVariables.set('product_cart_item_id', String(item.id));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "2. Tambah bundle",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/cart/items",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"bundle\",\n  \"bundle_listing_id\": \"{{bundle_listing_id}}\",\n  \"quantity\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const data = pm.response.json().data;",
+                  "  const item = data.items.find(i => i.type === 'bundle' && String(i.bundle_listing_id) === pm.variables.get('bundle_listing_id'));",
+                  "  if (item) pm.collectionVariables.set('bundle_cart_item_id', String(item.id));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "3. Lihat seluruh cart",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/cart",
+            "description": "Tanpa pilihan, data.selection kosong/nol. Seluruh item tetap terlihat, termasuk is_available=false."
+          },
+          "response": []
+        },
+        {
+          "name": "4. Ringkasan produk dan bundle terpilih",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/cart?cart_item_ids[]={{product_cart_item_id}}&cart_item_ids[]={{bundle_cart_item_id}}",
+            "description": "Menghitung pilihan tersedia pada data.selection tanpa menghubungi gudang. unavailable_item_ids harus ditangani sebelum preview."
+          },
+          "response": []
+        },
+        {
+          "name": "5. Preview pilihan dan alamat",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/checkout/preview",
+            "description": "Isi address_id milik customer. Preview memperbarui harga; tinjau price_changed/price_changes dan total. Token 15 menit wajib untuk order baru. Menjalankan preview lagi menyiapkan key checkout baru.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cart_item_ids\": [\n    \"{{product_cart_item_id}}\",\n    \"{{bundle_cart_item_id}}\"\n  ],\n  \"address_id\": \"{{address_id}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200 && pm.response.json().data.checkout_available) {",
+                  "  pm.collectionVariables.set('checkout_token', pm.response.json().data.checkout_token);",
+                  "  pm.collectionVariables.set('order_idempotency_key', 'checkout-' + pm.variables.replaceIn('{{$guid}}'));",
+                  "} else { pm.collectionVariables.unset('checkout_token'); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "6. Buat order atau retry key yang sama",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{order_idempotency_key}}"
+              }
+            ],
+            "url": "{{base_url}}/orders",
+            "description": "Jalankan setelah user menyetujui preview. Retry dengan key sama mengembalikan order lama; tidak membuat VA/QRIS. Gunakan koleksi Midtrans untuk membuat pembayaran.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cart_item_ids\": [\n    \"{{product_cart_item_id}}\",\n    \"{{bundle_cart_item_id}}\"\n  ],\n  \"address_id\": \"{{address_id}}\",\n  \"checkout_token\": \"{{checkout_token}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if ([200, 201].includes(pm.response.code)) pm.collectionVariables.set('order_id', String(pm.response.json().data.id));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "7. Detail order",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/orders/{{order_id}}",
+            "description": ""
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Opsional - manajemen cart (jalankan sesuai kebutuhan)",
+      "item": [
+        {
+          "name": "Ganti quantity produk menjadi 3",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/cart/items/{{product_cart_item_id}}",
+            "description": "Mengganti jumlah, bukan menambah. Item tidak tersedia ditolak 409 STALE_CART. Perbarui preview setelah perubahan.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quantity\": 3\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Ringkasan hanya produk",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/cart?cart_item_ids[]={{product_cart_item_id}}",
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "Hapus item produk",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/cart/items/{{product_cart_item_id}}",
+            "description": ""
+          },
+          "response": []
+        },
+        {
+          "name": "Kosongkan cart",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/cart",
+            "description": ""
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

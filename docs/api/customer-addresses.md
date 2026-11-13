@@ -1,5 +1,7 @@
 # API Alamat Customer dan Lokasi Everpro
 
+Postman: `base_url` lokal harus `http://127.0.0.1:8000/api/v1`. Endpoint ditambahkan setelah nilai ini. Environment aktif dapat menimpa variable Collection; lihat [pengaturan Postman](postman-setup.md).
+
 Base URL: `https://api.example.com/api/v1`. Ganti domain sesuai server.
 
 File impor: [Postman Collection alamat dan lokasi Everpro](../postman/customer-addresses.postman_collection.json). Isi variabel `base_url` dan `customer_token`. Request lokasi mengisi ID wilayah otomatis; request tambah alamat menyimpan `address_id` untuk update/hapus.

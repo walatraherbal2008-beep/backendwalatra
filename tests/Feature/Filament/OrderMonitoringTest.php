@@ -5,13 +5,16 @@ namespace Tests\Feature\Filament;
 use App\Filament\Resources\Orders\OrderResource;
 use App\Filament\Resources\Orders\Pages\ManageOrders;
 use App\Filament\Resources\Orders\Widgets\OrderStats;
+use App\Filament\Resources\PaymentCommunicationLogs\PaymentCommunicationLogResource;
 use App\Models\Order;
 use App\Models\OrderPayment;
+use App\Models\PaymentCommunicationLog;
 use App\Models\Store;
 use App\Models\StoreBundleListing;
 use App\Models\StoreProductListing;
 use App\Models\User;
 use App\Services\Marketplace\StoreTransactionReport;
+use Filament\Actions\Action;
 use Filament\Actions\Testing\TestAction;
 use Filament\Facades\Filament;
 use Illuminate\Database\Eloquent\Model;
@@ -241,7 +244,7 @@ class OrderMonitoringTest extends TestCase
         $this->assertSame(2, $this->summary($page)['total']);
     }
 
-    public function test_slide_over_shows_complete_order_but_never_raw_payment_payloads(): void
+    public function test_slide_over_shows_complete_order_and_sanitized_payment_payloads(): void
     {
         $a = Store::factory()->create(['name' => 'Toko A']);
         $b = Store::factory()->create(['name' => 'Toko B']);
@@ -256,6 +259,9 @@ class OrderMonitoringTest extends TestCase
         foreach (['Toko A', 'Toko B', 'Seluruh barang order', 'Penerima Monitor', 'Seluruh percobaan pembayaran'] as $text) {
             $this->assertStringContainsString($text, $detail);
         }
+        $this->assertStringContainsString('Request ke Midtrans', $detail);
+        $this->assertStringContainsString('Respons Midtrans', $detail);
+        $this->assertStringContainsString('Lihat log komunikasi Midtrans', $detail);
         $this->assertStringNotContainsString('DO-NOT-RENDER', $detail);
     }
 
@@ -527,5 +533,22 @@ class OrderMonitoringTest extends TestCase
         auth()->user()->update(['status' => 'inactive']);
         $page->call('refreshMonitoring')->assertForbidden();
         Http::assertNothingSent();
+    }
+
+    public function test_order_action_opens_only_its_communication_logs_without_sending_payment_requests(): void
+    {
+        $first = $this->order();
+        $second = $this->order();
+        foreach ([[$first, 'FIRST-ORDER-LOG'], [$second, 'SECOND-ORDER-LOG']] as [$order, $reference]) {
+            PaymentCommunicationLog::create(['order_id' => $order->id, 'environment' => 'sandbox', 'operation' => 'status',
+                'http_method' => 'GET', 'endpoint' => 'https://api.sandbox.midtrans.com/v2/'.$reference.'/status',
+                'provider_order_id' => $reference, 'outcome' => 'succeeded', 'http_status' => 200, 'requested_at' => now()]);
+        }
+        $url = PaymentCommunicationLogResource::getUrl('index', ['filters' => ['order' => ['value' => $first->id]]]);
+        Livewire::test(ManageOrders::class)
+            ->assertTableActionExists('viewPaymentLogs', fn (Action $action): bool => $action->getUrl() === $url, $first);
+        $this->get($url)->assertOk()->assertSee('FIRST-ORDER-LOG')->assertDontSee('SECOND-ORDER-LOG');
+        Http::assertNothingSent();
+        $this->assertDatabaseCount('payment_communication_logs', 2);
     }
 }

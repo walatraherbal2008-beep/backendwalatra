@@ -12,7 +12,9 @@ use App\Models\CartItem;
 use App\Services\Marketplace\CheckoutPricing;
 use App\Services\Marketplace\CheckoutShippingOrigin;
 use App\Services\Shipping\ShippingCostCalculator;
+use App\Support\CartItemAvailability;
 use App\Support\CartItemImage;
+use App\Support\CartSelection;
 use App\Support\CheckoutShipping;
 use App\Support\CheckoutSimulation;
 use App\Support\CheckoutStock;
@@ -36,8 +38,8 @@ class CheckoutController extends Controller
                 'items.variant.media',
                 'items.listing.media',
                 'items.bundleListing.media',
-                'items.listing.store',
-                'items.bundleListing.store',
+                'items.listing.store.owner.roles',
+                'items.bundleListing.store.owner.roles',
                 'items.bundleListing.bundle.items.variant.product.media',
                 'items.bundleListing.bundle.items.variant.media',
             ])
@@ -53,9 +55,10 @@ class CheckoutController extends Controller
             ], 422);
         }
 
-        if ($cart->items->contains(fn (CartItem $item): bool => ! $this->cartItemIsAvailable($item))) {
+        if ($cart->items->contains(fn (CartItem $item): bool => ! CartItemAvailability::available($item))) {
             return response()->json([
                 'success' => false,
+                'code' => 'STALE_CART',
                 'message' => 'Sebagian item cart sudah tidak tersedia. Silakan perbarui cart.',
             ], 409);
         }
@@ -102,6 +105,7 @@ class CheckoutController extends Controller
                 'checkout_token' => $availability['available'] ? $pricing->token($request->user()->id, $cart->items, $origin['warehouse_code']) : null,
                 'price_changed' => $priceChanges !== [],
                 'price_changes' => $priceChanges,
+                'selection' => CartSelection::summary($cart->items, $cart->items->modelKeys()),
                 'simulation' => CheckoutSimulation::enabled(),
                 'payment_required' => ! CheckoutSimulation::enabled(),
                 'payment_provider' => $manual ? 'manual' : (CheckoutSimulation::enabled() ? 'simulation' : 'midtrans'),
@@ -127,22 +131,6 @@ class CheckoutController extends Controller
                     : null,
             ],
         ], $availability['available'] ? 200 : 503);
-    }
-
-    private function cartItemIsAvailable(CartItem $item): bool
-    {
-        if ($item->isBundle()) {
-            return $item->bundleListing?->status === 'active'
-                && $item->bundleListing->store?->isEligibleForMarketplace()
-                && $item->bundleListing->bundle?->status === 'active'
-                && $item->bundleListing->bundle->isPurchasable();
-        }
-
-        return $item->listing?->status === 'active'
-            && $item->listing->store?->isEligibleForMarketplace()
-            && $item->listing->product?->status === 'active'
-            && $item->variant?->status === 'active'
-            && $item->variant->product?->status === 'active';
     }
 
     private function stockItems($items): array

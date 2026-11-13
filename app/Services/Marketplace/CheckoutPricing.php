@@ -58,11 +58,7 @@ class CheckoutPricing
     public function confirm(?string $token, int $userId, Collection $items, array $changes, ?string $warehouseCode = null): void
     {
         if ($token === null) {
-            if ($changes !== []) {
-                $this->conflict('PRICE_CHANGED', 'Harga barang berubah. Silakan tinjau ulang preview checkout.', ['price_changes' => $changes]);
-            }
-
-            return;
+            throw ValidationException::withMessages(['checkout_token' => 'Token checkout wajib diisi. Silakan buat preview baru.']);
         }
 
         try {
