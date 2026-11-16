@@ -79,7 +79,8 @@ class VariantsRelationManager extends RelationManager
                 TextInput::make('weight_grams')
                     ->label('Berat (gram)')
                     ->numeric()
-                    ->minValue(1)
+                    ->minValue(0)
+                    ->helperText('0 berarti berat belum diketahui. Aturan subsidi dengan batas berat tidak akan berlaku sampai berat diisi.')
                     ->required(),
                 Select::make('status')
                     ->label('Status')

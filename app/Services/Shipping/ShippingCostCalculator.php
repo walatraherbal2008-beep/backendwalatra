@@ -48,8 +48,10 @@ class ShippingCostCalculator
             ->orderByDesc('min_subtotal')
             ->get()
             ->first(function (ShippingSubsidyRule $rule) use ($province, $city, $district, $subDistrict, $weightGrams): bool {
-                if ($rule->max_weight_grams !== null && $weightGrams > $rule->max_weight_grams) {
-                    return false;
+                if ($rule->max_weight_grams !== null) {
+                    if ($weightGrams <= 0 || $weightGrams > $rule->max_weight_grams) {
+                        return false;
+                    }
                 }
 
                 return match ($rule->scope_type) {

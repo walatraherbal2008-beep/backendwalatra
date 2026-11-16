@@ -7,24 +7,22 @@ use App\Contracts\WarehouseStockProvider;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\CreateOrderRequest;
 use App\Http\Resources\Api\V1\OrderResource;
-use App\Models\Address;
 use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\Order;
 use App\Models\User;
 use App\Services\Marketplace\CheckoutPricing;
+use App\Services\Marketplace\CheckoutReview;
 use App\Services\Marketplace\CheckoutShippingOrigin;
 use App\Services\Marketplace\OrderImageSnapshots;
 use App\Services\Payments\OrderPayments;
 use App\Services\Shipping\ShippingCostCalculator;
 use App\Support\CartItemAvailability;
-use App\Support\CheckoutShipping;
 use App\Support\CheckoutSimulation;
 use App\Support\CheckoutStock;
 use App\Support\ManualCheckout;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -111,6 +109,7 @@ class OrderController extends Controller
         ShippingRateProvider $shipping,
         ShippingCostCalculator $shippingCosts,
         OrderImageSnapshots $snapshots,
+        CheckoutReview $review,
     ): OrderResource|JsonResponse {
         $idempotencyKey = trim((string) $request->header('Idempotency-Key'));
 
@@ -122,10 +121,10 @@ class OrderController extends Controller
         }
 
         try {
-            return DB::transaction(function () use ($request, $warehouse, $shipping, $shippingCosts, $idempotencyKey, $snapshots) {
+            return DB::transaction(function () use ($request, $warehouse, $shipping, $shippingCosts, $idempotencyKey, $snapshots, $review) {
                 User::query()->whereKey($request->user()->id)->lockForUpdate()->firstOrFail();
 
-                return $this->createFromCart($request, $warehouse, $shipping, $shippingCosts, $idempotencyKey, $snapshots);
+                return $this->createFromCart($request, $warehouse, $shipping, $shippingCosts, $idempotencyKey, $snapshots, $review);
             });
         } catch (\Throwable $exception) {
             $snapshots->discard();
@@ -140,6 +139,7 @@ class OrderController extends Controller
         ShippingCostCalculator $shippingCosts,
         string $idempotencyKey,
         OrderImageSnapshots $snapshots,
+        CheckoutReview $review,
     ): OrderResource|JsonResponse {
         $existing = Order::query()
             ->where('user_id', $request->user()->id)
@@ -160,34 +160,13 @@ class OrderController extends Controller
             ]);
         }
 
-        $shippingAddress = $request->validated('shipping_address');
-
-        if ($request->filled('address_id')) {
-            $shippingAddress = Address::query()
-                ->where('user_id', $request->user()->id)
-                ->findOrFail($request->integer('address_id'))
-                ->only([
-                    'label',
-                    'name',
-                    'phone',
-                    'province',
-                    'province_id',
-                    'province_name',
-                    'city',
-                    'city_id',
-                    'city_name',
-                    'district',
-                    'district_id',
-                    'district_name',
-                    'sub_district_id',
-                    'sub_district_name',
-                    'postal_code',
-                    'address',
-                    'address_note',
-                    'latitude',
-                    'longitude',
-                ]);
-        }
+        $addressContext = $review->address(
+            $request->user()->id,
+            $request->filled('address_id') ? $request->integer('address_id') : null,
+            $request->validated('shipping_address'),
+            lock: true,
+        );
+        $shippingAddress = $addressContext['snapshot'];
 
         $cart = Cart::query()
             ->where('user_id', $request->user()->id)
@@ -228,20 +207,26 @@ class OrderController extends Controller
         $pricing = app(CheckoutPricing::class);
         $priceChanges = $pricing->review($cart->items, lock: true);
         $origin = app(CheckoutShippingOrigin::class)->resolve($cart->items, lock: true);
-        $pricing->confirm($request->validated('checkout_token'), $request->user()->id, $cart->items, $priceChanges, $origin['warehouse_code']);
-
-        $stockItems = $this->stockItems($cart->items);
+        $stockItems = $review->stockItems($cart->items);
         $manual = ManualCheckout::enabled();
-        $shippingQuote = CheckoutShipping::quote($shipping, $shippingAddress, $stockItems);
-        $subtotal = (float) $cart->items->sum(
-            fn ($item): float => (float) $item->unit_price * $item->quantity,
-        );
-        $shippingCost = $shippingCosts->calculate(
-            $shippingQuote,
+        $checkoutQuote = $review->quote(
+            $shipping,
+            $shippingCosts,
             $shippingAddress,
-            $subtotal,
-            $this->weightGrams($cart->items),
+            $addressContext['fingerprint'],
+            $cart->items,
         );
+        $pricing->confirm(
+            $request->validated('checkout_token'),
+            $request->user()->id,
+            $cart->items,
+            $priceChanges,
+            $origin['warehouse_code'],
+            $checkoutQuote['fingerprint'],
+        );
+        $shippingQuote = $checkoutQuote['shipping_quote'];
+        $shippingCost = $checkoutQuote['shipping_cost'];
+        $subtotal = $checkoutQuote['subtotal'];
         $unlimitedStock = CheckoutStock::unlimited();
         $availability = $unlimitedStock ? ['available' => true, 'items' => []] : $warehouse->checkAvailability($stockItems);
 
@@ -352,41 +337,5 @@ class OrderController extends Controller
             'success' => true,
             'message' => 'Order berhasil dibuat.',
         ]);
-    }
-
-    /** @param Collection<int, CartItem> $items */
-    private function stockItems(Collection $items): array
-    {
-        return $items
-            ->flatMap(function (CartItem $item): Collection {
-                if (! $item->isBundle()) {
-                    return collect([['sku' => $item->variant->sku, 'quantity' => $item->quantity]]);
-                }
-
-                return $item->bundleListing->bundle->items->map(fn ($component): array => [
-                    'sku' => $component->variant->sku,
-                    'quantity' => $component->quantity * $item->quantity,
-                ]);
-            })
-            ->groupBy('sku')
-            ->map(fn (Collection $skuItems, string $sku): array => [
-                'sku' => $sku,
-                'quantity' => $skuItems->sum('quantity'),
-            ])
-            ->values()
-            ->all();
-    }
-
-    private function weightGrams(Collection $items): int
-    {
-        return (int) $items->sum(function (CartItem $item): int {
-            if ($item->isBundle()) {
-                return (int) $item->bundleListing->bundle->items->sum(
-                    fn ($component): int => (int) $component->variant->weight_grams * $component->quantity * $item->quantity,
-                );
-            }
-
-            return (int) $item->variant->weight_grams * $item->quantity;
-        });
     }
 }

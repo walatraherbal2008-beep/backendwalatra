@@ -114,11 +114,11 @@ Respons `200`, contoh satu produk:
 
 Token preview berlaku **15 menit**, terikat pada akun, pilihan item, quantity, harga, dan kode gudang. Preview tidak membuat order atau mereservasi stok. `price_changes` membandingkan harga master dengan harga yang tersimpan pada cart.
 
-Preview dapat dipanggil tanpa alamat, tetapi `shipping` dan `total` bernilai `null`. Sertakan alamat agar memperoleh total lengkap sebelum membuat order.
+Preview dapat dipanggil tanpa alamat untuk meninjau pilihan barang, tetapi `shipping`, `total`, dan `checkout_token` bernilai `null`. Sertakan alamat tujuan dan panggil preview lagi untuk memperoleh token yang dapat digunakan membuat order.
 
 ### Fungsi checkout_token untuk frontend
 
-`checkout_token` membuktikan bahwa backend sudah menerbitkan preview untuk akun dan isi checkout tertentu. Token wajib untuk order baru agar order tidak dibuat dari pilihan, jumlah, harga, atau gudang yang berbeda dari preview. Token tidak membuktikan user sudah menekan tombol setuju; frontend tetap harus menampilkan ringkasan dan meminta konfirmasi user.
+`checkout_token` membuktikan bahwa backend sudah menerbitkan preview untuk akun dan isi checkout tertentu. Token wajib untuk order baru agar order tidak dibuat dari pilihan, jumlah, harga, gudang, alamat, atau ongkir yang berbeda dari preview. Token tidak membuktikan user sudah menekan tombol setuju; frontend tetap harus menampilkan ringkasan dan meminta konfirmasi user.
 
 Contoh: user melihat harga Rp93.000 pada preview, lalu harga berubah sebelum order dibuat. Backend menolak token lama dengan `409 CHECKOUT_CHANGED`. Frontend mengambil preview baru dan menampilkan harga terbaru sebelum user mengonfirmasi kembali.
 
@@ -136,12 +136,12 @@ User tidak perlu melihat atau mengetik token. Frontend tidak membuat, mengubah, 
 |---|---|
 | `422` pada `checkout_token` | Token tidak ada/tidak valid/milik akun lain; ambil preview dari akun aktif. |
 | `409 CHECKOUT_EXPIRED` | Masa berlaku 15 menit habis; ambil preview baru. |
-| `409 CHECKOUT_CHANGED` | Pilihan, jumlah, harga, atau kode gudang berubah; ambil preview baru dan minta konfirmasi. |
+| `409 CHECKOUT_CHANGED` | Pilihan, jumlah, harga, gudang, alamat, atau ongkir berubah; ambil preview baru dan minta konfirmasi. |
 | Request order timeout | Pertahankan `Idempotency-Key` dan payload; retry dengan key yang sama agar tidak membuat order ganda. |
 
 **Bedakan tiga nilai:** Bearer token mengautentikasi customer; `checkout_token` memeriksa kesesuaian isi checkout; `Idempotency-Key` mencegah retry menghasilkan order tambahan. Token checkout bukan token pembayaran dan tidak menerbitkan VA/QRIS.
 
-**Batas perlindungan saat ini:** token memuat keterikatan akun, ID pilihan item, quantity, harga, dan kode gudang, tetapi belum mengikat alamat, ongkir, atau komposisi bundle. Karena itu frontend tetap perlu meminta preview ulang setelah perubahan alamat. Token tidak mengunci harga di database, mereservasi stok, atau menjamin stok fisik tersedia. Ketentuan ini berlaku pada mode manual maupun Midtrans; simulasi yang diaktifkan juga membutuhkan preview untuk order baru.
+Token mengikat akun, pilihan item, quantity, harga, kode gudang, snapshot alamat tujuan, rincian ongkir, subtotal, dan total yang ditampilkan pada preview. Jika alamat tersimpan berubah, request memakai alamat berbeda, atau hasil ongkir berubah sebelum pembuatan order, backend mengembalikan `409 CHECKOUT_CHANGED`; ambil preview baru dan minta persetujuan user kembali. Token belum mengikat komposisi komponen bundle, tidak mengunci harga di database, tidak mereservasi stok, dan tidak menjamin stok fisik tersedia. Ketentuan ini berlaku pada mode manual maupun Midtrans; simulasi yang diaktifkan juga membutuhkan preview untuk order baru.
 
 ## 2. Membuat order
 
@@ -348,7 +348,7 @@ Pembayaran terverifikasi melalui webhook/refresh dapat memperbarui order menjadi
 | `404` | Order atau alamat tidak ditemukan/milik akun lain |
 | `422` | Periksa key, alamat, pilihan item, atau token preview tidak valid; cart kosong juga menghasilkan `422` |
 | `422` pada `checkout_token` | Token wajib untuk order baru; token tidak valid harus diganti melalui preview baru |
-| `409 CHECKOUT_CHANGED` | Pilihan, quantity, harga, atau kode gudang berubah sejak preview; ambil token baru |
+| `409 CHECKOUT_CHANGED` | Pilihan, quantity, harga, gudang, alamat, atau rincian ongkir berubah sejak preview; ambil token baru dan minta konfirmasi ulang |
 | `409 CHECKOUT_EXPIRED` | Token preview melewati 15 menit; buat preview baru |
 | `409 STALE_CART` | Barang tidak lagi tersedia saat pembuatan order |
 | `409 WAREHOUSE_NOT_ASSIGNED` | Varian/komponen bundle belum memiliki titik pengiriman |

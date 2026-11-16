@@ -52,6 +52,17 @@ return [
         'server_key' => env('MIDTRANS_SERVER_KEY'),
         'client_key' => env('MIDTRANS_CLIENT_KEY'),
         'is_production' => (bool) env('MIDTRANS_IS_PRODUCTION', false),
+        'base_url' => rtrim((string) env(
+            'MIDTRANS_BASE_URL',
+            env('MIDTRANS_IS_PRODUCTION', false) ? 'https://api.midtrans.com' : 'https://api.sandbox.midtrans.com',
+        ), '/'),
+        'qr_allowed_hosts' => array_values(array_filter(array_map(
+            static fn (string $host): string => strtolower(trim($host)),
+            explode(',', (string) env(
+                'MIDTRANS_QR_ALLOWED_HOSTS',
+                env('MIDTRANS_IS_PRODUCTION', false) ? 'merchants-app.midtrans.com' : 'merchants-app.sbx.midtrans.com',
+            )),
+        ))),
         'timeout' => (int) env('MIDTRANS_TIMEOUT', 10),
         'methods' => array_filter(array_map('trim', explode(',', (string) env('MIDTRANS_PAYMENT_METHODS', 'bca_va,bni_va,bri_va,mandiri_bill,permata_va,qris')))),
         'qris_acquirer' => env('MIDTRANS_QRIS_ACQUIRER', 'gopay'),

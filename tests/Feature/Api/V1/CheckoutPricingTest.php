@@ -2,6 +2,8 @@
 
 namespace Tests\Feature\Api\V1;
 
+use App\Contracts\ShippingRateProvider;
+use App\Models\Address;
 use App\Models\CartItem;
 use App\Models\Order;
 use App\Models\ProductBundle;
@@ -12,6 +14,7 @@ use App\Models\StoreProductListing;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
+use Mockery;
 use Tests\Concerns\WithCheckoutWarehouse;
 use Tests\TestCase;
 
@@ -171,5 +174,61 @@ class CheckoutPricingTest extends TestCase
         $this->postJson('/api/v1/orders', [...$payload, 'checkout_token' => $token], ['Idempotency-Key' => 'reviewed-retry'])
             ->assertOk()->assertJsonPath('data.id', $orderId)->assertJsonPath('data.total', '30000.00');
         $this->assertSame(1, Order::query()->where('user_id', $owner->id)->count());
+    }
+
+    public function test_checkout_token_is_bound_to_direct_shipping_address(): void
+    {
+        [$item] = $this->addProduct();
+        $payload = $this->payload([$item->id]);
+        $token = $this->postJson('/api/v1/checkout/preview', $payload)->assertOk()->json('data.checkout_token');
+        $changed = $this->payload([$item->id]);
+        $changed['shipping_address']['address'] = 'Alamat yang belum ditinjau';
+
+        $this->postJson('/api/v1/orders', [...$changed, 'checkout_token' => $token], ['Idempotency-Key' => 'changed-address'])
+            ->assertStatus(409)->assertJsonPath('code', 'CHECKOUT_CHANGED');
+        $this->assertDatabaseCount('orders', 0);
+        $this->assertDatabaseCount('cart_items', 1);
+    }
+
+    public function test_checkout_token_is_bound_to_saved_address_snapshot(): void
+    {
+        [$item] = $this->addProduct();
+        $address = Address::query()->create([
+            'user_id' => auth()->id(), 'label' => 'Rumah', ...$this->payload([$item->id])['shipping_address'],
+        ]);
+        $payload = ['cart_item_ids' => [$item->id], 'address_id' => $address->id];
+        $token = $this->postJson('/api/v1/checkout/preview', $payload)->assertOk()->json('data.checkout_token');
+        $address->update(['address' => 'Alamat tersimpan diubah setelah preview']);
+
+        $this->postJson('/api/v1/orders', [...$payload, 'checkout_token' => $token], ['Idempotency-Key' => 'changed-saved-address'])
+            ->assertStatus(409)->assertJsonPath('code', 'CHECKOUT_CHANGED');
+        $this->assertDatabaseCount('orders', 0);
+    }
+
+    public function test_shipping_cost_change_after_preview_requires_new_confirmation(): void
+    {
+        config(['checkout.mode' => 'integrated', 'checkout.free_shipping' => false]);
+        [$item] = $this->addProduct();
+        $quotes = Mockery::mock(ShippingRateProvider::class);
+        $quotes->shouldReceive('quote')->once()->andReturn(['fee' => 5000, 'service' => 'REG', 'eta_days' => 3]);
+        $quotes->shouldReceive('quote')->once()->andReturn(['fee' => 9000, 'service' => 'REG', 'eta_days' => 3]);
+        $this->app->instance(ShippingRateProvider::class, $quotes);
+        $payload = $this->payload([$item->id]);
+        $preview = $this->postJson('/api/v1/checkout/preview', $payload)->assertOk()
+            ->assertJsonPath('data.shipping.fee', '5000.00')->assertJsonPath('data.total', '35000.00');
+
+        $this->postJson('/api/v1/orders', [...$payload, 'checkout_token' => $preview->json('data.checkout_token')], ['Idempotency-Key' => 'changed-shipping'])
+            ->assertStatus(409)->assertJsonPath('code', 'CHECKOUT_CHANGED');
+        $this->assertDatabaseCount('orders', 0);
+    }
+
+    public function test_preview_without_address_does_not_issue_an_orderable_checkout_token(): void
+    {
+        $this->addProduct();
+
+        $this->postJson('/api/v1/checkout/preview')->assertOk()
+            ->assertJsonPath('data.checkout_token', null)
+            ->assertJsonPath('data.shipping', null)
+            ->assertJsonPath('data.total', null);
     }
 }

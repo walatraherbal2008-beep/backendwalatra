@@ -8,6 +8,7 @@ use App\Http\Resources\Api\V1\OrderPaymentResource;
 use App\Jobs\ProcessMidtransNotification;
 use App\Models\Order;
 use App\Models\PaymentNotification;
+use App\Services\ExternalApiActivityLogger;
 use App\Services\Payments\OrderPayments;
 use App\Support\PaymentMethods;
 use Illuminate\Http\JsonResponse;
@@ -101,30 +102,57 @@ class PaymentController extends Controller
 
     public function webhook(Request $request): JsonResponse
     {
-        $data = $request->validate([
-            'order_id' => ['required', 'string', 'max:100'], 'status_code' => ['required', 'string', 'max:10'],
-            'gross_amount' => ['required', 'string', 'max:30'], 'signature_key' => ['required', 'string', 'size:128'],
-            'transaction_status' => ['required', 'string', 'max:30'], 'transaction_id' => ['sometimes', 'string', 'max:100'],
-            'fraud_status' => ['nullable', 'string', 'max:30'],
-        ]);
-        $key = (string) config('services.midtrans.server_key');
-        $signature = hash('sha512', $data['order_id'].$data['status_code'].$data['gross_amount'].$key);
-        if ($key === '' || ! hash_equals($signature, $data['signature_key'])) {
-            return response()->json(['success' => false, 'code' => 'INVALID_SIGNATURE', 'message' => 'Signature pembayaran tidak valid.'], 403);
-        }
-        ksort($data);
-        $hash = hash('sha256', PaymentMethods::environment().json_encode($data, JSON_THROW_ON_ERROR));
-        $notification = DB::transaction(fn () => PaymentNotification::firstOrCreate(['event_hash' => $hash], [
-            'provider_order_id' => $data['order_id'], 'environment' => PaymentMethods::environment(), 'payload' => $data,
-        ]));
-        if ($notification->processed_at === null) {
-            try {
-                ProcessMidtransNotification::dispatch($notification->id);
-            } catch (Throwable) {
-                // The durable inbox is retried by payments:reconcile even when the queue is unavailable.
-            }
-        }
+        $activityLogger = app(ExternalApiActivityLogger::class);
+        $started = hrtime(true);
+        $activity = $activityLogger->start(
+            'midtrans',
+            'Webhook notifikasi pembayaran',
+            $request->method(),
+            url('/api/v1/payments/midtrans/webhook'),
+            $request->all(),
+        );
 
-        return response()->json(['success' => true, 'message' => 'Webhook diterima.', 'code' => 'PAYMENT_WEBHOOK_ACCEPTED', 'data' => null]);
+        try {
+            $data = $request->validate([
+                'order_id' => ['required', 'string', 'max:100'], 'status_code' => ['required', 'string', 'max:10'],
+                'gross_amount' => ['required', 'string', 'max:30'], 'signature_key' => ['required', 'string', 'size:128'],
+                'transaction_status' => ['required', 'string', 'max:30'], 'transaction_id' => ['sometimes', 'string', 'max:100'],
+                'fraud_status' => ['nullable', 'string', 'max:30'],
+            ]);
+            $key = (string) config('services.midtrans.server_key');
+            $signature = hash('sha512', $data['order_id'].$data['status_code'].$data['gross_amount'].$key);
+            if ($key === '' || ! hash_equals($signature, $data['signature_key'])) {
+                $activityLogger->finish($activity, $started, 'failed', 403, ['code' => 'INVALID_SIGNATURE'], errorMessage: 'Signature notifikasi Midtrans tidak valid.');
+
+                return response()->json(['success' => false, 'code' => 'INVALID_SIGNATURE', 'message' => 'Signature pembayaran tidak valid.'], 403);
+            }
+            ksort($data);
+            $hash = hash('sha256', PaymentMethods::environment().json_encode($data, JSON_THROW_ON_ERROR));
+            $notification = DB::transaction(fn () => PaymentNotification::firstOrCreate(['event_hash' => $hash], [
+                'provider_order_id' => $data['order_id'], 'environment' => PaymentMethods::environment(), 'payload' => $data,
+            ]));
+            if ($notification->processed_at === null) {
+                try {
+                    ProcessMidtransNotification::dispatch($notification->id);
+                } catch (Throwable) {
+                    // The durable inbox is retried by payments:reconcile even when the queue is unavailable.
+                }
+            }
+
+            $result = ['success' => true, 'message' => 'Webhook diterima.', 'code' => 'PAYMENT_WEBHOOK_ACCEPTED', 'data' => null];
+            $activityLogger->finish($activity, $started, 'succeeded', 200, $result);
+
+            return response()->json($result);
+        } catch (Throwable $exception) {
+            $activityLogger->finish(
+                $activity,
+                $started,
+                $activityLogger->exceptionStatus($exception),
+                $exception instanceof \Illuminate\Validation\ValidationException ? 422 : null,
+                errorMessage: 'Webhook Midtrans tidak dapat diproses.',
+            );
+
+            throw $exception;
+        }
     }
 }

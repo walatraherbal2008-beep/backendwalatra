@@ -2,7 +2,7 @@
 
 Postman: `base_url` lokal harus `http://127.0.0.1:8000/api/v1`. Endpoint ditambahkan setelah nilai ini. Environment aktif dapat menimpa variable Collection; lihat [pengaturan Postman](postman-setup.md).
 
-Panduan integrasi frontend untuk menambahkan produk dan bundle ke satu cart, memilih barang yang dibeli, meninjau harga terbaru, lalu membuat order. Diperbarui mengikuti implementasi dan audit HTTP pada 12 November 2026.
+Panduan integrasi frontend untuk menambahkan produk dan bundle ke satu cart, memilih barang yang dibeli, meninjau harga terbaru, lalu membuat order. Diperbarui mengikuti implementasi dan audit HTTP pada 13 November 2026.
 
 Alur operasional memakai Midtrans Core API dan gratis ongkir: order baru berstatus `pending_payment`, ongkir `0.00`, dan pembayaran diverifikasi backend melalui Midtrans. Lihat [API pembayaran Midtrans](midtrans-core-payments.md) untuk VA, QRIS, dan webhook. Stok sementara dianggap tidak membatasi checkout. Titik pengiriman dipilih dari penetapan gudang pada varian; detail pengaturannya tersedia di [manajemen gudang](../warehouse-management.md).
 
@@ -310,7 +310,7 @@ Contoh respons 200 jika harga belum berubah:
 | `items` | Hanya item yang dipilih; kaitkan `cart_item_id` dengan `items[].id` dari cart untuk nama barang, varian, dan toko |
 | `price_changed` | Harga terbaru berbeda dari harga yang tersimpan pada cart |
 | `price_changes` | Rincian harga tersimpan dan harga terbaru untuk item terpilih |
-| `checkout_token` | Konfirmasi pilihan, quantity, harga, dan kode gudang asal; terikat akun dan berlaku 15 menit |
+| `checkout_token` | Konfirmasi pilihan, quantity, harga, gudang, snapshot alamat, ongkir, subtotal, dan total; terikat akun dan berlaku 15 menit |
 | `checkout_available` | Checkout dapat diajukan; pada mode manual bukan jaminan stok fisik sudah diperiksa |
 | `shipping_origin` | Titik pengiriman bersama untuk seluruh varian terpilih, termasuk komponen bundle |
 | `stock_mode` | `unlimited`: kuantitas stok tidak membatasi checkout; `external`: mengikuti pemeriksaan stok eksternal |
@@ -322,7 +322,7 @@ Jangan mengandalkan urutan array preview sama dengan cart. Gunakan ID untuk menc
 
 Preview membaca harga master terbaru, sehingga subtotalnya dapat berbeda dari subtotal cart. Harga produk memakai harga varian; harga bundle memakai harga tetap bundle. Preview tidak mengubah harga tersimpan, quantity, maupun isi cart dan tidak membuat order. Perubahan harga barang yang tidak dipilih tidak memengaruhi checkout ini.
 
-Preview boleh tanpa alamat dengan body `{"cart_item_ids": [12, 15]}`. Dalam kondisi tersebut, subtotal serta pemeriksaan item tetap tersedia, tetapi `shipping` dan `total` adalah `null`. Sebelum user mengonfirmasi pesanan, panggil preview lagi dengan alamat tujuan. Jika mengirim `shipping_address`, objek tidak boleh kosong dan field wajibnya harus lengkap.
+Preview boleh tanpa alamat dengan body `{"cart_item_ids": [12, 15]}`. Dalam kondisi tersebut, subtotal serta pemeriksaan item tetap tersedia, tetapi `shipping`, `total`, dan `checkout_token` adalah `null`. Panggil preview lagi dengan alamat tujuan sebelum user mengonfirmasi pesanan. Token dari preview beralamat mengikat snapshot alamat, ongkir, subtotal, dan total. Jika mengirim `shipping_address`, objek tidak boleh kosong dan field wajibnya harus lengkap.
 
 ### Jika harga berubah
 
@@ -357,7 +357,7 @@ Frontend menyimpan token sementara setelah preview, menampilkan ringkasannya, la
 
 - Buang token ketika pilihan, quantity, atau alamat berubah, lalu ambil preview baru. Pastikan respons preview lama yang terlambat tidak menggantikan hasil terbaru.
 - Token berlaku 15 menit. `CHECKOUT_EXPIRED` atau `CHECKOUT_CHANGED` memerlukan preview baru dan konfirmasi ulang. Token tidak ada, rusak, atau milik akun lain menghasilkan 422 pada field `checkout_token`.
-- Token belum mengikat alamat, ongkir, atau komposisi bundle. Preview ulang setelah perubahan alamat adalah tanggung jawab alur frontend; jangan mengasumsikan backend akan menolak token hanya karena alamat berubah.
+- Token mengikat snapshot alamat tujuan dan rincian ongkir; perubahan alamat atau nilai ongkir sejak preview menghasilkan `409 CHECKOUT_CHANGED`. Token belum mengikat komposisi komponen bundle, tidak mengunci harga di database, dan tidak mereservasi stok.
 - Bearer token digunakan untuk login; `checkout_token` untuk memeriksa isi checkout; `Idempotency-Key` untuk mencegah order ganda saat retry. Jika request order timeout, pertahankan key dan payload yang sama.
 
 Rincian penanganan tersedia pada [fungsi checkout_token untuk frontend](checkout-orders.md#fungsi-checkout_token-untuk-frontend).
@@ -467,7 +467,7 @@ Tidak semua endpoint memakai envelope error yang sama. Gunakan HTTP status sebag
 | 422 pada cart kosong | Tidak ada item untuk checkout | Arahkan ke cart/katalog |
 | 409 `STALE_CART` pada order | Item terpilih tidak aktif/tidak tersedia | Muat ulang cart dan perbarui pilihan |
 | 422 `VALIDATION_ERROR` pada `checkout_token` | Order baru tanpa token preview atau token tidak valid | Panggil preview dan kirim token asli dari respons |
-| 409 `CHECKOUT_CHANGED` | Isi pilihan, quantity, harga, atau gudang asal berbeda dari preview bertoken | Buat preview baru dan minta persetujuan user |
+| 409 `CHECKOUT_CHANGED` | Pilihan, quantity, harga, gudang, alamat, atau rincian ongkir berbeda dari preview bertoken | Buat preview baru dan minta persetujuan user |
 | 409 `WAREHOUSE_NOT_ASSIGNED` | Varian produk atau komponen bundle belum ditetapkan ke gudang | Tampilkan pesan server; admin perlu mengatur varian |
 | 409 `WAREHOUSE_MISMATCH` | Tidak ada satu gudang bersama untuk seluruh barang terpilih | Ubah pilihan barang atau perbaiki penetapan gudang |
 | 409 `WAREHOUSE_SELECTION_REQUIRED` | Ada beberapa gudang bersama tanpa pilihan prioritas server | Admin menentukan satu gudang atau mengisi konfigurasi prioritas |

@@ -46,17 +46,23 @@ class CheckoutPricing
         return $changes;
     }
 
-    public function token(int $userId, Collection $items, ?string $warehouseCode = null): string
+    public function token(int $userId, Collection $items, ?string $warehouseCode = null, array $checkoutContext = []): string
     {
         return Crypt::encryptString(json_encode([
             'user_id' => $userId,
             'expires_at' => now()->addMinutes(15)->timestamp,
-            'fingerprint' => $this->fingerprint($items, $warehouseCode),
+            'fingerprint' => $this->fingerprint($items, $warehouseCode, $checkoutContext),
         ], JSON_THROW_ON_ERROR));
     }
 
-    public function confirm(?string $token, int $userId, Collection $items, array $changes, ?string $warehouseCode = null): void
-    {
+    public function confirm(
+        ?string $token,
+        int $userId,
+        Collection $items,
+        array $changes,
+        ?string $warehouseCode = null,
+        array $checkoutContext = [],
+    ): void {
         if ($token === null) {
             throw ValidationException::withMessages(['checkout_token' => 'Token checkout wajib diisi. Silakan buat preview baru.']);
         }
@@ -76,23 +82,26 @@ class CheckoutPricing
             $this->conflict('CHECKOUT_EXPIRED', 'Preview checkout sudah kedaluwarsa. Silakan buat preview baru.');
         }
 
-        if (! hash_equals($payload['fingerprint'], $this->fingerprint($items, $warehouseCode))) {
-            $this->conflict('CHECKOUT_CHANGED', 'Pilihan barang, jumlah, harga, atau titik pengiriman berubah. Silakan tinjau ulang preview checkout.', ['price_changes' => $changes]);
+        if (! hash_equals($payload['fingerprint'], $this->fingerprint($items, $warehouseCode, $checkoutContext))) {
+            $this->conflict('CHECKOUT_CHANGED', 'Pilihan barang, jumlah, harga, alamat, ongkir, atau titik pengiriman berubah. Silakan tinjau ulang preview checkout.', ['price_changes' => $changes]);
         }
     }
 
-    private function fingerprint(Collection $items, ?string $warehouseCode): string
+    private function fingerprint(Collection $items, ?string $warehouseCode, array $checkoutContext): string
     {
-        return hash('sha256', json_encode($items->sortBy('id')->map(fn ($item): array => [
-            'id' => $item->id,
-            'type' => $item->item_type,
-            'listing_id' => $item->store_product_listing_id,
-            'bundle_listing_id' => $item->store_bundle_listing_id,
-            'variant_id' => $item->product_variant_id,
-            'quantity' => $item->quantity,
-            'unit_price' => $item->unit_price,
-            'warehouse_code' => $warehouseCode,
-        ])->values()->all(), JSON_THROW_ON_ERROR));
+        return hash('sha256', json_encode([
+            'items' => $items->sortBy('id')->map(fn ($item): array => [
+                'id' => $item->id,
+                'type' => $item->item_type,
+                'listing_id' => $item->store_product_listing_id,
+                'bundle_listing_id' => $item->store_bundle_listing_id,
+                'variant_id' => $item->product_variant_id,
+                'quantity' => $item->quantity,
+                'unit_price' => $item->unit_price,
+                'warehouse_code' => $warehouseCode,
+            ])->values()->all(),
+            'checkout_context' => $checkoutContext,
+        ], JSON_THROW_ON_ERROR));
     }
 
     private function conflict(string $code, string $message, ?array $data = null): never

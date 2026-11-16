@@ -3,6 +3,7 @@
 namespace App\Services\Shipping;
 
 use App\Exceptions\EverproUnavailableException;
+use App\Services\ExternalApiActivityLogger;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Throwable;
@@ -31,52 +32,79 @@ class EverproApiClient
             throw new EverproUnavailableException('Integrasi Everpro belum dikonfigurasi.');
         }
 
+        $baseUrl = rtrim((string) config('services.everpro.base_url'), '/');
+        $endpoint = $baseUrl.$path;
+        $token = $this->token();
+        $activityLogger = app(ExternalApiActivityLogger::class);
+        $started = hrtime(true);
+        $activity = $activityLogger->start('everpro', strtoupper($method).' '.$path, strtoupper($method), $endpoint, $method === 'get' ? $query : $payload);
+
         try {
-            $request = Http::baseUrl(rtrim((string) config('services.everpro.base_url'), '/'))
+            $request = Http::baseUrl($baseUrl)
                 ->acceptJson()
                 ->timeout((int) config('services.everpro.timeout', 10))
-                ->withToken($this->token());
+                ->withToken($token);
 
             $response = $method === 'get'
                 ? $request->get($path, $query)
                 : $request->post($path, $payload);
         } catch (Throwable $exception) {
+            $activityLogger->finish($activity, $started, $activityLogger->exceptionStatus($exception), exception: $exception);
             throw new EverproUnavailableException('API Everpro tidak dapat dihubungi.', 0, $exception);
         }
 
         if ($response->failed()) {
+            $activityLogger->finish($activity, $started, 'failed', $response->status(), $response->json(), errorMessage: 'API Everpro mengembalikan HTTP '.$response->status().'.');
             throw new EverproUnavailableException('API Everpro mengembalikan kegagalan.');
         }
 
-        return $response->json() ?? [];
+        $body = $response->json();
+        $activityLogger->finish($activity, $started, 'succeeded', $response->status(), is_array($body) ? $body : null);
+
+        return is_array($body) ? $body : [];
     }
 
     private function token(): string
     {
         return Cache::remember('everpro.access_token', now()->addMinutes(50), function (): string {
+            $baseUrl = rtrim((string) config('services.everpro.base_url'), '/');
+            $path = (string) config('services.everpro.token_path', '/auth/v1/token');
+            $activityLogger = app(ExternalApiActivityLogger::class);
+            $started = hrtime(true);
+            $activity = $activityLogger->start('everpro', 'Ambil access token', 'POST', $baseUrl.$path, [
+                'client_key' => config('services.everpro.client_key'),
+                'client_secret' => config('services.everpro.client_secret'),
+            ]);
+
             try {
-                $response = Http::baseUrl(rtrim((string) config('services.everpro.base_url'), '/'))
+                $response = Http::baseUrl($baseUrl)
                     ->acceptJson()
                     ->timeout((int) config('services.everpro.timeout', 10))
-                    ->post((string) config('services.everpro.token_path', '/auth/v1/token'), [
+                    ->post($path, [
                         'client_key' => config('services.everpro.client_key'),
                         'client_secret' => config('services.everpro.client_secret'),
                     ]);
             } catch (Throwable $exception) {
+                $activityLogger->finish($activity, $started, $activityLogger->exceptionStatus($exception), exception: $exception);
                 throw new EverproUnavailableException('Token Everpro tidak dapat diperoleh.', 0, $exception);
             }
 
             if ($response->failed()) {
+                $activityLogger->finish($activity, $started, 'failed', $response->status(), $response->json(), errorMessage: 'Endpoint token Everpro mengembalikan HTTP '.$response->status().'.');
                 throw new EverproUnavailableException('Token Everpro ditolak.');
             }
 
-            $token = data_get($response->json(), 'data.access_token')
-                ?? data_get($response->json(), 'data.token')
-                ?? data_get($response->json(), 'access_token');
+            $body = $response->json();
+            $token = data_get($body, 'data.access_token')
+                ?? data_get($body, 'data.token')
+                ?? data_get($body, 'access_token');
 
             if (! is_string($token) || $token === '') {
+                $activityLogger->finish($activity, $started, 'failed', $response->status(), is_array($body) ? $body : null, errorMessage: 'Response token Everpro tidak valid.');
                 throw new EverproUnavailableException('Response token Everpro tidak valid.');
             }
+
+            $activityLogger->finish($activity, $started, 'succeeded', $response->status(), is_array($body) ? $body : null);
 
             return $token;
         });

@@ -3,6 +3,7 @@
 namespace App\Services\Notifications;
 
 use App\Exceptions\OtpDeliveryException;
+use App\Services\ExternalApiActivityLogger;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -44,6 +45,14 @@ class MaxchatService
             'endpoint' => $baseUrl.'/api/send',
             'timeout' => config('services.maxchat.timeout'),
         ]);
+        $activityLogger = app(ExternalApiActivityLogger::class);
+        $started = hrtime(true);
+        $activity = $activityLogger->start('maxchat', 'Kirim OTP WhatsApp', 'GET', $baseUrl.'/api/send', [
+            'to' => $phone,
+            'type' => 'text',
+            'text' => '[Konten OTP disamarkan]',
+        ]);
+
         try {
             $response = Http::acceptJson()
                 ->withToken($token)
@@ -55,6 +64,7 @@ class MaxchatService
                     'text' => "Kode OTP Walatra Anda adalah {$code}. Kode berlaku selama 5 menit. Jangan bagikan kode ini kepada siapa pun.",
                 ]);
         } catch (ConnectionException $exception) {
+            $activityLogger->finish($activity, $started, $activityLogger->exceptionStatus($exception), exception: $exception);
             Log::channel('whatsapp')->warning('Response Maxchat tidak diketahui setelah koneksi timeout.', [
                 'phone' => $this->maskPhone($phone),
                 'exception' => $exception::class,
@@ -75,6 +85,7 @@ class MaxchatService
         ]);
 
         if (! $response->successful()) {
+            $activityLogger->finish($activity, $started, 'failed', $response->status(), $this->safeResponse($payload), errorMessage: 'Maxchat mengembalikan HTTP '.$response->status().'.');
             Log::channel('whatsapp')->error('Maxchat mengembalikan response gagal.', [
                 'phone' => $this->maskPhone($phone),
                 'http_status' => $response->status(),
@@ -104,6 +115,7 @@ class MaxchatService
         }
 
         if (in_array($status, ['failed', 'undelivered'], true)) {
+            $activityLogger->finish($activity, $started, 'failed', $response->status(), $this->safeResponse($payload), errorMessage: 'Maxchat melaporkan status pesan '.$status.'.');
             Log::channel('whatsapp')->error('Maxchat melaporkan OTP gagal dikirim.', [
                 'phone' => $this->maskPhone($phone),
                 'provider_status' => $status,
@@ -112,6 +124,8 @@ class MaxchatService
 
             throw new OtpDeliveryException('Layanan WhatsApp gagal mengirim OTP.');
         }
+
+        $activityLogger->finish($activity, $started, 'succeeded', $response->status(), $this->safeResponse($payload));
 
         Log::channel('whatsapp')->info('OTP diterima Maxchat untuk diproses.', [
             'phone' => $this->maskPhone($phone),
@@ -138,6 +152,14 @@ class MaxchatService
             return null;
         }
 
+        $activityLogger = app(ExternalApiActivityLogger::class);
+        $started = hrtime(true);
+        $endpoint = $baseUrl.'/api/messages/'.rawurlencode($messageId);
+        $activity = $activityLogger->start('maxchat', 'Cek status pesan', 'GET', $endpoint, [
+            'message_id' => $messageId,
+            'authorization' => 'Bearer [configured token]',
+        ]);
+
         try {
             $response = Http::acceptJson()
                 ->withToken($token)
@@ -145,6 +167,7 @@ class MaxchatService
                 ->timeout((int) config('services.maxchat.timeout', 30))
                 ->get($baseUrl.'/api/messages/'.rawurlencode($messageId));
         } catch (ConnectionException $exception) {
+            $activityLogger->finish($activity, $started, $activityLogger->exceptionStatus($exception), exception: $exception);
             Log::channel('whatsapp')->warning('Pengecekan status pesan Maxchat timeout.', [
                 'provider_message_id' => $messageId,
                 'exception' => $exception::class,
@@ -154,6 +177,11 @@ class MaxchatService
         }
 
         if (! $response->successful()) {
+            $providerResponse = $response->json();
+            $responsePayload = is_array($providerResponse)
+                ? $providerResponse
+                : ['raw_response' => $activityLogger->sanitizeResponseBody($response->body())];
+            $activityLogger->finish($activity, $started, 'failed', $response->status(), $responsePayload, errorMessage: 'Maxchat mengembalikan HTTP '.$response->status().'.');
             Log::channel('whatsapp')->warning('Pengecekan status pesan Maxchat gagal.', [
                 'provider_message_id' => $messageId,
                 'http_status' => $response->status(),
@@ -163,13 +191,21 @@ class MaxchatService
         }
 
         $payload = $response->json();
-        $payload = is_array($payload) ? $payload : [];
+        if (! is_array($payload)) {
+            $activityLogger->finish($activity, $started, 'failed', $response->status(), [
+                'raw_response' => $activityLogger->sanitizeResponseBody($response->body()),
+            ], errorMessage: 'Response status Maxchat bukan JSON yang valid.');
+
+            return null;
+        }
         $message = is_array($payload['data'] ?? null) ? $payload['data'] : $payload;
 
         Log::channel('whatsapp')->info('Status lanjutan pesan Maxchat diterima.', [
             'provider_message_id' => $messageId,
             'provider_status' => $message['status'] ?? null,
         ]);
+
+        $activityLogger->finish($activity, $started, 'succeeded', $response->status(), $this->safeResponse($message));
 
         return $this->safeResponse($message);
     }

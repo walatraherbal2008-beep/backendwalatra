@@ -49,12 +49,6 @@ class BannerResource extends Resource
                 ->label('Nama iklan')
                 ->required()
                 ->maxLength(255),
-            Select::make('position')
-                ->label('Area banner')
-                ->options(Banner::POSITIONS)
-                ->default('main')
-                ->required()
-                ->helperText('Pilih banner utama yang besar, area kanan atas, atau area kanan bawah.'),
             SpatieMediaLibraryFileUpload::make('image')
                 ->label('Gambar banner')
                 ->collection('image')
@@ -100,7 +94,7 @@ class BannerResource extends Resource
                 ->minValue(1)
                 ->default(100)
                 ->required()
-                ->helperText('Angka lebih kecil tampil lebih dahulu dalam area yang dipilih.'),
+                ->helperText('Angka lebih kecil tampil lebih dahulu dalam carousel.'),
         ]);
     }
 
@@ -119,11 +113,6 @@ class BannerResource extends Resource
                 TextColumn::make('status')
                     ->label('Status')
                     ->badge(),
-                TextColumn::make('position')
-                    ->label('Area banner')
-                    ->formatStateUsing(fn (string $state): string => Banner::POSITIONS[$state] ?? $state)
-                    ->badge()
-                    ->sortable(),
                 TextColumn::make('starts_at')
                     ->label('Mulai')
                     ->dateTime('d M Y H:i')
@@ -139,9 +128,6 @@ class BannerResource extends Resource
                     ->sortable(),
             ])
             ->filters([
-                SelectFilter::make('position')
-                    ->label('Area banner')
-                    ->options(Banner::POSITIONS),
                 SelectFilter::make('status')
                     ->label('Status')
                     ->options([

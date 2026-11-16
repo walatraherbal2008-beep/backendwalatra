@@ -31,9 +31,9 @@ class ProductVariant extends Model implements HasMedia
                 ]);
             }
 
-            if (! is_numeric($variant->weight_grams) || (int) $variant->weight_grams < 1) {
+            if (! is_numeric($variant->weight_grams) || (int) $variant->weight_grams < 0) {
                 throw ValidationException::withMessages([
-                    'weight_grams' => 'Berat varian minimal 1 gram.',
+                    'weight_grams' => 'Berat varian tidak boleh negatif. Gunakan 0 jika belum diketahui.',
                 ]);
             }
 

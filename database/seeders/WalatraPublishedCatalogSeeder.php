@@ -11,6 +11,8 @@ use App\Models\StoreBundleListing;
 use App\Models\StoreProductListing;
 use App\Models\User;
 use App\Services\Marketplace\StoreOwnerAssignmentService;
+use App\Support\WalatraOriginalProductCatalog;
+use App\Support\WalatraProductCategoryMap;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -20,7 +22,7 @@ use Spatie\Permission\PermissionRegistrar;
 
 class WalatraPublishedCatalogSeeder extends Seeder
 {
-    private const CATALOG_SOURCE = 'https://walatraherbal.com/assets/pdf/katalog-produk.pdf';
+    private const CATALOG_SOURCE = 'Daftar produk Walatra yang diberikan pengguna';
 
     private const STORE_EMAIL = 'toko1@mail.com';
 
@@ -38,7 +40,7 @@ class WalatraPublishedCatalogSeeder extends Seeder
             $store = $this->store($owner);
 
             foreach ($this->catalog() as $sortOrder => $productData) {
-                $product = $this->product($productData);
+                $product = $this->product($productData, $store);
 
                 $this->publishListing(
                     store: $store,
@@ -47,11 +49,12 @@ class WalatraPublishedCatalogSeeder extends Seeder
                 );
             }
 
+            $this->deactivateObsoleteCatalogProducts($store);
             $this->publishBundles($store);
         });
 
         $this->command?->newLine();
-        $this->command?->info('Katalog PDF Walatra berhasil diimpor dan dipublikasikan.');
+        $this->command?->info('Daftar produk dasar Walatra berhasil disinkronkan dan dipublikasikan.');
         $this->command?->info('Tiga paket bundle berhasil dibuat dan dipublikasikan.');
         $this->command?->line('Toko: Toko Herbal Abadi');
         $this->command?->line('Email admin toko: '.self::STORE_EMAIL);
@@ -100,7 +103,7 @@ class WalatraPublishedCatalogSeeder extends Seeder
 
         $store->fill([
             'name' => 'Toko Herbal Abadi',
-            'description' => 'Toko demo untuk pengujian katalog publik Walatra Herbal.',
+            'description' => 'Toko demo untuk pengujian katalog dasar Walatra Herbal.',
             'contact_email' => self::STORE_EMAIL,
             'status' => 'active',
             'email_verified_at' => $store->email_verified_at ?? now(),
@@ -122,41 +125,58 @@ class WalatraPublishedCatalogSeeder extends Seeder
      *     name: string,
      *     slug: string,
      *     code: string,
-     *     bpom_number: string,
+     *     bpom_number: ?string,
      *     categories: list<string>,
-     *     variants: list<array{name: string, sku: string, price: int, weight_grams: int, catalog_content: string}>
+     *     variants: list<array{name: string, sku: string, price: int, weight_grams: int, catalog_content: ?string}>
      * }  $data
      */
-    private function product(array $data): Product
+    private function product(array $data, Store $store): Product
     {
         $product = Product::withTrashed()
-            ->where('slug', $data['slug'])
-            ->orWhere('product_code', $data['code'])
+            ->where('product_code', $data['code'])
             ->first();
 
         if (! $product) {
+            $slugConflict = Product::withTrashed()
+                ->where('slug', $data['slug'])
+                ->first();
+
+            if ($slugConflict) {
+                $this->archiveProductConflict($slugConflict, $store, $data['slug']);
+            }
+
             $product = new Product;
             $product->forceFill(['product_code' => $data['code']]);
         } elseif ($product->trashed()) {
             $product->restore();
         }
 
-        if ($product->exists && $product->product_code !== $data['code']) {
-            $this->command?->warn(
-                "Produk {$data['name']} sudah memiliki kode {$product->product_code}; kode tersebut dipertahankan.",
-            );
+        $slugConflict = $product->exists
+            ? Product::withTrashed()
+                ->where('slug', $data['slug'])
+                ->where('id', '<>', $product->getKey())
+                ->first()
+            : null;
+
+        if ($slugConflict) {
+            $this->archiveProductConflict($slugConflict, $store, $data['slug']);
         }
 
         $product->forceFill([
             'name' => $data['name'],
             'slug' => $data['slug'],
-            'bpom_number' => $data['bpom_number'],
+            'bpom_number' => $data['bpom_number'] ?? $product->bpom_number,
             'status' => 'draft',
         ])->save();
 
         foreach ($data['variants'] as $variantData) {
             $this->variant($product, $variantData, count($data['variants']) === 1);
         }
+
+        ProductVariant::query()
+            ->where('product_id', $product->id)
+            ->whereNotIn('sku', array_column($data['variants'], 'sku'))
+            ->update(['status' => 'inactive']);
 
         $categoryIds = Category::query()
             ->whereIn('slug', $data['categories'])
@@ -175,8 +195,25 @@ class WalatraPublishedCatalogSeeder extends Seeder
         return $product->fresh(['variants', 'categories']);
     }
 
+    private function archiveProductConflict(Product $product, Store $store, string $canonicalSlug): void
+    {
+        $product->forceFill([
+            'slug' => $canonicalSlug.'-legacy-'.$product->id,
+            'status' => 'draft',
+        ])->save();
+
+        ProductVariant::query()
+            ->where('product_id', $product->id)
+            ->update(['status' => 'inactive']);
+
+        StoreProductListing::query()
+            ->where('store_id', $store->id)
+            ->where('product_id', $product->id)
+            ->update(['status' => 'inactive']);
+    }
+
     /**
-     * @param  array{name: string, sku: string, price: int, weight_grams: int, catalog_content: string}  $data
+     * @param  array{name: string, sku: string, price: int, weight_grams: int, catalog_content: ?string}  $data
      */
     private function variant(Product $product, array $data, bool $isOnlyVariant): ProductVariant
     {
@@ -215,15 +252,27 @@ class WalatraPublishedCatalogSeeder extends Seeder
             );
         }
 
+        $attributes = $variant->attributes ?? [];
+
+        if ($data['catalog_content'] !== null) {
+            $attributes['catalog_content'] = $data['catalog_content'];
+        }
+
+        $weightGrams = $data['weight_grams'] > 0
+            ? $data['weight_grams']
+            : (int) ($variant->weight_grams ?? 0);
+
+        $attributes['price_source'] = self::CATALOG_SOURCE;
+        if ($weightGrams === 0) {
+            $attributes['shipping_weight_status'] = 'unknown';
+            $attributes['shipping_weight_estimated'] = false;
+        }
+
         $variant->forceFill([
             'name' => $data['name'],
             'price' => $data['price'],
-            'weight_grams' => $data['weight_grams'],
-            'attributes' => [
-                'catalog_content' => $data['catalog_content'],
-                'catalog_source' => self::CATALOG_SOURCE,
-                'shipping_weight_estimated' => true,
-            ],
+            'weight_grams' => $weightGrams,
+            'attributes' => $attributes,
             'status' => 'active',
         ])->save();
 
@@ -253,6 +302,23 @@ class WalatraPublishedCatalogSeeder extends Seeder
             'sort_order' => $sortOrder,
             'published_at' => $listing->published_at ?? now(),
         ])->save();
+    }
+
+    private function deactivateObsoleteCatalogProducts(Store $store): void
+    {
+        $obsoleteProducts = Product::query()
+            ->whereIn('product_code', ['LMT', 'MHL', 'NOC'])
+            ->get();
+
+        foreach ($obsoleteProducts as $product) {
+            $product->forceFill(['status' => 'draft'])->save();
+            $product->variants()->update(['status' => 'inactive']);
+
+            StoreProductListing::query()
+                ->where('store_id', $store->id)
+                ->where('product_id', $product->id)
+                ->update(['status' => 'inactive']);
+        }
     }
 
     private function publishBundles(Store $store): void
@@ -345,9 +411,9 @@ class WalatraPublishedCatalogSeeder extends Seeder
                 'description' => 'Paket produk Walatra untuk kebutuhan keluarga.',
                 'price' => 350000,
                 'items' => [
-                    ['product_slug' => 'sehat-wanita', 'variant_name' => '50 Kapsul', 'quantity' => 1],
-                    ['product_slug' => 'madu-herbal-lambung-sehat', 'variant_name' => '250 gram', 'quantity' => 1],
-                    ['product_slug' => 'propolis-sm', 'variant_name' => '1 Box (7 Botol @ 6 ml)', 'quantity' => 1],
+                    ['product_slug' => 'sehat-wanita-50-kapsul', 'variant_name' => 'SEHAT WANITA 50 KAPSUL', 'quantity' => 1],
+                    ['product_slug' => 'kapsul-sehat-lambungku-30-kapsul', 'variant_name' => 'Kapsul Sehat Lambungku 30 kapsul', 'quantity' => 1],
+                    ['product_slug' => 'propolis-sm', 'variant_name' => 'PROPOLIS SM', 'quantity' => 1],
                 ],
             ],
             [
@@ -357,9 +423,9 @@ class WalatraPublishedCatalogSeeder extends Seeder
                 'description' => 'Paket produk Walatra untuk perawatan sendi dan otot.',
                 'price' => 300000,
                 'items' => [
-                    ['product_slug' => 'sendifit', 'variant_name' => '50 Kapsul', 'quantity' => 1],
-                    ['product_slug' => 'kapsul-oil-fit', 'variant_name' => '50 Kapsul', 'quantity' => 1],
-                    ['product_slug' => 'keloreena', 'variant_name' => '50 Kapsul', 'quantity' => 1],
+                    ['product_slug' => 'sendifit', 'variant_name' => 'SENDIFIT', 'quantity' => 1],
+                    ['product_slug' => 'oilfit', 'variant_name' => 'OILFIT', 'quantity' => 1],
+                    ['product_slug' => 'keloreena-50-kapsul', 'variant_name' => 'KELOREENA 50 KAPSUL', 'quantity' => 1],
                 ],
             ],
             [
@@ -369,127 +435,56 @@ class WalatraPublishedCatalogSeeder extends Seeder
                 'description' => 'Paket produk Walatra untuk mendukung daya tahan tubuh.',
                 'price' => 390000,
                 'items' => [
-                    ['product_slug' => 'qnc-jelly-gamat', 'variant_name' => '300 ml', 'quantity' => 1],
-                    ['product_slug' => 'bio-squalene', 'variant_name' => '30 Softgel', 'quantity' => 1],
-                    ['product_slug' => 'hexabumin', 'variant_name' => '130 ml', 'quantity' => 1],
+                    ['product_slug' => 'jelly-gamat-qnc', 'variant_name' => 'Jelly Gamat QnC', 'quantity' => 1],
+                    ['product_slug' => 'bio-squalen', 'variant_name' => 'BIO SQUALEN', 'quantity' => 1],
+                    ['product_slug' => 'hexabumin', 'variant_name' => 'Hexabumin', 'quantity' => 1],
                 ],
             ],
         ];
     }
 
     /**
-     * Harga, kode, isi, dan legalitas disalin dari Katalog Produk Walatra
-     * (versi PDF dengan metadata modifikasi 15 Februari 2025).
-     *
-     * Berat pengiriman tidak tersedia di PDF. Nilai weight_grams di bawah
-     * adalah estimasi operasional awal dan ditandai pada attributes varian.
+     * Identitas dan harga mengikuti daftar produk asli yang diberikan pengguna.
+     * Metadata yang tidak tersedia di daftar tidak ditebak.
      *
      * @return list<array{
      *     name: string,
      *     slug: string,
      *     code: string,
-     *     bpom_number: string,
+     *     bpom_number: ?string,
      *     categories: list<string>,
-     *     variants: list<array{name: string, sku: string, price: int, weight_grams: int, catalog_content: string}>
+     *     variants: list<array{name: string, sku: string, price: int, weight_grams: int, catalog_content: ?string}>
      * }>
      */
     private function catalog(): array
     {
-        return [
-            $this->catalogProduct('Albucare', 'albucare', 'ALB', 'TR233063621', ['nutrisi-dan-kebugaran', 'daya-tahan-tubuh'], [
-                $this->catalogVariant('100 Kapsul', 'SKU-WAL-ALB-100', 180000, 180, '100 Kapsul'),
-            ]),
-            $this->catalogProduct('Bio Squalene', 'bio-squalene', 'SQU', 'SD212334131', ['nutrisi-dan-kebugaran', 'daya-tahan-tubuh'], [
-                $this->catalogVariant('30 Softgel', 'SKU-WAL-SQU-30', 110000, 120, '30 Softgel'),
-            ]),
-            $this->catalogProduct('Garlic', 'garlic', 'GRC', 'TR193325651', ['daya-tahan-tubuh'], [
-                $this->catalogVariant('100 Kapsul', 'SKU-WAL-GRC-100', 147000, 180, '100 Kapsul'),
-            ]),
-            $this->catalogProduct('Sendifit', 'sendifit', 'IFI', 'TR233084841', ['sendi-dan-otot'], [
-                $this->catalogVariant('50 Kapsul', 'SKU-WAL-IFI-50', 117000, 100, '50 Kapsul'),
-            ]),
-            $this->catalogProduct('Kapsul Gamat Emas', 'kapsul-gamat-emas', 'KGE', 'TR233061561', ['pencernaan', 'daya-tahan-tubuh'], [
-                $this->catalogVariant('50 Kapsul', 'SKU-WAL-KGE-50', 135000, 150, '50 Kapsul'),
-            ]),
-            $this->catalogProduct('Limatta Sehat Mata', 'limatta-sehat-mata', 'LMT', 'TR193325531', ['kesehatan-mata'], [
-                $this->catalogVariant('30 Softgel', 'SKU-WAL-LMT-30', 150000, 120, '30 Softgel'),
-            ]),
-            $this->catalogProduct('Oil Fit', 'kapsul-oil-fit', 'OIL', 'TR233086041', ['nutrisi-dan-kebugaran'], [
-                $this->catalogVariant('50 Kapsul', 'SKU-WAL-OIL-50', 99500, 100, '50 Kapsul'),
-            ]),
-            $this->catalogProduct('Proskin', 'proskin', 'SKIN', 'TR213310581', ['kesehatan-kulit'], [
-                $this->catalogVariant('60 Kapsul', 'SKU-WAL-SKIN-60', 115000, 150, '60 Kapsul'),
-            ]),
-            $this->catalogProduct('Keloreena', 'keloreena', 'KLR', 'TR193332021', ['nutrisi-dan-kebugaran', 'kesehatan-mata'], [
-                $this->catalogVariant('50 Kapsul', 'SKU-WAL-KLRN-50', 87000, 100, '50 Kapsul'),
-                $this->catalogVariant('100 Kapsul', 'SKU-WAL-KLR-100', 155000, 180, '100 Kapsul'),
-            ]),
-            $this->catalogProduct('Sehat Wanita', 'sehat-wanita', 'WNT', 'TR173307361', ['kesehatan-wanita'], [
-                $this->catalogVariant('50 Kapsul', 'SKU-WAL-WNT-50', 117000, 100, '50 Kapsul'),
-                $this->catalogVariant('100 Kapsul', 'SKU-WAL-WBW-100', 199000, 180, '100 Kapsul'),
-            ]),
-            $this->catalogProduct('Hexabumin', 'hexabumin', 'HEX', 'TR183615831', ['nutrisi-dan-kebugaran', 'daya-tahan-tubuh'], [
-                $this->catalogVariant('130 ml', 'SKU-WAL-HEX-130ML', 87000, 350, '130 ml'),
-            ]),
-            $this->catalogProduct('KurmaQu', 'kurmaqu', 'AQU', 'MD866612001100', ['nutrisi-dan-kebugaran'], [
-                $this->catalogVariant('350 gram', 'SKU-WAL-AQU-350G', 60000, 450, '350 gram'),
-            ]),
-            $this->catalogProduct('Madu Herbal Lambung Sehat', 'madu-herbal-lambung-sehat', 'MHL', 'TR213611811', ['pencernaan'], [
-                $this->catalogVariant('250 gram', 'SKU-WAL-MHL-250G', 135000, 350, '250 gram'),
-            ]),
-            $this->catalogProduct('Minyak Sapu Jagat', 'minyak-sapu-jagat', 'SPJ', 'QD153613221', ['sendi-dan-otot'], [
-                $this->catalogVariant('110 ml', 'SKU-WAL-SPJ-110ML', 124000, 220, '110 ml'),
-            ]),
-            $this->catalogProduct('Natural Oud Facial Wash', 'natural-oud-facial-wash', 'NOC', 'NA18231201970', ['kesehatan-kulit'], [
-                $this->catalogVariant('50 ml', 'SKU-WAL-NOC-50ML', 150000, 120, '50 ml'),
-            ]),
-            $this->catalogProduct('Propolis SM', 'propolis-sm', 'PSM', 'TR193624961', ['daya-tahan-tubuh', 'pernapasan-dan-tenggorokan'], [
-                $this->catalogVariant('1 Box (7 Botol @ 6 ml)', 'SKU-WAL-PSM-7X6ML', 95000, 150, '1 box isi 7 botol @ 6 ml'),
-            ]),
-            $this->catalogProduct('QNC Jelly Gamat', 'qnc-jelly-gamat', 'QNC', 'TR173609991', ['daya-tahan-tubuh', 'sendi-dan-otot'], [
-                $this->catalogVariant('300 ml', 'SKU-WAL-QNC-300ML', 180000, 400, '300 ml'),
-            ]),
-            $this->catalogProduct('Kopi Radimax', 'radimax', 'RAD', 'TR193228081', ['vitalitas-pria'], [
-                $this->catalogVariant('10 Sachet @ 25 gram', 'SKU-WAL-RAD-10X25G', 150000, 350, '10 sachet @ 25 gram'),
-            ]),
-            $this->catalogProduct('Etaku Goat Milk', 'etaku-goat-milk', 'KAM', 'TR193227981', ['nutrisi-dan-kebugaran'], [
-                $this->catalogVariant('200 gram', 'SKU-WAL-KAM-200G', 80000, 500, '200 gram'),
-            ]),
-        ];
+        $categoryMap = WalatraProductCategoryMap::map();
+
+        return array_map(fn (array $product): array => [
+            'name' => $product['name'],
+            'slug' => $product['slug'],
+            'code' => $product['code'],
+            'bpom_number' => null,
+            'categories' => $categoryMap[$product['slug']] ?? [],
+            'variants' => [$this->catalogVariant(
+                $product['name'],
+                $product['sku'],
+                $product['price'],
+                0,
+                null,
+            )],
+        ], WalatraOriginalProductCatalog::products());
     }
 
     /**
-     * @param  list<string>  $categories
-     * @param  list<array{name: string, sku: string, price: int, weight_grams: int, catalog_content: string}>  $variants
-     * @return array{name: string, slug: string, code: string, bpom_number: string, categories: list<string>, variants: list<array{name: string, sku: string, price: int, weight_grams: int, catalog_content: string}>}
-     */
-    private function catalogProduct(
-        string $name,
-        string $slug,
-        string $code,
-        string $bpomNumber,
-        array $categories,
-        array $variants,
-    ): array {
-        return [
-            'name' => $name,
-            'slug' => $slug,
-            'code' => $code,
-            'bpom_number' => $bpomNumber,
-            'categories' => $categories,
-            'variants' => $variants,
-        ];
-    }
-
-    /**
-     * @return array{name: string, sku: string, price: int, weight_grams: int, catalog_content: string}
+     * @return array{name: string, sku: string, price: int, weight_grams: int, catalog_content: ?string}
      */
     private function catalogVariant(
         string $name,
         string $sku,
         int $price,
         int $weightGrams,
-        string $catalogContent,
+        ?string $catalogContent,
     ): array {
         return [
             'name' => $name,

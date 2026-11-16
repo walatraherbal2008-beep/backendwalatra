@@ -4,6 +4,7 @@ namespace App\Services\Warehouse;
 
 use App\Contracts\WarehouseStockProvider;
 use App\Exceptions\WarehouseUnavailableException;
+use App\Services\ExternalApiActivityLogger;
 use Illuminate\Support\Facades\Http;
 use Throwable;
 
@@ -50,21 +51,30 @@ class WarehouseApiStockProvider implements WarehouseStockProvider
     private function request(string $operation, array $payload): array
     {
         $path = (string) config('services.warehouse.paths.'.$operation);
+        $baseUrl = rtrim((string) config('services.warehouse.base_url'), '/');
+        $activityLogger = app(ExternalApiActivityLogger::class);
+        $started = hrtime(true);
+        $activity = $activityLogger->start('warehouse_stock', $operation, 'POST', $baseUrl.$path, $payload);
 
         try {
-            $response = Http::baseUrl(rtrim((string) config('services.warehouse.base_url'), '/'))
+            $response = Http::baseUrl($baseUrl)
                 ->withToken((string) config('services.warehouse.token'))
                 ->acceptJson()
                 ->timeout((int) config('services.warehouse.timeout', 10))
                 ->post($path, $payload);
         } catch (Throwable $exception) {
+            $activityLogger->finish($activity, $started, $activityLogger->exceptionStatus($exception), exception: $exception);
             throw new WarehouseUnavailableException('API gudang tidak dapat dihubungi.', 0, $exception);
         }
 
         if ($response->failed()) {
+            $activityLogger->finish($activity, $started, 'failed', $response->status(), $response->json(), errorMessage: 'API stok gudang mengembalikan HTTP '.$response->status().'.');
             throw new WarehouseUnavailableException('API gudang mengembalikan kegagalan.');
         }
 
-        return $response->json() ?? [];
+        $body = $response->json();
+        $activityLogger->finish($activity, $started, 'succeeded', $response->status(), is_array($body) ? $body : null);
+
+        return is_array($body) ? $body : [];
     }
 }
