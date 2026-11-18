@@ -301,7 +301,10 @@ class WalatraPublishedCatalogSeeder extends Seeder
             'status' => 'active',
             'sort_order' => $sortOrder,
             'published_at' => $listing->published_at ?? now(),
-        ])->save();
+        ]);
+        $listing->setRelation('product', $product);
+        $listing->setRelation('store', $store);
+        $listing->save();
     }
 
     private function deactivateObsoleteCatalogProducts(Store $store): void
@@ -383,7 +386,11 @@ class WalatraPublishedCatalogSeeder extends Seeder
                 'status' => 'active',
                 'sort_order' => $sortOrder + 1,
                 'published_at' => $listing->published_at ?? now(),
-            ])->save();
+            ]);
+            $bundle->load('items.variant.product');
+            $listing->setRelation('bundle', $bundle);
+            $listing->setRelation('store', $store);
+            $listing->save();
         }
     }
 

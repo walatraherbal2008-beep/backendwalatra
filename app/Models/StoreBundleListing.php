@@ -37,15 +37,14 @@ class StoreBundleListing extends Model implements HasMedia
                 return;
             }
 
-            $bundle = $listing->bundle()->with('items.variant.product')->first();
-            $store = $listing->store()->first();
-            $itemsAreAvailable = $bundle
-                && $bundle->items->isNotEmpty()
-                && $bundle->items->every(fn ($item): bool => $item->variant?->status === 'active'
-                    && $item->variant->product?->status === 'active'
-                );
+            $bundleIsAvailable = $listing->bundle()->where('status', 'active')
+                ->whereHas('items')
+                ->whereDoesntHave('items', fn ($items) => $items->whereDoesntHave('variant', fn ($variants) => $variants
+                    ->where('status', 'active')
+                    ->whereHas('product', fn ($products) => $products->where('status', 'active'))))
+                ->exists();
 
-            if (! $bundle || $bundle->status !== 'active' || ! $itemsAreAvailable || ! $store || $store->status !== 'active') {
+            if (! $bundleIsAvailable || ! $listing->store()->where('status', 'active')->exists()) {
                 throw ValidationException::withMessages([
                     'status' => 'Listing bundle hanya dapat diaktifkan jika bundle, seluruh komponen, dan toko aktif.',
                 ]);

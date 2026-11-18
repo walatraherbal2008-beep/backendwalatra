@@ -38,15 +38,10 @@ class StoreProductListing extends Model implements HasMedia
                 return;
             }
 
-            $product = $listing->product()->with('variants')->first();
-            $store = $listing->store()->first();
-
             if (
-                ! $product
-                || $product->status !== 'active'
-                || ! $product->variants->contains(fn (ProductVariant $variant): bool => $variant->status === 'active')
-                || ! $store
-                || $store->status !== 'active'
+                ! $listing->product()->where('status', 'active')
+                    ->whereHas('variants', fn ($query) => $query->where('status', 'active'))->exists()
+                || ! $listing->store()->where('status', 'active')->exists()
             ) {
                 throw ValidationException::withMessages([
                     'status' => 'Listing hanya dapat diaktifkan jika produk aktif, memiliki minimal satu varian aktif, dan toko aktif.',

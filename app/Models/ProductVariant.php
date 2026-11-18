@@ -94,7 +94,7 @@ class ProductVariant extends Model implements HasMedia
 
     protected static function generateUniqueSku(ProductVariant $variant): string
     {
-        $product = $variant->product()->first();
+        $product = $variant->product;
         $productKey = $product?->product_code ?: $product?->name ?: 'PRODUCT';
         $baseSku = 'SKU-WAL-'.Str::upper(Str::slug($productKey, '-')).'-'.Str::upper(Str::slug($variant->name, '-'));
         $sku = $baseSku;
