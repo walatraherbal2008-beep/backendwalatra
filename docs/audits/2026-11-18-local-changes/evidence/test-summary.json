@@ -1,0 +1,26 @@
+{
+  "baseline": {
+    "tests": "407",
+    "assertions": "3071",
+    "errors": "0",
+    "failures": "0",
+    "skipped": "0",
+    "time": "23.245100"
+  },
+  "final": {
+    "tests": "425",
+    "assertions": "3104",
+    "errors": "0",
+    "failures": "0",
+    "skipped": "0",
+    "time": "23.906920"
+  },
+  "integration": {
+    "tests": "3",
+    "assertions": "0",
+    "errors": "0",
+    "failures": "0",
+    "skipped": "3",
+    "time": "0.018673"
+  }
+}

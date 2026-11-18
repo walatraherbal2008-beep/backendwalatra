@@ -1,0 +1,40 @@
+PHPUnit 11.5.58 by Sebastian Bergmann and contributors.
+
+Runtime:       PHP 8.4.27
+Configuration: /home/popes/Project/backendwalatra-remote/phpunit.xml
+
+FFFFFFFFF                                                           9 / 9 (100%)
+
+Time: 00:00.532, Memory: 72.50 MB
+
+There were 9 failures:
+
+1) Tests\Feature\Models\ProductAvailabilityTest::test_product_activation_rejects_stale_preloaded_relations with data set #0 ('product')
+Failed asserting that exception of type "Illuminate\Validation\ValidationException" is thrown.
+
+2) Tests\Feature\Models\ProductAvailabilityTest::test_product_activation_rejects_stale_preloaded_relations with data set #1 ('variant')
+Failed asserting that exception of type "Illuminate\Validation\ValidationException" is thrown.
+
+3) Tests\Feature\Models\ProductAvailabilityTest::test_product_activation_rejects_stale_preloaded_relations with data set #2 ('store')
+Failed asserting that exception of type "Illuminate\Validation\ValidationException" is thrown.
+
+4) Tests\Feature\Models\ProductAvailabilityTest::test_product_activation_rejects_stale_preloaded_relations with data set #3 ('deleted_product')
+Failed asserting that exception of type "Illuminate\Validation\ValidationException" is thrown.
+
+5) Tests\Feature\Models\ProductAvailabilityTest::test_bundle_activation_rejects_stale_preloaded_relations with data set #0 ('bundle')
+Failed asserting that exception of type "Illuminate\Validation\ValidationException" is thrown.
+
+6) Tests\Feature\Models\ProductAvailabilityTest::test_bundle_activation_rejects_stale_preloaded_relations with data set #1 ('variant')
+Failed asserting that exception of type "Illuminate\Validation\ValidationException" is thrown.
+
+7) Tests\Feature\Models\ProductAvailabilityTest::test_bundle_activation_rejects_stale_preloaded_relations with data set #2 ('product')
+Failed asserting that exception of type "Illuminate\Validation\ValidationException" is thrown.
+
+8) Tests\Feature\Models\ProductAvailabilityTest::test_bundle_activation_rejects_stale_preloaded_relations with data set #3 ('store')
+Failed asserting that exception of type "Illuminate\Validation\ValidationException" is thrown.
+
+9) Tests\Feature\Models\ProductAvailabilityTest::test_bundle_activation_rejects_stale_preloaded_relations with data set #4 ('deleted_item')
+Failed asserting that exception of type "Illuminate\Validation\ValidationException" is thrown.
+
+FAILURES!
+Tests: 9, Assertions: 9, Failures: 9.

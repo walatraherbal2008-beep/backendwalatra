@@ -1,0 +1,243 @@
+{
+  "base": "2284c216fceb529e3f1f9201166d82562e5d3c65",
+  "head": "deb3ec4fc64d888a22370522ab7b4feaf8e0e6ce",
+  "reviewed_files": 58,
+  "commits_match_manifest": true,
+  "working_tree_clean_before_report": true,
+  "installed_versions_match_lock": true,
+  "diff_check_passed": true,
+  "files": [
+    {
+      "path": "composer.lock",
+      "sha256": "4ee8718ffee4a14eb003c9602106ad190f03dacb3a46a3cacf1aa127d1c704b6"
+    },
+    {
+      "path": "public/css/filament/filament/app.css",
+      "sha256": "7c64a0683e060d679a256555d6d99e3ac2385d8de26bec6841cc4d3494915256"
+    },
+    {
+      "path": "public/js/filament/actions/actions.js",
+      "sha256": "8400d0120bd171677c8cb9699bb36082772c67056f8c81ad97b2a9ab2893e7a8"
+    },
+    {
+      "path": "public/js/filament/filament/app.js",
+      "sha256": "e20c31ca2e55da8d51747424f619375a0888dbb500b3fa1232cbac06fa96dbae"
+    },
+    {
+      "path": "public/js/filament/forms/components/builder.js",
+      "sha256": "488ce8377600a3edfd1ebced5cf6924f7ae7ac01b4bee8196aa67443b89181a6"
+    },
+    {
+      "path": "public/js/filament/forms/components/checkbox-list.js",
+      "sha256": "a847e290c667fcf298fd5230ffd491e99852de4cdf75d241ca6a511a7b98a15e"
+    },
+    {
+      "path": "public/js/filament/forms/components/code-editor.js",
+      "sha256": "b143495c033d693bd388b5fb792e0ccaf0c320a10e6e5ed8d09647a511311c22"
+    },
+    {
+      "path": "public/js/filament/forms/components/color-picker.js",
+      "sha256": "73801523f0a2c2020fb1d221276b704fa63424767d520062e2eba061d80cf775"
+    },
+    {
+      "path": "public/js/filament/forms/components/date-time-picker.js",
+      "sha256": "be19040020f0ec6fa8d4b689df41c52b82c04fc5fd222abeea4ffcbadb123d4e"
+    },
+    {
+      "path": "public/js/filament/forms/components/file-upload.js",
+      "sha256": "2eb29183aac211baa231f36b15b3173b1a8596552530203d4f3d0e75f661d3f2"
+    },
+    {
+      "path": "public/js/filament/forms/components/js-field.js",
+      "sha256": "7ee53dc7bbd0eafcc69be811f07377c7a7185c4126fad961a2fe6cb528622555"
+    },
+    {
+      "path": "public/js/filament/forms/components/key-value.js",
+      "sha256": "fb9b8c2c93a209079ac746fa2e69e05dfd08bd4cae1c2001bec19d001dd3cb9e"
+    },
+    {
+      "path": "public/js/filament/forms/components/markdown-editor.js",
+      "sha256": "2a99bef8bd46d0e233833c3ef40ffe27167af7367423976ae86f7ac7b7cf628e"
+    },
+    {
+      "path": "public/js/filament/forms/components/repeater.js",
+      "sha256": "47174ac31c42104334dda24e7bd5835d5e682d03a3c79b71d905b5827a810ea2"
+    },
+    {
+      "path": "public/js/filament/forms/components/rich-editor.js",
+      "sha256": "e4dfcf3b2890c2d413096889557f8bcca627277b9930071337b7ae88860575bc"
+    },
+    {
+      "path": "public/js/filament/forms/components/select.js",
+      "sha256": "6d91553af00561f1f8b72c0b6c09ace6ad4c516b8cf8bf97102ea12c47fa9849"
+    },
+    {
+      "path": "public/js/filament/forms/components/slider.js",
+      "sha256": "129afc4d84fa83efd193d7620e7f695b90827cf5d53e38b3869af94c37d9e60b"
+    },
+    {
+      "path": "public/js/filament/forms/components/tags-input.js",
+      "sha256": "51104d2ae37b35e8fcafb9e4b0b5910a18f0713865fac7eea13d91d7ca370187"
+    },
+    {
+      "path": "public/js/filament/forms/components/text-input/password-reveal.js",
+      "sha256": "3ec263cf243077557155d8ceddc0e1ec3b7073419cb441ae79ea37e5506c8cc0"
+    },
+    {
+      "path": "public/js/filament/forms/components/textarea.js",
+      "sha256": "7cc3e9c69bec6c491977699c825c6cd14cf9a0926916fb7e258469b9705b9572"
+    },
+    {
+      "path": "public/js/filament/forms/components/toggle-buttons.js",
+      "sha256": "175e4d554046593cb33a6ab2968c361ef1389fd035301872526129484351131a"
+    },
+    {
+      "path": "public/js/filament/notifications/notifications.js",
+      "sha256": "176d56dce465e391b2af09c62ce06fd5e26b2e3971cc1e6000557b8ec8cd6029"
+    },
+    {
+      "path": "public/js/filament/schemas/components/js-component.js",
+      "sha256": "ff168d125f25241c8739e844232e2ebaf6cc3cc6da647bf9768eb019dfb866af"
+    },
+    {
+      "path": "public/js/filament/schemas/components/tabs.js",
+      "sha256": "7980d76e639739d258991ad58462cd3eba0f35c32b97ebfd02678b8d5397651c"
+    },
+    {
+      "path": "public/js/filament/schemas/components/wizard.js",
+      "sha256": "e3884816ba8c222ee9b863526804c737c3b5eb050ebbd0f55d8da07110daaa19"
+    },
+    {
+      "path": "public/js/filament/schemas/schemas.js",
+      "sha256": "f5b4106119d40cfd8142239ba8c4886eb417c9f70c61a7548cd7abadf924eb4c"
+    },
+    {
+      "path": "public/js/filament/support/support.js",
+      "sha256": "4a280855a5db7a79047b5ab0c4f67491b969fffd85bf0ccb1bafb6a32d55b492"
+    },
+    {
+      "path": "public/js/filament/tables/components/columns/checkbox.js",
+      "sha256": "d4dcd9df04f04a36ddd26fb3f95fff2bc915f9a31eee83c2339efc3787869336"
+    },
+    {
+      "path": "public/js/filament/tables/components/columns/select.js",
+      "sha256": "e66e1f2ac00cdb0ffd5c6b7ba5901f8af1b17995eca0c049ceddad22d160b972"
+    },
+    {
+      "path": "public/js/filament/tables/components/columns/text-input.js",
+      "sha256": "c58142905bea79bd1b7ea01748879e2f7f9893a196bb9e013f59c84d59e3de12"
+    },
+    {
+      "path": "public/js/filament/tables/components/columns/toggle.js",
+      "sha256": "725677f8617f009133a53df63d803e4a0fd12ad4abf9beeffc26b11547d1f43d"
+    },
+    {
+      "path": "public/js/filament/tables/tables.js",
+      "sha256": "7f02dd81ad001519513667f1e86deb319cf4ac82f48785253ad5b2bee93b5dfe"
+    },
+    {
+      "path": "public/js/filament/widgets/components/chart.js",
+      "sha256": "e626c994570cb9f4da98e46e69419f853b671e873be5f52811bbe280cbf93ee5"
+    },
+    {
+      "path": "public/js/filament/widgets/components/js-widget.js",
+      "sha256": "22e0b627ee8cdb3ede3fe867f0c76751e85232062b0f301c3bad2a284d124088"
+    },
+    {
+      "path": "public/js/filament/widgets/components/stats-overview/stat/chart.js",
+      "sha256": "c5cbc929b9bf3b8296591a9e9384c6022d47e8ae24f17d800c3fdbb5cd3c9439"
+    },
+    {
+      "path": "tests/Feature/Filament/BannerLinkTargetTest.php",
+      "sha256": "e1e0febd0d6116811b0f24293aea60c1dc2c4c9756d919ac91978de437ecc01d"
+    },
+    {
+      "path": ".env.example",
+      "sha256": "04508fe668516d1a2c5f676a76a33978da34377452cfeb2832a89ba4a3371928"
+    },
+    {
+      "path": ".env.production.example",
+      "sha256": "ae4aa9cb52063c2f1b04b447b0358867a44e83764ba70a8fb69bb21555ea44e5"
+    },
+    {
+      "path": "app/Http/Controllers/Api/V1/CustomerAuthController.php",
+      "sha256": "228a11c0b1efb6243ed9242284cb94db19d3ee6aab798ff483ad6b6feecad4fe"
+    },
+    {
+      "path": "app/Http/Controllers/Api/V1/PaymentController.php",
+      "sha256": "118b5c677dcef37c2092f88602c419c3de5d820598bca98fed232bfb9bae957f"
+    },
+    {
+      "path": "app/Http/Middleware/LimitPaymentWebhook.php",
+      "sha256": "a0ef85c2c7dd69e5ffa7d7d0207a94da62ebdc6d83dc1ad517758a241a562407"
+    },
+    {
+      "path": "app/Providers/AppServiceProvider.php",
+      "sha256": "b9249e32c6dedfdeb532eb71007ec779962e57cf5c78f5c564d0721a8b1b742b"
+    },
+    {
+      "path": "app/Services/ExternalApiActivityLogger.php",
+      "sha256": "8a022dac7dd0d1c1609c5bb0ea91ae174b46c65348425d13ea7db667219fd427"
+    },
+    {
+      "path": "app/Support/ClientIdentity.php",
+      "sha256": "16cf295aa4ad7d583d8ed2108d817e6456083721d5d862daf5740fa9406332dd"
+    },
+    {
+      "path": "app/Support/ProductionSecurity.php",
+      "sha256": "f857f095dc2d058c4b918a7b002048e99047f404a68cf33e62cc6f60f9a5c658"
+    },
+    {
+      "path": "config/security.php",
+      "sha256": "822bb89bce74094a96c50608b8aad3396ab5366e91e55ee11f99b9788f46f789"
+    },
+    {
+      "path": "docs/deployment/sysadmin-first-run.md",
+      "sha256": "c201f005a049aac4aaa81089f8b9d3deb800fd13bdcb4a47917925eed0870210"
+    },
+    {
+      "path": "routes/api.php",
+      "sha256": "5dcd99adff21f3a4b0080b62e503c63696a3d6dd9582c85df273d0c9c255dd6b"
+    },
+    {
+      "path": "routes/console.php",
+      "sha256": "581769d20050c667d4fb507f72af183b1658c447e2c8154ccbb35774b748f600"
+    },
+    {
+      "path": "tests/Feature/Api/V1/BridgeClientIdentityTest.php",
+      "sha256": "a33109424f1b1e0aab04bacd51424a352b75bb74984ee918bf541efd76b4e094"
+    },
+    {
+      "path": "tests/Feature/Api/V1/CustomerOtpAuthTest.php",
+      "sha256": "555f64ea6a39a2ecc500b2b0108ddf6c1857a5b5311727b61d242233b79719f6"
+    },
+    {
+      "path": "tests/Feature/Api/V1/SecurityLoggingTest.php",
+      "sha256": "5d0698deff53d2b57e63158d5c1134156a876d07fbf18ee23c6f4f45f0c0aa19"
+    },
+    {
+      "path": "tests/Feature/ProductionSecurityTest.php",
+      "sha256": "23e0dcb5b2fddf4e1b917ed8a74604bb8e64c744cc61f2f339d9f2b2f69d7de0"
+    },
+    {
+      "path": "app/Models/ProductVariant.php",
+      "sha256": "5709e60077a4590f7e8314b6d7d575227d5289fa0762d52373fd0311f7ac863c"
+    },
+    {
+      "path": "app/Models/StoreBundleListing.php",
+      "sha256": "ddbfa12c10389f1019cf7e3981d0eb22d219cb41c6724918e5584c4e97e7fce8"
+    },
+    {
+      "path": "app/Models/StoreProductListing.php",
+      "sha256": "cfdb82f1f080c085f5f874f22853d0c08d35ab23d8fca0de118812b093b383d2"
+    },
+    {
+      "path": "database/seeders/WalatraPublishedCatalogSeeder.php",
+      "sha256": "2608a2c795fb8b8dfb9174b294ce9df4a5ec74a6aee01eba5f783f60f7bfe118"
+    },
+    {
+      "path": "tests/Feature/Models/ProductAvailabilityTest.php",
+      "sha256": "80739737191c4fefc80238cf1bfebb1757be69cbd96307432ca3d6fa535bc2a5"
+    }
+  ]
+}

@@ -1,0 +1,254 @@
+[
+  {
+    "public": "public/js/filament/notifications/notifications.js",
+    "source": [
+      "vendor/filament/notifications/dist/index.js"
+    ],
+    "status": "match"
+  },
+  {
+    "public": "public/js/filament/forms/components/select.js",
+    "source": [
+      "vendor/filament/forms/dist/components/select.js"
+    ],
+    "status": "match"
+  },
+  {
+    "public": "public/js/filament/forms/components/key-value.js",
+    "source": [
+      "vendor/filament/forms/dist/components/key-value.js"
+    ],
+    "status": "match"
+  },
+  {
+    "public": "public/js/filament/forms/components/repeater.js",
+    "source": [
+      "vendor/filament/forms/dist/components/repeater.js"
+    ],
+    "status": "match"
+  },
+  {
+    "public": "public/js/filament/forms/components/date-time-picker.js",
+    "source": [
+      "vendor/filament/forms/dist/components/date-time-picker.js"
+    ],
+    "status": "match"
+  },
+  {
+    "public": "public/js/filament/forms/components/markdown-editor.js",
+    "source": [
+      "vendor/filament/forms/dist/components/markdown-editor.js"
+    ],
+    "status": "match"
+  },
+  {
+    "public": "public/js/filament/forms/components/code-editor.js",
+    "source": [
+      "vendor/filament/forms/dist/components/code-editor.js"
+    ],
+    "status": "match"
+  },
+  {
+    "public": "public/js/filament/forms/components/builder.js",
+    "source": [
+      "vendor/filament/forms/dist/components/builder.js"
+    ],
+    "status": "match"
+  },
+  {
+    "public": "public/js/filament/forms/components/color-picker.js",
+    "source": [
+      "vendor/filament/forms/dist/components/color-picker.js"
+    ],
+    "status": "match"
+  },
+  {
+    "public": "public/js/filament/forms/components/js-field.js",
+    "source": [
+      "vendor/filament/forms/dist/components/js-field.js"
+    ],
+    "status": "match"
+  },
+  {
+    "public": "public/js/filament/forms/components/slider.js",
+    "source": [
+      "vendor/filament/forms/dist/components/slider.js"
+    ],
+    "status": "match"
+  },
+  {
+    "public": "public/js/filament/forms/components/rich-editor.js",
+    "source": [
+      "vendor/filament/forms/dist/components/rich-editor.js"
+    ],
+    "status": "match"
+  },
+  {
+    "public": "public/js/filament/forms/components/checkbox-list.js",
+    "source": [
+      "vendor/filament/forms/dist/components/checkbox-list.js"
+    ],
+    "status": "match"
+  },
+  {
+    "public": "public/js/filament/forms/components/textarea.js",
+    "source": [
+      "vendor/filament/forms/dist/components/textarea.js"
+    ],
+    "status": "match"
+  },
+  {
+    "public": "public/js/filament/forms/components/toggle-buttons.js",
+    "source": [
+      "vendor/filament/forms/dist/components/toggle-buttons.js"
+    ],
+    "status": "match"
+  },
+  {
+    "public": "public/js/filament/forms/components/file-upload.js",
+    "source": [
+      "vendor/filament/forms/dist/components/file-upload.js"
+    ],
+    "status": "match"
+  },
+  {
+    "public": "public/js/filament/forms/components/tags-input.js",
+    "source": [
+      "vendor/filament/forms/dist/components/tags-input.js"
+    ],
+    "status": "match"
+  },
+  {
+    "public": "public/js/filament/forms/components/text-input/password-reveal.js",
+    "source": [
+      "vendor/filament/forms/dist/components/text-input/password-reveal.js"
+    ],
+    "status": "match"
+  },
+  {
+    "public": "public/js/filament/support/support.js",
+    "source": [
+      "vendor/filament/support/dist/index.js"
+    ],
+    "status": "match"
+  },
+  {
+    "public": "public/js/filament/tables/tables.js",
+    "source": [
+      "vendor/filament/tables/dist/index.js"
+    ],
+    "status": "match"
+  },
+  {
+    "public": "public/js/filament/tables/components/columns/text-input.js",
+    "source": [
+      "vendor/filament/tables/dist/components/columns/text-input.js"
+    ],
+    "status": "match"
+  },
+  {
+    "public": "public/js/filament/tables/components/columns/select.js",
+    "source": [
+      "vendor/filament/tables/dist/components/columns/select.js"
+    ],
+    "status": "match"
+  },
+  {
+    "public": "public/js/filament/tables/components/columns/checkbox.js",
+    "source": [
+      "vendor/filament/tables/dist/components/columns/checkbox.js"
+    ],
+    "status": "match"
+  },
+  {
+    "public": "public/js/filament/tables/components/columns/toggle.js",
+    "source": [
+      "vendor/filament/tables/dist/components/columns/toggle.js"
+    ],
+    "status": "match"
+  },
+  {
+    "public": "public/js/filament/widgets/components/js-widget.js",
+    "source": [
+      "vendor/filament/widgets/dist/components/js-widget.js"
+    ],
+    "status": "match"
+  },
+  {
+    "public": "public/js/filament/widgets/components/chart.js",
+    "source": [
+      "vendor/filament/widgets/dist/components/chart.js"
+    ],
+    "status": "match"
+  },
+  {
+    "public": "public/js/filament/widgets/components/stats-overview/stat/chart.js",
+    "source": [
+      "vendor/filament/widgets/dist/components/stats-overview/stat/chart.js"
+    ],
+    "status": "match"
+  },
+  {
+    "public": "public/js/filament/filament/echo.js",
+    "source": [
+      "vendor/filament/filament/dist/echo.js"
+    ],
+    "status": "match"
+  },
+  {
+    "public": "public/js/filament/filament/app.js",
+    "source": [
+      "vendor/filament/filament/dist/index.js"
+    ],
+    "status": "match"
+  },
+  {
+    "public": "public/js/filament/actions/actions.js",
+    "source": [
+      "vendor/filament/actions/dist/index.js"
+    ],
+    "status": "match"
+  },
+  {
+    "public": "public/js/filament/schemas/schemas.js",
+    "source": [
+      "vendor/filament/schemas/dist/index.js"
+    ],
+    "status": "match"
+  },
+  {
+    "public": "public/js/filament/schemas/components/tabs.js",
+    "source": [
+      "vendor/filament/schemas/dist/components/tabs.js"
+    ],
+    "status": "match"
+  },
+  {
+    "public": "public/js/filament/schemas/components/actions.js",
+    "source": [
+      "vendor/filament/schemas/dist/components/actions.js"
+    ],
+    "status": "match"
+  },
+  {
+    "public": "public/js/filament/schemas/components/js-component.js",
+    "source": [
+      "vendor/filament/schemas/dist/components/js-component.js"
+    ],
+    "status": "match"
+  },
+  {
+    "public": "public/js/filament/schemas/components/wizard.js",
+    "source": [
+      "vendor/filament/schemas/dist/components/wizard.js"
+    ],
+    "status": "match"
+  },
+  {
+    "public": "public/css/filament/filament/app.css",
+    "source": [
+      "vendor/filament/filament/dist/theme.css"
+    ],
+    "status": "match"
+  }
+]

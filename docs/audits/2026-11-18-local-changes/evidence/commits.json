@@ -1,0 +1,78 @@
+[
+  {
+    "sha": "6d1c5bdf6d43a113f1d8fbd290988b57d0be05bc",
+    "message": "chore: align dependency lockfile and published Filament assets",
+    "paths": [
+      "composer.lock",
+      "public/css/filament/filament/app.css",
+      "public/js/filament/actions/actions.js",
+      "public/js/filament/filament/app.js",
+      "public/js/filament/forms/components/builder.js",
+      "public/js/filament/forms/components/checkbox-list.js",
+      "public/js/filament/forms/components/code-editor.js",
+      "public/js/filament/forms/components/color-picker.js",
+      "public/js/filament/forms/components/date-time-picker.js",
+      "public/js/filament/forms/components/file-upload.js",
+      "public/js/filament/forms/components/js-field.js",
+      "public/js/filament/forms/components/key-value.js",
+      "public/js/filament/forms/components/markdown-editor.js",
+      "public/js/filament/forms/components/repeater.js",
+      "public/js/filament/forms/components/rich-editor.js",
+      "public/js/filament/forms/components/select.js",
+      "public/js/filament/forms/components/slider.js",
+      "public/js/filament/forms/components/tags-input.js",
+      "public/js/filament/forms/components/text-input/password-reveal.js",
+      "public/js/filament/forms/components/textarea.js",
+      "public/js/filament/forms/components/toggle-buttons.js",
+      "public/js/filament/notifications/notifications.js",
+      "public/js/filament/schemas/components/js-component.js",
+      "public/js/filament/schemas/components/tabs.js",
+      "public/js/filament/schemas/components/wizard.js",
+      "public/js/filament/schemas/schemas.js",
+      "public/js/filament/support/support.js",
+      "public/js/filament/tables/components/columns/checkbox.js",
+      "public/js/filament/tables/components/columns/select.js",
+      "public/js/filament/tables/components/columns/text-input.js",
+      "public/js/filament/tables/components/columns/toggle.js",
+      "public/js/filament/tables/tables.js",
+      "public/js/filament/widgets/components/chart.js",
+      "public/js/filament/widgets/components/js-widget.js",
+      "public/js/filament/widgets/components/stats-overview/stat/chart.js",
+      "tests/Feature/Filament/BannerLinkTargetTest.php"
+    ]
+  },
+  {
+    "sha": "52584a8794fb3dceb56ed52b0d3281927e28de7d",
+    "message": "fix: harden OTP bridge webhook and external activity logs",
+    "paths": [
+      ".env.example",
+      ".env.production.example",
+      "app/Http/Controllers/Api/V1/CustomerAuthController.php",
+      "app/Http/Controllers/Api/V1/PaymentController.php",
+      "app/Http/Middleware/LimitPaymentWebhook.php",
+      "app/Providers/AppServiceProvider.php",
+      "app/Services/ExternalApiActivityLogger.php",
+      "app/Support/ClientIdentity.php",
+      "app/Support/ProductionSecurity.php",
+      "config/security.php",
+      "docs/deployment/sysadmin-first-run.md",
+      "routes/api.php",
+      "routes/console.php",
+      "tests/Feature/Api/V1/BridgeClientIdentityTest.php",
+      "tests/Feature/Api/V1/CustomerOtpAuthTest.php",
+      "tests/Feature/Api/V1/SecurityLoggingTest.php",
+      "tests/Feature/ProductionSecurityTest.php"
+    ]
+  },
+  {
+    "sha": "deb3ec4fc64d888a22370522ab7b4feaf8e0e6ce",
+    "message": "fix: validate listing availability against current database state",
+    "paths": [
+      "app/Models/ProductVariant.php",
+      "app/Models/StoreBundleListing.php",
+      "app/Models/StoreProductListing.php",
+      "database/seeders/WalatraPublishedCatalogSeeder.php",
+      "tests/Feature/Models/ProductAvailabilityTest.php"
+    ]
+  }
+]

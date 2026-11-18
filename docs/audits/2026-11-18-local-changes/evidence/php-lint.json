@@ -1,0 +1,102 @@
+[
+  {
+    "path": "app/Http/Controllers/Api/V1/CustomerAuthController.php",
+    "exit_code": 0,
+    "output": "No syntax errors detected in app/Http/Controllers/Api/V1/CustomerAuthController.php\n"
+  },
+  {
+    "path": "app/Http/Controllers/Api/V1/PaymentController.php",
+    "exit_code": 0,
+    "output": "No syntax errors detected in app/Http/Controllers/Api/V1/PaymentController.php\n"
+  },
+  {
+    "path": "app/Http/Middleware/LimitPaymentWebhook.php",
+    "exit_code": 0,
+    "output": "No syntax errors detected in app/Http/Middleware/LimitPaymentWebhook.php\n"
+  },
+  {
+    "path": "app/Models/ProductVariant.php",
+    "exit_code": 0,
+    "output": "No syntax errors detected in app/Models/ProductVariant.php\n"
+  },
+  {
+    "path": "app/Models/StoreBundleListing.php",
+    "exit_code": 0,
+    "output": "No syntax errors detected in app/Models/StoreBundleListing.php\n"
+  },
+  {
+    "path": "app/Models/StoreProductListing.php",
+    "exit_code": 0,
+    "output": "No syntax errors detected in app/Models/StoreProductListing.php\n"
+  },
+  {
+    "path": "app/Providers/AppServiceProvider.php",
+    "exit_code": 0,
+    "output": "No syntax errors detected in app/Providers/AppServiceProvider.php\n"
+  },
+  {
+    "path": "app/Services/ExternalApiActivityLogger.php",
+    "exit_code": 0,
+    "output": "No syntax errors detected in app/Services/ExternalApiActivityLogger.php\n"
+  },
+  {
+    "path": "app/Support/ClientIdentity.php",
+    "exit_code": 0,
+    "output": "No syntax errors detected in app/Support/ClientIdentity.php\n"
+  },
+  {
+    "path": "app/Support/ProductionSecurity.php",
+    "exit_code": 0,
+    "output": "No syntax errors detected in app/Support/ProductionSecurity.php\n"
+  },
+  {
+    "path": "config/security.php",
+    "exit_code": 0,
+    "output": "No syntax errors detected in config/security.php\n"
+  },
+  {
+    "path": "database/seeders/WalatraPublishedCatalogSeeder.php",
+    "exit_code": 0,
+    "output": "No syntax errors detected in database/seeders/WalatraPublishedCatalogSeeder.php\n"
+  },
+  {
+    "path": "routes/api.php",
+    "exit_code": 0,
+    "output": "No syntax errors detected in routes/api.php\n"
+  },
+  {
+    "path": "routes/console.php",
+    "exit_code": 0,
+    "output": "No syntax errors detected in routes/console.php\n"
+  },
+  {
+    "path": "tests/Feature/Api/V1/BridgeClientIdentityTest.php",
+    "exit_code": 0,
+    "output": "No syntax errors detected in tests/Feature/Api/V1/BridgeClientIdentityTest.php\n"
+  },
+  {
+    "path": "tests/Feature/Api/V1/CustomerOtpAuthTest.php",
+    "exit_code": 0,
+    "output": "No syntax errors detected in tests/Feature/Api/V1/CustomerOtpAuthTest.php\n"
+  },
+  {
+    "path": "tests/Feature/Api/V1/SecurityLoggingTest.php",
+    "exit_code": 0,
+    "output": "No syntax errors detected in tests/Feature/Api/V1/SecurityLoggingTest.php\n"
+  },
+  {
+    "path": "tests/Feature/Filament/BannerLinkTargetTest.php",
+    "exit_code": 0,
+    "output": "No syntax errors detected in tests/Feature/Filament/BannerLinkTargetTest.php\n"
+  },
+  {
+    "path": "tests/Feature/Models/ProductAvailabilityTest.php",
+    "exit_code": 0,
+    "output": "No syntax errors detected in tests/Feature/Models/ProductAvailabilityTest.php\n"
+  },
+  {
+    "path": "tests/Feature/ProductionSecurityTest.php",
+    "exit_code": 0,
+    "output": "No syntax errors detected in tests/Feature/ProductionSecurityTest.php\n"
+  }
+]

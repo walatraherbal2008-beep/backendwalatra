@@ -1,0 +1,38 @@
+{
+  "project": "home-popes-Project-backendwalatra-remote",
+  "generation": "2026-11-18T01:10:41Z",
+  "path_total": 58,
+  "has_more": false,
+  "exceptions": [
+    {
+      "requested_path": "composer.lock",
+      "path": "composer.lock",
+      "status": "no_recorded_issue",
+      "freshness": "not_tracked",
+      "recommended_action": "read_source_and_reindex",
+      "coverage": []
+    },
+    {
+      "requested_path": "public/css/filament/filament/app.css",
+      "path": "public/css/filament/filament/app.css",
+      "status": "partial",
+      "freshness": "metadata_match",
+      "recommended_action": "read_ranges_and_verify_scope",
+      "coverage": [
+        {
+          "path": "public/css/filament/filament/app.css",
+          "kind": "parse_partial",
+          "match": "exact",
+          "ranges": [
+            {
+              "start": 2,
+              "end": 2
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "source_fallback": "composer.lock dibaca dan dibandingkan dengan lockfile HEAD awal serta vendor/composer/installed.json. Seluruh isi 36 aset Filament dibaca langsung dan dibandingkan byte-for-byte dengan dist dependency terpasang, termasuk CSS dengan parse_partial.",
+  "caveat": "Best-effort signal only. No recorded issue does not prove graph or source completeness; read flagged source and qualify claims when metadata is changed or unavailable."
+}

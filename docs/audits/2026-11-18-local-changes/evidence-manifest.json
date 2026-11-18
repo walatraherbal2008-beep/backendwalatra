@@ -1,0 +1,20 @@
+{
+  "README.md": "d0cd3e0fbdeb5f5e05c5f041ddf2b203af8d86c24b6e7f2d25b3cc303fce78b4",
+  "evidence/asset-verification.json": "c0d98c3987d417872ed35ace171ff683e4f78adcc399d86167764de724480071",
+  "evidence/baseline-tests.txt": "748ac274918f7f7a03461c0a5c6c88128a3393bd3e6a099ffe787985bb3f346d",
+  "evidence/commit-groups.json": "57ee72051026845fc7f07b9fd60de88a5683a06b5940d0586d8bcc74f23df141",
+  "evidence/commits.json": "739580035db248700f50382787821ffdfecf0c4871e2cc7119850b3e39802a7a",
+  "evidence/composer-audit.json": "e464a6f19a008d852b61fd0966a47b663d20d70ccfba0b30edd6483a787f15f5",
+  "evidence/composer-validate.txt": "43add299dc97ecbd90ec2dc456ef5a0bd824bb9abdae2a3d7cdb520e21f8e86d",
+  "evidence/dependency-changes.json": "67882be7af8987b4ed4adb199e69bbd28861d2bfbfd50034c686794be7fa18d6",
+  "evidence/final-build.txt": "6bd956ac8aab87f343171322b3c325802fc8cd4e3e98543b2335c99b0a9bdb49",
+  "evidence/final-style.txt": "cd1a94fc2cf6a965b86e1a4809d6c7fb9148b1ee374e1010ed2ac96ff4876ec2",
+  "evidence/final-tests.txt": "0d3f0e0ed8e8520ad5e635b45e31621df005b2d76dc44fe8aae77769f6692f70",
+  "evidence/index-coverage-summary.json": "c5b863e94601f844485aa9ae15d51e9602b1de41654816078184dd077aeb03c3",
+  "evidence/integration-tests.txt": "e0d605f3fe7a0a3f77dac0db0374157d60e6c4c7b36e879b5fb6c7607e4c65e9",
+  "evidence/php-lint.json": "1b71ca5088cbfea11c11a5afc41dd1afd5a0aae3f6c4efd7ee1b402b031788f4",
+  "evidence/post-commit-audit.json": "2c3e789c9da392a077319e13649c79c813ab8e035ccf390b65f1427c2e085ed0",
+  "evidence/stale-relations-green.txt": "bf4eb47fee1fe55f6841f5a1ec1900e961b9539bae7f0fc55a1ba4da3b7c2842",
+  "evidence/stale-relations-red.txt": "fbdb1827dcd014abcb3c5c508ef13695b4e6088aff9bf7d3e08efb743e42d150",
+  "evidence/test-summary.json": "93d1f9d934954e42753361fed90eeb9fc5de10f892cced3d5fbd0437cadcc73e"
+}

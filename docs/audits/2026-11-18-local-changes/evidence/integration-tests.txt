@@ -1,0 +1,22 @@
+PHPUnit 11.5.58 by Sebastian Bergmann and contributors.
+
+Runtime:       PHP 8.4.27
+Configuration: /home/popes/Project/backendwalatra-remote/phpunit.xml
+
+SSS                                                                 3 / 3 (100%)
+
+Time: 00:00.213, Memory: 48.50 MB
+
+There were 3 skipped tests:
+
+1) Tests\Integration\CartCheckoutConcurrencyTest::test_cart_mutations_wait_for_checkout_and_cannot_change_or_delete_its_snapshot
+Memerlukan database PostgreSQL khusus dengan prefix walatra_cart_concurrency_test_.
+
+2) Tests\Integration\CartCheckoutConcurrencyTest::test_master_product_and_bundle_price_updates_wait_until_order_is_committed
+Memerlukan database PostgreSQL khusus dengan prefix walatra_cart_concurrency_test_.
+
+3) Tests\Integration\CorePaymentConcurrencyTest::test_concurrent_payment_requests_cannot_issue_a_second_charge
+Memerlukan PostgreSQL khusus dengan prefix walatra_payment_concurrency_test_.
+
+OK, but some tests were skipped!
+Tests: 3, Assertions: 0, Skipped: 3.
