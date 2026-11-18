@@ -15,6 +15,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\Response;
 use Throwable;
 
@@ -104,13 +105,7 @@ class PaymentController extends Controller
     {
         $activityLogger = app(ExternalApiActivityLogger::class);
         $started = hrtime(true);
-        $activity = $activityLogger->start(
-            'midtrans',
-            'Webhook notifikasi pembayaran',
-            $request->method(),
-            url('/api/v1/payments/midtrans/webhook'),
-            $request->all(),
-        );
+        $activity = null;
 
         try {
             $data = $request->validate([
@@ -122,10 +117,9 @@ class PaymentController extends Controller
             $key = (string) config('services.midtrans.server_key');
             $signature = hash('sha512', $data['order_id'].$data['status_code'].$data['gross_amount'].$key);
             if ($key === '' || ! hash_equals($signature, $data['signature_key'])) {
-                $activityLogger->finish($activity, $started, 'failed', 403, ['code' => 'INVALID_SIGNATURE'], errorMessage: 'Signature notifikasi Midtrans tidak valid.');
-
                 return response()->json(['success' => false, 'code' => 'INVALID_SIGNATURE', 'message' => 'Signature pembayaran tidak valid.'], 403);
             }
+            $activity = $activityLogger->start('midtrans', 'Webhook notifikasi pembayaran', $request->method(), url('/api/v1/payments/midtrans/webhook'), $data);
             ksort($data);
             $hash = hash('sha256', PaymentMethods::environment().json_encode($data, JSON_THROW_ON_ERROR));
             $notification = DB::transaction(fn () => PaymentNotification::firstOrCreate(['event_hash' => $hash], [
@@ -148,7 +142,7 @@ class PaymentController extends Controller
                 $activity,
                 $started,
                 $activityLogger->exceptionStatus($exception),
-                $exception instanceof \Illuminate\Validation\ValidationException ? 422 : null,
+                $exception instanceof ValidationException ? 422 : null,
                 errorMessage: 'Webhook Midtrans tidak dapat diproses.',
             );
 

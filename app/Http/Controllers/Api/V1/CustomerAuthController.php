@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\RequestCustomerOtpRequest;
 use App\Http\Requests\Api\V1\VerifyCustomerOtpRequest;
 use App\Services\Auth\OtpService;
+use App\Support\ClientIdentity;
 use Illuminate\Http\JsonResponse;
 
 class CustomerAuthController extends Controller
@@ -18,7 +19,7 @@ class CustomerAuthController extends Controller
         $result = $otpService->issue(
             phone: $request->string('phone')->toString(),
             purpose: 'customer_login',
-            ip: $request->ip(),
+            ip: ClientIdentity::ip($request),
             userAgent: $request->userAgent(),
         );
 
@@ -53,7 +54,7 @@ class CustomerAuthController extends Controller
             challengeId: $request->integer('challenge_id'),
             otp: $request->string('otp')->toString(),
             deviceName: $request->string('device_name')->toString(),
-            ip: $request->ip(),
+            ip: ClientIdentity::ip($request),
             userAgent: $request->userAgent(),
         );
 

@@ -22,7 +22,9 @@ use App\Services\Warehouse\SimulatedWarehouseStockProvider;
 use App\Services\Warehouse\UnavailableWarehouseStockProvider;
 use App\Services\Warehouse\WarehouseApiStockProvider;
 use App\Support\CheckoutSimulation;
+use App\Support\ClientIdentity;
 use App\Support\PhoneNumber;
+use App\Support\ProductionSecurity;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -82,6 +84,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        ProductionSecurity::check();
+        RateLimiter::for('payment-webhook', fn ($request) => Limit::perMinute(300)->by('webhook:'.$request->ip()));
         RateLimiter::for('payment-create', fn ($request) => Limit::perMinute(10)->by('payment-create:'.$request->user()?->id.':'.$request->route('order')));
         RateLimiter::for('payment-refresh', fn ($request) => Limit::perMinute(12)->by('payment-refresh:'.$request->user()?->id.':'.$request->route('order')));
         Product::observe(ProductObserver::class);
@@ -107,11 +111,11 @@ class AppServiceProvider extends ServiceProvider
 
             return [
                 // perMinute(maximum requests, duration in minutes).
-                Limit::perMinute(10, 1)
+                Limit::perMinute(max(1, (int) config('security.otp_request_phone_limit', 10)), 1)
                     ->by('phone:'.$phoneKey)
                     ->response($throttledResponse),
-                Limit::perMinute(20, 15)
-                    ->by('ip:'.$request->ip())
+                Limit::perMinute(max(1, (int) config('security.otp_request_ip_limit', 20)), 15)
+                    ->by('ip:'.ClientIdentity::ip($request))
                     ->response($throttledResponse),
             ];
         });
@@ -124,10 +128,10 @@ class AppServiceProvider extends ServiceProvider
 
             return [
                 Limit::perMinutes(5, 10)->by(
-                    'challenge:'.$challengeKey.'|'.$request->ip(),
+                    'challenge:'.$challengeKey.'|'.ClientIdentity::ip($request),
                 )->response($throttledResponse),
-                Limit::perMinutes(5, 30)->by(
-                    'ip:'.$request->ip(),
+                Limit::perMinutes(5, max(1, (int) config('security.otp_verify_ip_limit', 30)))->by(
+                    'ip:'.ClientIdentity::ip($request),
                 )->response($throttledResponse),
             ];
         });

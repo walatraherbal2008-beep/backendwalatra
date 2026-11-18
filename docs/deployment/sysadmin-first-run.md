@@ -82,6 +82,8 @@ DB_USERNAME=walatra_app
 DB_PASSWORD=<PASSWORD_DATABASE>
 
 SESSION_DRIVER=database
+SESSION_SECURE_COOKIE=true
+FRONTEND_BRIDGE_SECRET=<SECRET_ACAK_MINIMAL_32_KARAKTER>
 CACHE_STORE=redis
 QUEUE_CONNECTION=redis
 REDIS_HOST=127.0.0.1
@@ -109,6 +111,14 @@ EVERPRO_ENABLED=false
 ```
 
 Jangan mengaktifkan `OTP_EXPOSE_CODE` di production dan jangan menyimpan token pihak ketiga di repository.
+
+Gunakan `.env.production.example` sebagai pelengkap `.env.example`, bukan pengganti seluruh konfigurasi. Aplikasi menolak boot pada `APP_ENV=production` jika debug atau exposure OTP aktif, secure cookie belum bernilai `true`, atau secret bridge kurang dari 32 karakter. Lengkapi nilai ini sebelum menjalankan perintah Artisan dalam mode production.
+
+Buat secret bridge menggunakan generator kriptografis di lingkungan server yang aman. Simpan nilai yang sama pada backend dan proses server frontend yang meneruskan request OTP. Jangan kirim secret ke browser atau memasukkannya ke variabel frontend publik.
+
+Bridge mengirim `X-Walatra-Client-IP`, `X-Walatra-Client-Time` (Unix timestamp dalam detik), dan `X-Walatra-Client-Signature`. Signature berupa HMAC-SHA256 heksadesimal lowercase atas `timestamp + "\n" + ip + "\n" + method + "\n" + path`, menggunakan secret bridge. Method harus sama dengan request backend (misalnya `POST`) dan path menyertakan `/api/v1` tanpa query string. Backend menerima selisih waktu maksimal 30 detik; sinkronkan jam kedua server. Header tidak valid menggunakan IP koneksi sebagai fallback. Request langsung tanpa bridge tetap didukung dengan IP koneksi tersebut.
+
+Konfigurasi tambahan tersedia pada `.env.example`: batas request OTP per nomor dan IP, batas verifikasi OTP per IP, batas ukuran webhook, serta retensi log API eksternal. Nilai bawaan retensi log adalah 30 hari. Scheduler menjalankan `logs:prune-external` setiap hari. Periksa dampak dengan `php artisan logs:prune-external --dry-run`; sanitasi log lama dapat ditinjau dengan `php artisan logs:sanitize-external --dry-run` sebelum menjalankan tanpa opsi tersebut.
 
 ## 4. Database dan Superadmin
 
@@ -250,6 +260,7 @@ Jangan mencetak atau menyimpan OTP production di command history maupun log.
 
 - [ ] `APP_DEBUG=false` dan `APP_URL` memakai HTTPS.
 - [ ] `OTP_EXPOSE_CODE=false`.
+- [ ] `SESSION_SECURE_COOKIE=true` dan secret bridge minimal 32 karakter sudah disiapkan pada proses server yang memerlukannya.
 - [ ] Database production dan credential sudah benar.
 - [ ] Redis aktif dan dapat diakses aplikasi.
 - [ ] Horizon aktif pada queue `otp` dan `default`.

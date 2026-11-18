@@ -16,7 +16,7 @@ class ExternalApiActivityLogger
                 'service' => $service,
                 'operation' => $operation,
                 'http_method' => strtoupper($method),
-                'endpoint' => Str::limit($endpoint, 1024, ''),
+                'endpoint' => $this->sanitizeText($endpoint),
                 'correlation_id' => (string) Str::uuid(),
                 'status' => 'running',
                 'request_payload' => $this->sanitizePayload($payload),
@@ -82,7 +82,7 @@ class ExternalApiActivityLogger
         return Str::limit($body, 4096, '…');
     }
 
-    private function sanitizePayload(?array $payload): ?array
+    public function sanitizePayload(?array $payload): ?array
     {
         if ($payload === null) {
             return null;
@@ -107,7 +107,7 @@ class ExternalApiActivityLogger
             return '[REDACTED]';
         }
 
-        if ($key !== null && in_array(strtolower($key), ['phone', 'mobile', 'email', 'address', 'fulladdr', 'to', 'recipient_name', 'customer_name', 'full_name', 'first_name', 'last_name', 'text', 'message'], true)) {
+        if ($key !== null && in_array(strtolower($key), ['phone', 'mobile', 'email', 'address', 'address_note', 'street', 'postal_code', 'fulladdr', 'to', 'name', 'realname', 'recipient_name', 'customer_name', 'full_name', 'first_name', 'last_name', 'text', 'message', 'latitude', 'longitude', 'lat', 'lng', 'lon', 'coordinates'], true)) {
             return '[REDACTED]';
         }
 
@@ -122,16 +122,22 @@ class ExternalApiActivityLogger
         }
 
         if (is_string($value)) {
-            return Str::limit($value, 4096, '…');
+            return $this->sanitizeText($value);
         }
 
         return is_scalar($value) || $value === null ? $value : '[UNSUPPORTED VALUE]';
     }
 
-    private function sanitizeText(?string $value): ?string
+    public function sanitizeText(?string $value): ?string
     {
         if ($value === null || trim($value) === '') {
             return null;
+        }
+        foreach (['maxchat.api_token', 'everpro.client_key', 'everpro.client_secret', 'midtrans.server_key', 'midtrans.client_key', 'warehouse.token', 'shipping.token'] as $key) {
+            $secret = config('services.'.$key);
+            if (is_string($secret) && strlen($secret) >= 8) {
+                $value = str_replace([$secret, base64_encode($secret.':')], '[REDACTED]', $value);
+            }
         }
 
         $value = preg_replace('/(bearer\s+)[^\s,;]+/i', '$1[REDACTED]', $value) ?? $value;

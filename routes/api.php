@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\V1\ShippingLocationController;
 use App\Http\Controllers\Api\V1\StoreOnboardingController;
 use App\Http\Controllers\Api\V1\WarehouseController;
 use App\Http\Middleware\EnsureUserIsActive;
+use App\Http\Middleware\LimitPaymentWebhook;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function (): void {
@@ -67,6 +68,7 @@ Route::prefix('v1')->group(function (): void {
     });
 
     Route::post('/payments/midtrans/webhook', [PaymentController::class, 'webhook'])
+        ->middleware([LimitPaymentWebhook::class, 'throttle:payment-webhook'])
         ->name('payments.midtrans.webhook');
     Route::post(
         '/auth/customer/request-otp',

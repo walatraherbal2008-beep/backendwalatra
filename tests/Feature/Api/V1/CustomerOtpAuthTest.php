@@ -519,7 +519,7 @@ class CustomerOtpAuthTest extends TestCase
     public function test_request_limit_by_ip_cannot_be_bypassed_by_changing_phone(): void
     {
         $this->freezeSecond();
-        for ($number = 0; $number < 5; $number++) {
+        for ($number = 0; $number < 20; $number++) {
             $this->postJson('/api/v1/auth/customer/request-otp', [
                 'phone' => '08123456'.str_pad((string) $number, 3, '0', STR_PAD_LEFT),
             ])->assertOk();
@@ -533,7 +533,7 @@ class CustomerOtpAuthTest extends TestCase
                 'message' => 'Terlalu banyak percobaan. Silakan tunggu sebelum mencoba lagi.',
                 'retry_after' => 900,
             ]);
-        $this->assertDatabaseCount('otp_challenges', 5);
+        $this->assertDatabaseCount('otp_challenges', 20);
     }
 
     public function test_verification_limit_by_ip_cannot_be_bypassed_by_changing_challenge(): void
