@@ -75,38 +75,36 @@ class BannerLinkTargetTest extends TestCase
         $this->assertFalse($banner->fresh()->open_in_new_tab);
     }
 
-    public function test_superadmin_can_create_banners_in_each_area_and_default_is_main(): void
+    public function test_carousel_creation_uses_default_position_without_area_input(): void
     {
-        foreach (array_keys(Banner::POSITIONS) as $position) {
-            Livewire::test(CreateBanner::class)->assertFormSet(['position' => 'main'])
-                ->fillForm([
-                    'name' => $position, 'position' => $position,
-                    'cta_url' => 'https://example.com/promo',
-                    'image' => [UploadedFile::fake()->image('banner.png')],
-                ])->call('create')->assertHasNoFormErrors();
-            $this->assertSame($position, Banner::where('name', $position)->sole()->position);
-        }
+        Livewire::test(CreateBanner::class)->assertFormFieldDoesNotExist('position')
+            ->assertFormSet(['sort_order' => 100])
+            ->fillForm([
+                'name' => 'Carousel', 'cta_url' => 'https://example.com/promo',
+                'image' => [UploadedFile::fake()->image('banner.png')],
+            ])->call('create')->assertHasNoFormErrors();
+        $this->assertSame('main', Banner::where('name', 'Carousel')->sole()->position);
     }
 
-    public function test_superadmin_can_change_area_and_filter_table_without_losing_banner_settings(): void
+    public function test_carousel_edit_preserves_legacy_area_and_supports_status_filter(): void
     {
         $banner = Banner::create(['name' => 'Promo', 'cta_url' => 'https://example.com/promo', 'open_in_new_tab' => true]);
         $image = $banner->addMedia(UploadedFile::fake()->image('banner.png'))->toMediaCollection('image');
         foreach (array_keys(Banner::POSITIONS) as $position) {
-            Livewire::test(EditBanner::class, ['record' => $banner->id])->fillForm(['position' => $position])
+            $banner->update(['position' => $position]);
+            Livewire::test(EditBanner::class, ['record' => $banner->id])->assertFormFieldDoesNotExist('position')
+                ->fillForm(['sort_order' => 150, 'status' => 'active'])
                 ->call('save')->assertHasNoFormErrors();
             $this->assertSame($position, $banner->fresh()->position);
+            $this->assertSame(150, $banner->fresh()->sort_order);
         }
         $banner->refresh();
         $this->assertTrue($banner->open_in_new_tab);
         $this->assertSame('https://example.com/promo', $banner->cta_url);
         $this->assertSame($image->id, $banner->getFirstMedia('image')->id);
         $main = Banner::create(['name' => 'Utama', 'cta_url' => 'https://example.com']);
-        Livewire::test(ListBanners::class)->filterTable('position', 'secondary_bottom')
+        Livewire::test(ListBanners::class)->filterTable('status', 'active')
             ->assertCanSeeTableRecords([$banner])->assertCanNotSeeTableRecords([$main]);
-        Livewire::test(EditBanner::class, ['record' => $banner->id])->fillForm(['position' => 'invalid'])
-            ->call('save')->assertHasFormErrors(['position']);
-        $this->assertSame('secondary_bottom', $banner->fresh()->position);
     }
 
     public function test_migration_defaults_existing_banners_to_same_tab_and_can_roll_back(): void
