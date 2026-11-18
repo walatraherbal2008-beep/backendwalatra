@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\V1\PaymentController;
 use App\Http\Controllers\Api\V1\ShippingLocationController;
 use App\Http\Controllers\Api\V1\StoreOnboardingController;
 use App\Http\Controllers\Api\V1\WarehouseController;
+use App\Http\Controllers\Api\V1\WarehouseStockController;
 use App\Http\Middleware\EnsureUserIsActive;
 use App\Http\Middleware\LimitPaymentWebhook;
 use Illuminate\Support\Facades\Route;
@@ -48,6 +49,7 @@ Route::prefix('v1')->group(function (): void {
         Route::get('/auth/me', [AuthController::class, 'me'])
             ->middleware(EnsureUserIsActive::class);
         Route::middleware(EnsureUserIsActive::class)->group(function (): void {
+            Route::post('/warehouses/{code}/stock', [WarehouseStockController::class, 'show'])->middleware('throttle:warehouse-stock');
             Route::get('/cart', [CartController::class, 'show']);
             Route::post('/cart/items', [CartController::class, 'store']);
             Route::patch('/cart/items/{item}', [CartController::class, 'update']);

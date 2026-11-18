@@ -22,9 +22,9 @@ class ShippingSubsidyRuleResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedTruck;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Manajemen Marketplace';
+    protected static string|UnitEnum|null $navigationGroup = 'Pengiriman';
 
-    protected static ?int $navigationSort = 11;
+    protected static ?int $navigationSort = 20;
 
     protected static ?string $navigationLabel = 'Aturan Gratis Ongkir';
 
@@ -73,7 +73,7 @@ class ShippingSubsidyRuleResource extends Resource
     {
         return $table->columns([
             TextColumn::make('name')->label('Nama')->searchable(),
-            TextColumn::make('scope_name')->label('Wilayah')->formatStateUsing(fn ($state, ShippingSubsidyRule $record): string => $record->scope_type === 'all' ? 'Seluruh Indonesia' : (($state ?: '-') . ' (' . ($record->scope_code ?: '-') . ')')),
+            TextColumn::make('scope_name')->label('Wilayah')->formatStateUsing(fn ($state, ShippingSubsidyRule $record): string => $record->scope_type === 'all' ? 'Seluruh Indonesia' : (($state ?: '-').' ('.($record->scope_code ?: '-').')')),
             TextColumn::make('min_subtotal')->label('Min. belanja')->money('IDR'),
             TextColumn::make('max_subsidy')->label('Maks. subsidi')->money('IDR'),
             TextColumn::make('priority')->label('Prioritas')->sortable(),

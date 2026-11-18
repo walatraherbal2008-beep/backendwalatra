@@ -3,6 +3,8 @@
 return [
     'mode' => env('ORDER_PROCESSING_MODE', 'manual'),
     'stock_mode' => env('CHECKOUT_STOCK_MODE', 'unlimited'),
+    'warehouse_selection' => env('CHECKOUT_WAREHOUSE_SELECTION', 'legacy'),
+    'warehouse_selection_timeout' => (float) env('CHECKOUT_WAREHOUSE_SELECTION_TIMEOUT', 15),
     'preferred_warehouse_code' => env('CHECKOUT_WAREHOUSE_CODE'),
     'free_shipping' => (bool) env('FREE_SHIPPING_ENABLED', true),
     'manual' => [

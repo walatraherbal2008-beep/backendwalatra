@@ -34,6 +34,8 @@ Artisan::command('payments:reconcile {--limit=50}', function () {
 })->purpose('Pulihkan inbox webhook dan sinkronkan status pembayaran Midtrans');
 
 Schedule::command('payments:reconcile')->everyMinute()->withoutOverlapping();
+Schedule::command('warehouses:sync')->hourly()->withoutOverlapping()
+    ->when(fn (): bool => (bool) config('services.warehouse_directory.enabled'));
 
 Artisan::command('logs:prune-external {--days=} {--dry-run}', function () {
     $days = $this->option('days') ?? config('security.external_log_retention_days', 30);

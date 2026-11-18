@@ -32,6 +32,7 @@ class OrderResource extends JsonResource
             'shipping_address' => $this->shipping_address,
             'shipping_origin' => $this->shipping_origin,
             'stock_mode' => $this->stock_mode,
+            'stock_check' => $this->stock_check,
             'items' => $this->whenLoaded('items', fn () => $this->items->map(fn ($item): array => [
                 'id' => $item->id,
                 'type' => $item->item_type,

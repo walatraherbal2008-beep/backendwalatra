@@ -4,6 +4,7 @@ namespace App\Services\Marketplace;
 
 use App\Models\ProductBundle;
 use App\Models\ProductVariant;
+use App\Support\CheckoutStock;
 use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Support\Collection;
@@ -99,7 +100,14 @@ class CheckoutPricing
                 'quantity' => $item->quantity,
                 'unit_price' => $item->unit_price,
                 'warehouse_code' => $warehouseCode,
+                ...(CheckoutStock::checkOnly() && $item->isBundle() ? ['bundle_components' => $item->bundleListing->bundle->items
+                    ->sortBy('product_variant_id')->map(fn ($component): array => [
+                        'variant_id' => $component->product_variant_id,
+                        'product_code' => $component->variant->product->product_code,
+                        'quantity' => $component->quantity,
+                    ])->values()->all()] : []),
             ])->values()->all(),
+            ...(CheckoutStock::checkOnly() ? ['product_requirements' => app(CheckoutReview::class)->productRequirements($items)] : []),
             'checkout_context' => $checkoutContext,
         ], JSON_THROW_ON_ERROR));
     }

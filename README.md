@@ -27,6 +27,8 @@ Pengelolaan alamat penerima, alamat utama, dan pemilihan alamat checkout tersedi
 
 Penetapan gudang produk untuk seluruh toko dikelola superadmin melalui [panduan pengaturan gudang](docs/warehouse-management.md).
 
+Pengecekan stok per kode produk, sinkronisasi master gudang, dan pemilihan gudang terdekat berdasarkan koordinat alamat tersedia di [API stok dan gudang terdekat](docs/api/nearest-warehouse-stock.md).
+
 Monitoring seluruh sumber order, subtotal toko, tindakan pembayaran, dan pembaruan otomatis tersedia pada [panduan Pesanan](docs/store-transactions.md).
 
 Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:

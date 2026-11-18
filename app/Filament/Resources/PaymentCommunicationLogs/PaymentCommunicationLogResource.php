@@ -28,9 +28,9 @@ class PaymentCommunicationLogResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCodeBracket;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Manajemen Marketplace';
+    protected static string|UnitEnum|null $navigationGroup = 'Sistem';
 
-    protected static ?int $navigationSort = 5;
+    protected static ?int $navigationSort = 20;
 
     protected static ?string $navigationLabel = 'Log Pembayaran';
 

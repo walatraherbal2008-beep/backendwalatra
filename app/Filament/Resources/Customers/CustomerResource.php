@@ -2,13 +2,13 @@
 
 namespace App\Filament\Resources\Customers;
 
-use App\Filament\Resources\Customers\Pages\ManageCustomers;
 use App\Filament\Resources\Customers\Pages\EditCustomer;
+use App\Filament\Resources\Customers\Pages\ManageCustomers;
 use App\Filament\Resources\Customers\RelationManagers\AddressesRelationManager;
+use App\Filament\Resources\Customers\RelationManagers\LoginHistoriesRelationManager;
 use App\Filament\Resources\Customers\RelationManagers\OrdersRelationManager;
 use App\Filament\Resources\Customers\RelationManagers\StatusHistoriesRelationManager;
 use App\Filament\Resources\Customers\RelationManagers\TokensRelationManager;
-use App\Filament\Resources\Customers\RelationManagers\LoginHistoriesRelationManager;
 use App\Models\User;
 use App\Services\Marketplace\UserStatusService;
 use BackedEnum;
@@ -32,9 +32,9 @@ class CustomerResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedUsers;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Manajemen Marketplace';
+    protected static string|UnitEnum|null $navigationGroup = 'Operasional';
 
-    protected static ?int $navigationSort = 3;
+    protected static ?int $navigationSort = 40;
 
     protected static ?string $navigationLabel = 'Customer';
 

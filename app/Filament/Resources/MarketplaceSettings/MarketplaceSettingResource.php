@@ -22,9 +22,9 @@ class MarketplaceSettingResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedAdjustmentsHorizontal;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Manajemen Marketplace';
+    protected static string|UnitEnum|null $navigationGroup = 'Sistem';
 
-    protected static ?int $navigationSort = 10;
+    protected static ?int $navigationSort = 30;
 
     protected static ?string $navigationLabel = 'Pengaturan';
 

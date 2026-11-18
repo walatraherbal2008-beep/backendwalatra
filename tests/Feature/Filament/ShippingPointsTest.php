@@ -4,6 +4,7 @@ namespace Tests\Feature\Filament;
 
 use App\Filament\Pages\ShippingPoints;
 use App\Models\User;
+use App\Models\Warehouse;
 use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
@@ -140,5 +141,47 @@ class ShippingPointsTest extends TestCase
         $this->actingAs(User::factory()->create());
         $this->assertFalse(ShippingPoints::canAccess());
         $this->get('/superadmin/titik-pengiriman')->assertForbidden();
+    }
+
+    public function test_sync_action_publishes_local_directory_and_details_work_without_external_calls(): void
+    {
+        $this->admin();
+        $this->fakeDirectory(['coordinates' => '-6.91, 107.63']);
+        Livewire::test(ShippingPoints::class)->callAction('syncWarehouses')
+            ->assertNotified('Master gudang disinkronkan')->assertCanSeeTableRecords(['WH-ACEH', 'WH-BDG']);
+        $this->assertDatabaseCount('warehouses', 2);
+        $count = Http::recorded()->count();
+        Livewire::test(ShippingPoints::class)->mountTableAction('viewDetails', 'WH-BDG')
+            ->assertTableActionDataSet(['code' => 'WH-BDG', 'coordinates' => '-6.91, 107.63']);
+        $this->assertSame($count, Http::recorded()->count());
+    }
+
+    public function test_local_active_setting_survives_sync_and_is_reflected_in_table(): void
+    {
+        $this->admin();
+        $this->fakeDirectory();
+        Livewire::test(ShippingPoints::class)->callAction('syncWarehouses')
+            ->callTableAction('toggleActive', 'WH-BDG')->assertTableColumnStateSet('is_active', false, 'WH-BDG')
+            ->callAction('syncWarehouses')->assertTableColumnStateSet('is_active', false, 'WH-BDG');
+        $this->assertFalse(Warehouse::where('code', 'WH-BDG')->sole()->is_active);
+    }
+
+    public function test_nearest_mode_with_empty_local_registry_does_not_fetch_directory_on_page_load(): void
+    {
+        $this->admin();
+        config(['checkout.warehouse_selection' => 'nearest_available']);
+        Livewire::test(ShippingPoints::class)->assertSee('Tidak ada titik pengiriman');
+        Http::assertNothingSent();
+    }
+
+    public function test_failed_manual_sync_preserves_existing_local_records(): void
+    {
+        $this->admin();
+        Warehouse::create(['code' => 'WH-LOCAL', 'realname' => 'Lokal', 'codename' => 'LOCAL', 'initial' => 'LC',
+            'area_group' => 'pulaujawa', 'synced_at' => now()]);
+        Http::fake(['*' => Http::response([], 503)]);
+        Livewire::test(ShippingPoints::class)->callAction('syncWarehouses')
+            ->assertNotified('Sinkronisasi gudang gagal')->assertCanSeeTableRecords(['WH-LOCAL']);
+        $this->assertDatabaseCount('warehouses', 1);
     }
 }

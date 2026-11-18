@@ -27,9 +27,9 @@ class StoreAdminResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'name';
 
-    protected static string|UnitEnum|null $navigationGroup = 'Manajemen Marketplace';
+    protected static string|UnitEnum|null $navigationGroup = 'Operasional';
 
-    protected static ?int $navigationSort = 1;
+    protected static ?int $navigationSort = 30;
 
     protected static ?string $navigationLabel = 'Akun Seller';
 

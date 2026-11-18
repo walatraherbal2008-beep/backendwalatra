@@ -50,6 +50,7 @@ class ExternalApiHealthChecker
                 'maxchat' => $this->maxchatProbe(),
                 'warehouse_directory' => $this->warehouseDirectoryProbe(),
                 'warehouse_stock' => $this->warehouseStockProbe(),
+                'warehouse_remaining_stock' => $this->remainingStockProbe(),
                 'shipping_rate' => $this->shippingRateProbe(),
                 default => throw new RuntimeException('Layanan API tidak dikenal.'),
             };
@@ -212,6 +213,19 @@ class ExternalApiHealthChecker
     }
 
     /** @return array<string, mixed> */
+    private function remainingStockProbe(): array
+    {
+        $baseUrl = rtrim((string) config('services.warehouse_remaining_stock.base_url'), '/');
+        $endpoint = $baseUrl.(string) config('services.warehouse_remaining_stock.path');
+
+        return [
+            'base_url' => $baseUrl, 'credentials' => [], 'endpoint' => $endpoint,
+            'method' => 'HEAD', 'payload' => null,
+            'expected_not_found' => false, 'expected_method_not_allowed' => true,
+            'request' => fn (): Response => Http::acceptJson()->withoutRedirecting()->connectTimeout(3)->timeout(3)->head($endpoint),
+        ];
+    }
+
     private function shippingRateProbe(): array
     {
         $baseUrl = rtrim((string) config('services.shipping.base_url'), '/');
@@ -252,7 +266,7 @@ class ExternalApiHealthChecker
             return 'Endpoint status pesan merespons; ID uji tidak ditemukan dan autentikasi belum dapat dipastikan.';
         }
 
-        if (in_array($service, ['warehouse_stock', 'shipping_rate'], true) && $response->status() === 405) {
+        if (in_array($service, ['warehouse_stock', 'warehouse_remaining_stock', 'shipping_rate'], true) && $response->status() === 405) {
             return 'Host merespons, tetapi endpoint menolak metode HEAD; autentikasi belum dapat dipastikan.';
         }
 

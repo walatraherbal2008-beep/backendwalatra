@@ -27,9 +27,9 @@ class BannerResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedPhoto;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Manajemen Marketplace';
+    protected static string|UnitEnum|null $navigationGroup = 'Katalog & Promosi';
 
-    protected static ?int $navigationSort = 12;
+    protected static ?int $navigationSort = 40;
 
     protected static ?string $navigationLabel = 'Banner Iklan';
 

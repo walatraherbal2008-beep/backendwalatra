@@ -82,6 +82,12 @@ return [
             'release' => env('WAREHOUSE_STOCK_RELEASE_PATH', '/stock/release'),
         ],
     ],
+    'warehouse_remaining_stock' => [
+        'enabled' => (bool) env('WAREHOUSE_REMAINING_STOCK_ENABLED', false),
+        'base_url' => env('WAREHOUSE_REMAINING_STOCK_BASE_URL', 'https://originalwalatraherbal.com'),
+        'path' => env('WAREHOUSE_REMAINING_STOCK_PATH', '/index.php?procs=gudang.stok.sisa'),
+        'timeout' => (float) env('WAREHOUSE_REMAINING_STOCK_TIMEOUT', 3),
+    ],
     'warehouse_directory' => [
         'enabled' => (bool) env('WAREHOUSE_DIRECTORY_ENABLED', false),
         'base_url' => env('WAREHOUSE_DIRECTORY_BASE_URL', 'https://originalwalatraherbal.com'),

@@ -206,7 +206,9 @@ class OrderController extends Controller
 
         $pricing = app(CheckoutPricing::class);
         $priceChanges = $pricing->review($cart->items, lock: true);
-        $origin = app(CheckoutShippingOrigin::class)->resolve($cart->items, lock: true);
+        $origin = app(CheckoutShippingOrigin::class)->resolve($cart->items, lock: true, address: $shippingAddress);
+        $stockCheck = $origin['stock_check'] ?? null;
+        unset($origin['stock_check']);
         $stockItems = $review->stockItems($cart->items);
         $manual = ManualCheckout::enabled();
         $checkoutQuote = $review->quote(
@@ -228,7 +230,9 @@ class OrderController extends Controller
         $shippingCost = $checkoutQuote['shipping_cost'];
         $subtotal = $checkoutQuote['subtotal'];
         $unlimitedStock = CheckoutStock::unlimited();
-        $availability = $unlimitedStock ? ['available' => true, 'items' => []] : $warehouse->checkAvailability($stockItems);
+        $availability = ($unlimitedStock || CheckoutStock::checkOnly())
+            ? ['available' => true, 'items' => $stockCheck['items'] ?? []]
+            : $warehouse->checkAvailability($stockItems);
 
         if (! $availability['available']) {
             return response()->json([
@@ -241,10 +245,10 @@ class OrderController extends Controller
         }
 
         $reference = (string) Str::uuid();
-        $reservationId = $unlimitedStock ? null : $warehouse->reserve($stockItems, $reference);
+        $reservationId = ($unlimitedStock || CheckoutStock::checkOnly()) ? null : $warehouse->reserve($stockItems, $reference);
 
         try {
-            $order = DB::transaction(function () use ($request, $cart, $idempotencyKey, $reservationId, $shippingAddress, $shippingQuote, $shippingCost, $subtotal, $manual, $snapshots, $origin): Order {
+            $order = DB::transaction(function () use ($request, $cart, $idempotencyKey, $reservationId, $shippingAddress, $shippingQuote, $shippingCost, $subtotal, $manual, $snapshots, $origin, $stockCheck): Order {
                 $shippingFee = (float) $shippingCost['fee'];
                 $simulated = CheckoutSimulation::enabled();
 
@@ -267,6 +271,7 @@ class OrderController extends Controller
                     'shipping_address' => $shippingAddress,
                     'shipping_origin' => $origin,
                     'stock_mode' => CheckoutStock::mode(),
+                    'stock_check' => $stockCheck,
                     'stock_reservation_id' => $simulated ? null : $reservationId,
                     'placed_at' => now(),
                 ]);

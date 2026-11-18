@@ -27,11 +27,11 @@ class ExternalApiActivityLogResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedSignal;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Manajemen Marketplace';
+    protected static string|UnitEnum|null $navigationGroup = 'Sistem';
 
-    protected static ?int $navigationSort = 3;
+    protected static ?int $navigationSort = 10;
 
-    protected static ?string $navigationLabel = 'Monitoring API Eksternal';
+    protected static ?string $navigationLabel = 'Monitoring API';
 
     protected static ?string $modelLabel = 'aktivitas API eksternal';
 
@@ -80,6 +80,7 @@ class ExternalApiActivityLogResource extends Resource
             'maxchat' => ['label' => 'Maxchat', 'enabled' => config('services.maxchat.enabled') && filled(config('services.maxchat.api_token'))],
             'warehouse_directory' => ['label' => 'Titik Pengiriman', 'enabled' => config('services.warehouse_directory.enabled') && filled(config('services.warehouse_directory.base_url'))],
             'warehouse_stock' => ['label' => 'Stok Gudang', 'enabled' => config('services.warehouse.enabled') && filled(config('services.warehouse.base_url')) && filled(config('services.warehouse.token'))],
+            'warehouse_remaining_stock' => ['label' => 'Sisa Stok Produk', 'enabled' => config('services.warehouse_remaining_stock.enabled') && filled(config('services.warehouse_remaining_stock.base_url')) && filled(config('services.warehouse_remaining_stock.path'))],
             'shipping_rate' => ['label' => 'Tarif Ongkir', 'enabled' => config('services.shipping.enabled') && filled(config('services.shipping.base_url')) && filled(config('services.shipping.token'))],
         ];
     }

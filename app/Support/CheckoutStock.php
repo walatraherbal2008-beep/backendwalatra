@@ -11,6 +11,16 @@ final class CheckoutStock
 
     public static function mode(): string
     {
-        return self::unlimited() ? 'unlimited' : 'external';
+        return self::checkOnly() ? 'check_only' : (self::unlimited() ? 'unlimited' : 'external');
+    }
+
+    public static function checkOnly(): bool
+    {
+        return config('checkout.stock_mode') === 'check_only';
+    }
+
+    public static function nearest(): bool
+    {
+        return config('checkout.warehouse_selection') === 'nearest_available';
     }
 }

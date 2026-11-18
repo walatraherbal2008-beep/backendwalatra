@@ -4,7 +4,10 @@ namespace App\Filament\Pages;
 
 use App\Contracts\WarehouseDirectoryProvider;
 use App\Exceptions\WarehouseDirectoryUnavailableException;
+use App\Models\Warehouse;
 use App\Services\Warehouse\ExternalWarehouseDirectoryClient;
+use App\Services\Warehouse\WarehouseSyncService;
+use App\Support\CheckoutStock;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Infolists\Components\TextEntry;
@@ -12,6 +15,7 @@ use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Support\Exceptions\Halt;
 use Filament\Support\Icons\Heroicon;
+use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
@@ -28,11 +32,11 @@ class ShippingPoints extends Page implements HasTable
 
     protected static ?string $navigationLabel = 'Titik Pengiriman';
 
-    protected static string|UnitEnum|null $navigationGroup = 'Manajemen Marketplace';
+    protected static string|UnitEnum|null $navigationGroup = 'Pengiriman';
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedMapPin;
 
-    protected static ?int $navigationSort = 6;
+    protected static ?int $navigationSort = 10;
 
     protected static ?string $slug = 'titik-pengiriman';
 
@@ -42,6 +46,13 @@ class ShippingPoints extends Page implements HasTable
 
     private ?string $directoryError = null;
 
+    private ?bool $localDirectory = null;
+
+    private function usesLocalDirectory(): bool
+    {
+        return $this->localDirectory ??= CheckoutStock::nearest() || Warehouse::query()->exists();
+    }
+
     public static function canAccess(): bool
     {
         return auth()->user()?->status === 'active' && auth()->user()->hasRole('super_admin');
@@ -49,8 +60,13 @@ class ShippingPoints extends Page implements HasTable
 
     private function directory(): array
     {
+        abort_unless(static::canAccess(), 403);
         if ($this->points !== null) {
             return $this->points;
+        }
+
+        if ($this->usesLocalDirectory()) {
+            return $this->points = Warehouse::query()->orderBy('realname')->get()->toArray();
         }
 
         try {
@@ -67,9 +83,30 @@ class ShippingPoints extends Page implements HasTable
     protected function getHeaderActions(): array
     {
         return [
+            Action::make('syncWarehouses')->label('Sinkronkan gudang')->icon(Heroicon::OutlinedCloudArrowDown)
+                ->authorize(fn (): bool => static::canAccess())
+                ->requiresConfirmation()
+                ->modalDescription('Perbarui master gudang dan koordinat dari API. Status aktif lokal dipertahankan; tindakan ini tidak mengubah stok.')
+                ->action(function (WarehouseSyncService $sync): void {
+                    abort_unless(static::canAccess(), 403);
+                    try {
+                        $result = $sync->sync();
+                    } catch (WarehouseDirectoryUnavailableException) {
+                        Notification::make()->danger()->title('Sinkronisasi gudang gagal')
+                            ->body('Data lokal dipertahankan. Periksa koneksi layanan dan coba kembali.')->send();
+
+                        return;
+                    }
+                    $this->points = null;
+                    $this->localDirectory = null;
+                    $this->resetTable();
+                    Notification::make()->success()->title('Master gudang disinkronkan')
+                        ->body($result['synced'].' gudang diperbarui; '.$result['without_coordinates'].' belum memiliki koordinat valid.')->send();
+                }),
             Action::make('reload')->label('Muat ulang')->icon(Heroicon::OutlinedArrowPath)
                 ->action(function (): void {
                     $this->points = null;
+                    $this->localDirectory = null;
                     $this->directoryError = null;
                     $this->resetTable();
                 }),
@@ -99,6 +136,10 @@ class ShippingPoints extends Page implements HasTable
                 TextColumn::make('codename')->label('Wilayah')->wrap(),
                 TextColumn::make('area_group')->label('Grup')->badge()
                     ->formatStateUsing(fn (string $state): string => self::areaLabel($state)),
+                IconColumn::make('is_active')->label('Aktif lokal')->boolean()->visible(fn (): bool => $this->usesLocalDirectory()),
+                IconColumn::make('is_listed')->label('Terdaftar di API')->boolean()->visible(fn (): bool => $this->usesLocalDirectory()),
+                TextColumn::make('synced_at')->label('Sinkronisasi terakhir')->dateTime('d M Y H:i', timezone: 'Asia/Jakarta')
+                    ->visible(fn (): bool => $this->usesLocalDirectory()),
             ])
             ->filters([
                 SelectFilter::make('area_group')->label('Grup wilayah')->options([
@@ -119,7 +160,7 @@ class ShippingPoints extends Page implements HasTable
                     ->modalCancelActionLabel('Tutup')
                     ->fillForm(function (array $record): array {
                         try {
-                            $detail = app(ExternalWarehouseDirectoryClient::class)->detail($record['code']);
+                            $detail = $this->usesLocalDirectory() ? $record : app(ExternalWarehouseDirectoryClient::class)->detail($record['code']);
                         } catch (WarehouseDirectoryUnavailableException) {
                             Notification::make()->danger()->title('Detail titik pengiriman belum dapat dimuat')
                                 ->body('Silakan tutup dan coba lihat detail kembali.')->send();
@@ -127,7 +168,7 @@ class ShippingPoints extends Page implements HasTable
                             throw new Halt;
                         }
 
-                        return [...$detail, 'code' => $record['code'], 'map_url' => self::mapUrl($detail['coordinates'])];
+                        return [...$detail, 'code' => $record['code'], 'map_url' => self::mapUrl($detail['coordinates'] ?? '')];
                     })
                     ->schema([
                         TextEntry::make('realname')->label('Nama titik pengiriman')->state(fn () => $this->detailValue('realname')),
@@ -144,6 +185,15 @@ class ShippingPoints extends Page implements HasTable
                             ->formatStateUsing(fn (): string => 'Buka di Google Maps')
                             ->url(fn (?string $state): ?string => $state)->openUrlInNewTab(),
                     ]),
+                Action::make('toggleActive')->label(fn (array $record): string => ($record['is_active'] ?? false) ? 'Nonaktifkan' : 'Aktifkan')
+                    ->visible(fn (array $record): bool => array_key_exists('is_active', $record))
+                    ->authorize(fn (): bool => static::canAccess())->requiresConfirmation()
+                    ->action(function (array $record): void {
+                        abort_unless(static::canAccess(), 403);
+                        Warehouse::where('code', $record['code'])->update(['is_active' => ! $record['is_active']]);
+                        $this->points = null;
+                        $this->resetTable();
+                    }),
             ]);
     }
 

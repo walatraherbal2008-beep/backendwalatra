@@ -85,6 +85,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         ProductionSecurity::check();
+        RateLimiter::for('warehouse-stock', fn (Request $request) => Limit::perMinute(30)->by('warehouse-stock:'.$request->user()?->id));
         RateLimiter::for('payment-webhook', fn ($request) => Limit::perMinute(300)->by('webhook:'.$request->ip()));
         RateLimiter::for('payment-create', fn ($request) => Limit::perMinute(10)->by('payment-create:'.$request->user()?->id.':'.$request->route('order')));
         RateLimiter::for('payment-refresh', fn ($request) => Limit::perMinute(12)->by('payment-refresh:'.$request->user()?->id.':'.$request->route('order')));

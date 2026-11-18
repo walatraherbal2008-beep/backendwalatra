@@ -6,6 +6,7 @@ use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
+use Filament\Navigation\NavigationGroup;
 use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
@@ -33,8 +34,10 @@ class SuperAdminPanelProvider extends PanelProvider
                 'primary' => Color::Amber,
             ])
             ->navigationGroups([
-                'Manajemen Marketplace',
-                'Katalog',
+                NavigationGroup::make('Operasional'),
+                NavigationGroup::make('Katalog & Promosi'),
+                NavigationGroup::make('Pengiriman'),
+                NavigationGroup::make('Sistem')->collapsed(),
             ])
             ->sidebarCollapsibleOnDesktop()
             ->sidebarFullyCollapsibleOnDesktop()

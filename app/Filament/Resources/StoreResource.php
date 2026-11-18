@@ -27,11 +27,11 @@ class StoreResource extends Resource
 {
     protected static ?string $model = Store::class;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Manajemen Marketplace';
+    protected static string|UnitEnum|null $navigationGroup = 'Operasional';
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBuildingStorefront;
 
-    protected static ?int $navigationSort = 2;
+    protected static ?int $navigationSort = 20;
 
     protected static ?string $navigationLabel = 'Toko';
 
@@ -185,9 +185,9 @@ class StoreResource extends Resource
             ])
             ->filters([
                 SelectFilter::make('status')
-                ->options([
-                    'pending_owner' => 'Menunggu pemilik member',
-                    'pending_approval' => 'Menunggu persetujuan',
+                    ->options([
+                        'pending_owner' => 'Menunggu pemilik member',
+                        'pending_approval' => 'Menunggu persetujuan',
                         'active' => 'Aktif',
                         'rejected' => 'Ditolak',
                         'suspended' => 'Ditangguhkan',

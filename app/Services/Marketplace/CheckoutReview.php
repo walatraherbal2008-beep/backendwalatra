@@ -8,6 +8,7 @@ use App\Models\CartItem;
 use App\Services\Shipping\ShippingCostCalculator;
 use App\Support\CheckoutShipping;
 use Illuminate\Support\Collection;
+use Illuminate\Validation\ValidationException;
 
 class CheckoutReview
 {
@@ -101,6 +102,27 @@ class CheckoutReview
             ])
             ->values()
             ->all();
+    }
+
+    /** @return list<array{product_code: string, quantity: int}> */
+    public function productRequirements(Collection $items): array
+    {
+        return $items->flatMap(function (CartItem $item) {
+            if (! $item->isBundle()) {
+                return [['product_code' => $item->variant->product->product_code, 'quantity' => $item->quantity]];
+            }
+
+            return $item->bundleListing->bundle->items->map(fn ($component): array => [
+                'product_code' => $component->variant->product->product_code,
+                'quantity' => $component->quantity * $item->quantity,
+            ]);
+        })->groupBy('product_code')->map(function ($rows, string $code): array {
+            if (trim($code) === '') {
+                throw ValidationException::withMessages(['product_code' => 'Produk belum memiliki kode stok yang valid.']);
+            }
+
+            return ['product_code' => $code, 'quantity' => (int) $rows->sum('quantity')];
+        })->sortBy('product_code', SORT_STRING)->values()->all();
     }
 
     private function weightGrams(Collection $items): int

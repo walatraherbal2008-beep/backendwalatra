@@ -3,9 +3,12 @@
 namespace App\Services\Marketplace;
 
 use App\Contracts\WarehouseDirectoryProvider;
+use App\Exceptions\WarehouseUnavailableException;
 use App\Models\ProductVariant;
 use App\Models\WarehouseProductVariant;
 use App\Services\Warehouse\ExternalWarehouseDirectoryClient;
+use App\Services\Warehouse\NearestWarehouseSelector;
+use App\Support\CheckoutStock;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Support\Collection;
 
@@ -16,8 +19,12 @@ class CheckoutShippingOrigin
         private readonly ExternalWarehouseDirectoryClient $client,
     ) {}
 
-    public function resolve(Collection $items, bool $lock = false): array
+    public function resolve(Collection $items, bool $lock = false, ?array $address = null): array
     {
+        if (CheckoutStock::nearest() !== CheckoutStock::checkOnly()
+            || (CheckoutStock::nearest() && ! config('checkout.free_shipping'))) {
+            throw new WarehouseUnavailableException('Pemilihan gudang terdekat memerlukan mode check_only dan gratis ongkir.');
+        }
         $variantIds = $items->flatMap(fn ($item) => $item->isBundle()
             ? $item->bundleListing->bundle->items->pluck('product_variant_id')
             : [$item->product_variant_id])->unique()->sort()->values();
@@ -41,6 +48,12 @@ class CheckoutShippingOrigin
         }
         if (empty($common)) {
             $this->conflict('WAREHOUSE_MISMATCH', 'Barang yang dipilih belum memiliki satu titik pengiriman yang sama. Silakan ubah pilihan barang.');
+        }
+
+        if (CheckoutStock::nearest()) {
+            return app(NearestWarehouseSelector::class)->select(
+                $common, app(CheckoutReview::class)->productRequirements($items), $address, $lock,
+            );
         }
 
         $preferred = trim((string) config('checkout.preferred_warehouse_code', ''));

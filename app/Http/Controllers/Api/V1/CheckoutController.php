@@ -64,19 +64,21 @@ class CheckoutController extends Controller
         }
 
         $priceChanges = $pricing->review($cart->items);
-        $origin = $origins->resolve($cart->items);
-        $items = $review->stockItems($cart->items);
-
-        $manual = ManualCheckout::enabled();
-        $unlimitedStock = CheckoutStock::unlimited();
-        $availability = $unlimitedStock ? ['available' => true, 'items' => []] : $warehouse->checkAvailability($items);
-
         $addressContext = $review->address(
             $request->user()->id,
             $request->filled('address_id') ? $request->integer('address_id') : null,
             $request->validated('shipping_address'),
         );
         $shippingAddress = $addressContext['snapshot'] ?? null;
+        $origin = $origins->resolve($cart->items, address: $shippingAddress);
+        $stockCheck = $origin['stock_check'] ?? null;
+        unset($origin['stock_check']);
+        $items = $review->stockItems($cart->items);
+        $manual = ManualCheckout::enabled();
+        $unlimitedStock = CheckoutStock::unlimited();
+        $availability = ($unlimitedStock || CheckoutStock::checkOnly())
+            ? ['available' => true, 'items' => $stockCheck['items'] ?? []]
+            : $warehouse->checkAvailability($items);
         $subtotal = (float) $cart->items->sum(fn ($item): float => (float) $item->unit_price * $item->quantity);
         $checkoutQuote = is_array($shippingAddress)
             ? $review->quote($shipping, $shippingCosts, $shippingAddress, $addressContext['fingerprint'], $cart->items)
@@ -101,7 +103,8 @@ class CheckoutController extends Controller
                 'payment_provider' => $manual ? 'manual' : (CheckoutSimulation::enabled() ? 'simulation' : 'midtrans'),
                 'stock_mode' => CheckoutStock::mode(),
                 'shipping_origin' => $origin,
-                'stock_verification' => $unlimitedStock ? 'pending_manual' : (CheckoutSimulation::enabled() ? 'simulated' : 'external'),
+                'stock_verification' => CheckoutStock::checkOnly() ? 'check_only' : ($unlimitedStock ? 'pending_manual' : (CheckoutSimulation::enabled() ? 'simulated' : 'external')),
+                'stock_check' => $stockCheck,
                 'checkout_available' => $availability['available'],
                 'items' => $cart->items->map(fn ($item): array => [
                     'cart_item_id' => $item->id,
