@@ -1,6 +1,6 @@
 # Stok produk dan pemilihan gudang terdekat
 
-Fitur ini memilih **satu gudang terdekat dari alamat pengiriman yang cukup untuk seluruh barang terpilih**. Jarak dihitung dengan Haversine (garis lurus), bukan jarak perjalanan kendaraan. Semua request customer memakai Bearer token Sanctum dengan ability `customer-api` dan akun aktif.
+Fitur ini memilih **satu gudang terdekat dari alamat pengiriman yang ditetapkan untuk seluruh barang terpilih**. Jarak dihitung dengan Haversine (garis lurus), bukan jarak perjalanan kendaraan. Mode stok `unlimited` memilih gudang berdasarkan jarak saja; mode `check_only` juga memeriksa stok dan mencoba kandidat berikutnya jika stok kandidat terdekat kurang. Semua request customer memakai Bearer token Sanctum dengan ability `customer-api` dan akun aktif.
 
 ## 1. Master gudang dan aktivasi
 
@@ -21,13 +21,9 @@ Aktifkan melalui environment setelah memeriksa hasil sinkronisasi dan kecocokan 
 
 ```dotenv
 WAREHOUSE_DIRECTORY_ENABLED=true
-WAREHOUSE_REMAINING_STOCK_ENABLED=true
-WAREHOUSE_REMAINING_STOCK_BASE_URL=https://originalwalatraherbal.com
-WAREHOUSE_REMAINING_STOCK_PATH=/index.php?procs=gudang.stok.sisa
-WAREHOUSE_REMAINING_STOCK_TIMEOUT=3
 CHECKOUT_WAREHOUSE_SELECTION=nearest_available
 CHECKOUT_WAREHOUSE_SELECTION_TIMEOUT=15
-CHECKOUT_STOCK_MODE=check_only
+CHECKOUT_STOCK_MODE=unlimited
 FREE_SHIPPING_ENABLED=true
 ```
 
@@ -35,9 +31,13 @@ FREE_SHIPPING_ENABLED=true
 php artisan config:clear
 ```
 
-Konfigurasi default source tetap `CHECKOUT_WAREHOUSE_SELECTION=legacy` dan API sisa stok nonaktif. Mode terdekat wajib dipasangkan dengan `check_only` serta gratis ongkir. Pasangan konfigurasi yang tidak cocok menolak checkout dengan 503; tidak diam-diam melewati pengecekan. Untuk kembali ke alur lama, gunakan `legacy` dan mode stok sebelumnya (`unlimited` atau `external`). Konfigurasi mode hanya berlaku pada order baru; snapshot order lama tetap disimpan.
+Pada mode `unlimited`, selector tidak memanggil API stok; field `stock_check` bernilai `null` dan `stock_verification` bernilai `pending_manual`. Gudang terdekat dipilih dari gudang yang ditetapkan pada semua varian, aktif, terdaftar, dan memiliki koordinat valid. Mode ini tidak memastikan stok fisik tersedia. Untuk pengecekan stok, gunakan `check_only`; mode itu memerlukan API sisa stok yang valid dan gratis ongkir. Error API stok menghentikan checkout, tidak dianggap sebagai stok nol. Mode terdekat tanpa `unlimited` atau `check_only`, atau tanpa gratis ongkir, menolak checkout dengan 503.
+
+Konfigurasi ini berlaku untuk order baru; snapshot order lama tetap disimpan. Untuk kembali ke pemilihan gudang lama, gunakan `CHECKOUT_WAREHOUSE_SELECTION=legacy`.
 
 `CHECKOUT_WAREHOUSE_CODE` tidak mengalahkan pencarian jarak dalam mode terdekat. Penetapan gudang per varian tetap wajib: kandidat adalah irisan gudang seluruh varian, termasuk seluruh komponen bundle, yang aktif lokal, masih terdaftar di API, serta memiliki koordinat valid.
+
+Data saat aktivasi: 37 gudang aktif, baru 1 memiliki koordinat valid, dan seluruh 24 varian aktif ditetapkan ke gudang Tasikmalaya. Jadi saat ini checkout yang berhasil akan memilih Tasikmalaya; gudang lain baru ikut dipertimbangkan setelah koordinatnya dilengkapi.
 
 ## 2. Cek stok satu produk pada gudang tertentu
 
@@ -94,17 +94,17 @@ Gunakan endpoint yang sudah ada, `POST /api/v1/checkout/preview`, dengan `cart_i
 
 ID contoh harus diganti dengan ID cart milik customer. Frontend harus meminta pembeli mengonfirmasi titik **alamat pengiriman**; lokasi perangkat tidak otomatis menjadi alamat tujuan. Koordinat yang belum lengkap menghasilkan 422, sehingga frontend dapat meminta pengguna melengkapi titik alamat.
 
-Kebutuhan stok dijumlahkan berdasarkan kode produk di seluruh listing/varian dan komponen bundle. Dua QNC satuan dan dua bundle berisi masing-masing tiga QNC membutuhkan delapan QNC. Satu unit varian memakai satu unit stok produk; tidak ada faktor konversi kemasan pada versi ini.
+Pada mode `check_only`, kebutuhan stok dijumlahkan berdasarkan kode produk di seluruh listing/varian dan komponen bundle. Dua QNC satuan dan dua bundle berisi masing-masing tiga QNC membutuhkan delapan QNC. Satu unit varian memakai satu unit stok produk; tidak ada faktor konversi kemasan pada versi ini. Mode `unlimited` tidak membaca kebutuhan produk untuk pemilihan gudang.
 
-Kandidat diurutkan menurut jarak tanpa pembulatan. Jarak sama memakai urutan kode gudang yang stabil. Gudang pertama diperiksa sampai ditemukan kekurangan atau seluruh produk mencukupi. Jika kurang, lanjut ke kandidat berikutnya. Jika status stok sebuah kandidat tidak dapat dipastikan, proses berhenti dengan 503, bukan melewati kandidat tersebut lalu mengklaim gudang lain sebagai terdekat.
+Kandidat diurutkan menurut jarak tanpa pembulatan. Jarak sama memakai urutan kode gudang yang stabil. Dalam mode `unlimited`, kandidat terdekat langsung dipilih tanpa memanggil API stok. Dalam mode `check_only`, gudang pertama diperiksa sampai ditemukan kekurangan atau seluruh produk mencukupi; jika kurang, lanjut ke kandidat berikutnya. Jika status stok kandidat tidak dapat dipastikan, proses berhenti dengan 503, bukan melewati kandidat tersebut lalu mengklaim gudang lain sebagai terdekat.
 
 Pemeriksaan dibatasi maksimal tiga detik per request upstream dan maksimal 15 detik untuk seluruh pencarian stok. Satu pasangan gudang–produk hanya diperiksa sekali dalam pencarian karena kebutuhan sudah digabung. Tidak ada cache stok lintas request.
 
 Preview berhasil mempertahankan field lama dan menambahkan:
 
-- `stock_mode: "check_only"`, `stock_verification: "check_only"`.
-- `shipping_origin.distance_km`, `latitude`, `longitude`, dan `selection_method: "nearest_available"`.
-- `stock_check`: kode gudang, `available: true`, `reserved: false`, waktu pengecekan, dan `items[]` dengan kode produk, jumlah diminta, jumlah tersedia, serta `sufficient`.
+- `shipping_origin.distance_km`, `latitude`, `longitude`, dan `selection_method`.
+- Dalam mode `unlimited`: `stock_mode: "unlimited"`, `stock_verification: "pending_manual"`, `selection_method: "nearest_by_distance"`, dan `stock_check: null`.
+- Dalam mode `check_only`: `stock_mode: "check_only"`, `stock_verification: "check_only"`, `selection_method: "nearest_available"`, serta `stock_check` berisi kode gudang, `available: true`, `reserved: false`, waktu pengecekan, dan `items[]` dengan kode produk, jumlah diminta, jumlah tersedia, serta `sufficient`.
 
 Jarak respons dibulatkan hingga tiga desimal kilometer. Token hanya diterbitkan setelah pengecekan berhasil dan quote checkout tersedia. Jika tidak ada gudang yang cukup, tidak ada token/order yang dibuat.
 
@@ -115,18 +115,18 @@ Jarak respons dibulatkan hingga tiga desimal kilometer. Token hanya diterbitkan 
 | 409 `WAREHOUSE_MISMATCH` | Barang tidak memiliki satu gudang bersama; ubah pilihan barang. |
 | 409 `WAREHOUSE_NOT_AVAILABLE` | Tidak ada kandidat aktif dengan koordinat valid. |
 | 409 `STOCK_UNAVAILABLE` | Seluruh kandidat sudah terbukti tidak cukup. `data.warehouses[].items` berisi hasil yang sempat diperiksa sampai kekurangan pertama, bukan inventaris lengkap. |
-| 503 `WAREHOUSE_UNAVAILABLE` | Pemeriksaan stok belum berhasil atau konfigurasi tidak cocok; jangan tampilkan sebagai stok nol. |
+| 503 `WAREHOUSE_UNAVAILABLE` | Pada mode `check_only`, pemeriksaan stok belum berhasil atau konfigurasi tidak cocok; jangan tampilkan sebagai stok nol. |
 
 ## 4. Membuat order dan perubahan setelah preview
 
-Tetap gunakan `POST /api/v1/orders` dengan pilihan cart/alamat yang sama, `checkout_token`, serta header `Idempotency-Key`. Backend membaca ulang stok dan memilih ulang kandidat berdasarkan data terbaru.
+Tetap gunakan `POST /api/v1/orders` dengan pilihan cart/alamat yang sama, `checkout_token`, serta header `Idempotency-Key`. Backend memilih ulang gudang berdasarkan jarak terbaru. Dalam mode `check_only`, backend juga membaca ulang stok.
 
-Token mengikat alamat, pilihan barang, jumlah, harga, kebutuhan per kode produk, komposisi bundle, kode gudang dan ongkir. Jumlah stok tersedia dan waktu pengecekan tidak masuk fingerprint karena berubah setiap saat. Jika gudang, alamat, harga, jumlah atau komposisi bundle berubah, respons `409 CHECKOUT_CHANGED` meminta preview dan konfirmasi ulang. Jika stok sudah tidak cukup di semua kandidat, respons `409 STOCK_UNAVAILABLE`. Kegagalan mempertahankan cart dan tidak menyimpan order baru.
+Token mengikat alamat, pilihan barang, jumlah, harga, komposisi bundle, kode gudang dan ongkir. Pada mode `check_only`, kebutuhan per kode produk juga diikat; jumlah stok dan waktu pengecekan tidak masuk fingerprint karena berubah setiap saat. Jika gudang, alamat, harga, jumlah atau komposisi bundle berubah, respons `409 CHECKOUT_CHANGED` meminta preview dan konfirmasi ulang. Jika stok sudah tidak cukup di semua kandidat pada mode `check_only`, respons `409 STOCK_UNAVAILABLE`. Kegagalan mempertahankan cart dan tidak menyimpan order baru.
 
-Order menyimpan `shipping_origin`, `stock_mode` dan snapshot `stock_check` hasil pemeriksaan terakhir. `stock_reservation_id` tetap kosong. Pembayaran/pembatalan tidak memanggil reserve/confirm/release untuk order check-only. Retry idempotent order yang sudah berhasil mengembalikan snapshot order sebelumnya tanpa memeriksa stok ulang atau mengganti gudang.
+Order menyimpan `shipping_origin`, `stock_mode` dan snapshot `stock_check` hasil pemeriksaan terakhir (`null` untuk mode `unlimited`). `stock_reservation_id` tetap kosong. Pembayaran/pembatalan tidak memanggil reserve/confirm/release. Retry idempotent order yang sudah berhasil mengembalikan snapshot order sebelumnya tanpa memilih gudang ulang.
 
-Frontend dapat menampilkan nama gudang, jarak, hasil cek stok dan pesan **stok belum direservasi** dari respons tersebut. Perubahan alamat atau pilihan barang memerlukan preview baru. Integrasi UI pembeli menggunakan kontrak API ini; perhitungan tarif berbayar berdasarkan gudang asal tidak ditambahkan pada versi ini.
+Frontend dapat menampilkan nama gudang dan jarak dari respons. Dalam mode `unlimited`, tampilkan bahwa stok belum diverifikasi. Dalam mode `check_only`, tampilkan hasil cek stok serta pesan **stok belum direservasi**. Perubahan alamat atau pilihan barang memerlukan preview baru. Integrasi UI pembeli menggunakan kontrak API ini; perhitungan tarif berbayar berdasarkan gudang asal tidak ditambahkan pada versi ini.
 
 ## 5. Batas jaminan stok
 
-API ini hanya membaca sisa stok. Pembeli lain, kanal penjualan lain atau proses gudang dapat mengubah stok setelah pengecekan. Mode check-only **tidak menjamin bebas overselling**, tidak menahan stok untuk order pending, dan tidak mengurangi stok saat pembayaran lunas. Jaminan tersebut memerlukan kontrak reservasi/pengurangan stok atomik dari sistem gudang; fitur tidak memalsukan operasi tersebut.
+Mode `unlimited` sama sekali tidak memeriksa stok, sehingga dapat terjadi overselling. Mode `check_only` hanya membaca sisa stok; pembeli lain, kanal penjualan lain atau proses gudang dapat mengubah stok setelah pengecekan. Mode check-only **tidak menjamin bebas overselling**, tidak menahan stok untuk order pending, dan tidak mengurangi stok saat pembayaran lunas. Jaminan tersebut memerlukan kontrak reservasi/pengurangan stok atomik dari sistem gudang; fitur tidak memalsukan operasi tersebut.

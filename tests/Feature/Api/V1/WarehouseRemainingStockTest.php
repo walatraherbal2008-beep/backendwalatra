@@ -69,7 +69,6 @@ class WarehouseRemainingStockTest extends TestCase
             'provider error' => [['error' => 'failed', 'data' => ['jumlah' => 0]], 200],
             'missing error field' => [['data' => ['jumlah' => 4]], 200],
             'missing quantity' => [['error' => '', 'data' => []], 200],
-            'negative' => [['error' => '', 'data' => ['jumlah' => -1]], 200],
             'fraction' => [['error' => '', 'data' => ['jumlah' => 1.5]], 200],
             'boolean' => [['error' => '', 'data' => ['jumlah' => true]], 200],
             'overflow' => [['error' => '', 'data' => ['jumlah' => '9999999999999999999999']], 200],

@@ -19,14 +19,16 @@ class WarehouseStockController extends Controller
         ]);
         $warehouse = Warehouse::active()->where('code', $code)->firstOrFail();
         $product = Product::where('product_code', $validated['product_code'])->where('status', 'active')->firstOrFail();
-        $quantity = $stock->quantity($warehouse->code, $product->product_code);
+        $reportedQuantity = $stock->quantity($warehouse->code, $product->product_code);
+        $availableQuantity = max(0, $reportedQuantity);
 
         return response()->json([
             'success' => true, 'message' => 'Sisa stok berhasil diperiksa. Stok belum direservasi.',
             'data' => [
                 'warehouse_code' => $warehouse->code, 'product_code' => $product->product_code,
-                'requested_quantity' => (int) $validated['quantity'], 'available_quantity' => $quantity,
-                'sufficient' => $quantity >= $validated['quantity'], 'reserved' => false,
+                'requested_quantity' => (int) $validated['quantity'], 'reported_quantity' => $reportedQuantity,
+                'available_quantity' => $availableQuantity,
+                'sufficient' => $availableQuantity >= $validated['quantity'], 'reserved' => false,
                 'checked_at' => now()->toIso8601String(),
             ],
         ]);

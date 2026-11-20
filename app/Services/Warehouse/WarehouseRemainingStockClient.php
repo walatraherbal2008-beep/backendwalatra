@@ -39,10 +39,13 @@ class WarehouseRemainingStockClient
         }
         $payload = $response->json();
         $quantity = data_get($payload, 'data.jumlah');
-        $validQuantity = (is_int($quantity) && $quantity >= 0)
-            || (is_string($quantity) && preg_match('/^(0|[1-9][0-9]*)$/D', $quantity)
-                && filter_var($quantity, FILTER_VALIDATE_INT, ['options' => ['min_range' => 0]]) !== false);
-        if (! $response->successful() || ! is_array($payload) || ($payload['error'] ?? null) !== '' || ! $validQuantity) {
+        $validError = is_array($payload)
+            && array_key_exists('error', $payload)
+            && in_array($payload['error'], [null, ''], true);
+        $validQuantity = is_int($quantity)
+            || (is_string($quantity) && preg_match('/^-?(0|[1-9][0-9]*)$/D', $quantity)
+                && filter_var($quantity, FILTER_VALIDATE_INT) !== false);
+        if (! $response->successful() || ! $validError || ! $validQuantity) {
             $logger->finish($activity, $started, 'failed', $response->status(), is_array($payload) ? $payload : null, errorMessage: 'Respons sisa stok tidak valid.');
             throw new WarehouseUnavailableException('Respons sisa stok tidak valid.');
         }

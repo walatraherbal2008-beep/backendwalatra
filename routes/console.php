@@ -36,6 +36,8 @@ Artisan::command('payments:reconcile {--limit=50}', function () {
 Schedule::command('payments:reconcile')->everyMinute()->withoutOverlapping();
 Schedule::command('warehouses:sync')->hourly()->withoutOverlapping()
     ->when(fn (): bool => (bool) config('services.warehouse_directory.enabled'));
+Schedule::command('warehouses:sync-stock')->hourly()->withoutOverlapping()
+    ->when(fn (): bool => (bool) config('services.warehouse_remaining_stock.enabled'));
 
 Artisan::command('logs:prune-external {--days=} {--dry-run}', function () {
     $days = $this->option('days') ?? config('security.external_log_retention_days', 30);

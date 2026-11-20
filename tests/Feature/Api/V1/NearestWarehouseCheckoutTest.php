@@ -113,6 +113,27 @@ class NearestWarehouseCheckoutTest extends TestCase
         $this->getJson('/api/v1/orders/'.$order->json('data.id'))->assertOk()->assertJsonPath('data.stock_check.items.0.requested_quantity', 2);
     }
 
+    public function test_nearest_warehouse_is_selected_by_distance_without_calling_stock_api_in_unlimited_mode(): void
+    {
+        $this->addProduct();
+        config(['checkout.stock_mode' => 'unlimited']);
+
+        $preview = $this->preview()->assertOk()
+            ->assertJsonPath('data.shipping_origin.warehouse_code', 'NEAR')
+            ->assertJsonPath('data.shipping_origin.distance_km', 0)
+            ->assertJsonPath('data.shipping_origin.selection_method', 'nearest_by_distance')
+            ->assertJsonPath('data.stock_mode', 'unlimited')
+            ->assertJsonPath('data.stock_check', null);
+
+        $order = $this->place($preview->json('data.checkout_token'))->assertCreated()
+            ->assertJsonPath('data.shipping_origin.warehouse_code', 'NEAR')
+            ->assertJsonPath('data.stock_mode', 'unlimited')
+            ->assertJsonPath('data.stock_check', null);
+
+        Http::assertNothingSent();
+        $this->assertNull(Order::findOrFail($order->json('data.id'))->stock_check);
+    }
+
     public function test_shortage_falls_back_to_next_nearest_warehouse(): void
     {
         $this->addProduct();
@@ -246,7 +267,7 @@ class NearestWarehouseCheckoutTest extends TestCase
         $this->addProduct();
         config(['checkout.free_shipping' => false]);
         $this->preview()->assertStatus(503);
-        config(['checkout.free_shipping' => true, 'checkout.stock_mode' => 'unlimited']);
+        config(['checkout.free_shipping' => true, 'checkout.stock_mode' => 'external']);
         $this->preview()->assertStatus(503);
         Http::assertNothingSent();
     }

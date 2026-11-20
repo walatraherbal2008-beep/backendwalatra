@@ -4,6 +4,7 @@ namespace App\Services\Warehouse;
 
 use App\Exceptions\WarehouseUnavailableException;
 use App\Models\Warehouse;
+use App\Support\CheckoutStock;
 use App\Support\GeoCoordinates;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Validation\ValidationException;
@@ -31,6 +32,21 @@ class NearestWarehouseSelector
         if ($candidates->isEmpty()) {
             $this->conflict('WAREHOUSE_NOT_AVAILABLE', 'Belum ada gudang aktif dengan koordinat valid untuk seluruh barang yang dipilih.');
         }
+
+        if (CheckoutStock::unlimited()) {
+            $candidate = $candidates->first();
+            $warehouse = $candidate['warehouse'];
+
+            return [
+                'warehouse_code' => $warehouse->code, 'warehouse_name' => $warehouse->realname,
+                'address' => $warehouse->fulladdr, 'postal_code' => $warehouse->postal_code,
+                'coordinates' => $warehouse->coordinates,
+                'latitude' => $warehouse->latitude, 'longitude' => $warehouse->longitude,
+                'distance_km' => round($candidate['distance'], 3), 'selection_method' => 'nearest_by_distance',
+                'stock_check' => null,
+            ];
+        }
+
         $deadline = hrtime(true) / 1e9 + min(15, max(0.01, (float) config('checkout.warehouse_selection_timeout', 15)));
         $shortages = [];
         foreach ($candidates as $candidate) {
@@ -38,11 +54,12 @@ class NearestWarehouseSelector
             $items = [];
             $available = true;
             foreach ($requirements as $requirement) {
-                $quantity = $this->stock->quantity($warehouse->code, $requirement['product_code'], $deadline);
+                $reportedQuantity = $this->stock->quantity($warehouse->code, $requirement['product_code'], $deadline);
+                $quantity = max(0, $reportedQuantity);
                 $sufficient = $quantity >= $requirement['quantity'];
                 $items[] = [
                     'product_code' => $requirement['product_code'], 'requested_quantity' => $requirement['quantity'],
-                    'available_quantity' => $quantity, 'sufficient' => $sufficient,
+                    'reported_quantity' => $reportedQuantity, 'available_quantity' => $quantity, 'sufficient' => $sufficient,
                 ];
                 if (! $sufficient) {
                     $available = false;

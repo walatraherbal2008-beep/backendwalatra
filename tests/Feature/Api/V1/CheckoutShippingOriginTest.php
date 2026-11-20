@@ -32,7 +32,10 @@ class CheckoutShippingOriginTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        config(['checkout.mode' => 'manual', 'checkout.free_shipping' => true, 'checkout.stock_mode' => 'unlimited']);
+        config([
+            'checkout.mode' => 'manual', 'checkout.free_shipping' => true,
+            'checkout.stock_mode' => 'unlimited', 'checkout.warehouse_selection' => 'legacy',
+        ]);
         $this->customer = User::factory()->create();
         Sanctum::actingAs($this->customer, ['customer-api']);
         $stock = Mockery::mock(WarehouseStockProvider::class);

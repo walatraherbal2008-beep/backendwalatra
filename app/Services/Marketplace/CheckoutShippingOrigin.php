@@ -21,9 +21,11 @@ class CheckoutShippingOrigin
 
     public function resolve(Collection $items, bool $lock = false, ?array $address = null): array
     {
-        if (CheckoutStock::nearest() !== CheckoutStock::checkOnly()
-            || (CheckoutStock::nearest() && ! config('checkout.free_shipping'))) {
-            throw new WarehouseUnavailableException('Pemilihan gudang terdekat memerlukan mode check_only dan gratis ongkir.');
+        $nearest = CheckoutStock::nearest();
+        $stockModeCompatible = CheckoutStock::unlimited() || CheckoutStock::checkOnly();
+        if (($nearest && (! $stockModeCompatible || ! config('checkout.free_shipping')))
+            || (! $nearest && CheckoutStock::checkOnly())) {
+            throw new WarehouseUnavailableException('Pemilihan gudang terdekat memerlukan mode stok unlimited atau check_only dan gratis ongkir.');
         }
         $variantIds = $items->flatMap(fn ($item) => $item->isBundle()
             ? $item->bundleListing->bundle->items->pluck('product_variant_id')
@@ -52,7 +54,10 @@ class CheckoutShippingOrigin
 
         if (CheckoutStock::nearest()) {
             return app(NearestWarehouseSelector::class)->select(
-                $common, app(CheckoutReview::class)->productRequirements($items), $address, $lock,
+                $common,
+                CheckoutStock::checkOnly() ? app(CheckoutReview::class)->productRequirements($items) : [],
+                $address,
+                $lock,
             );
         }
 

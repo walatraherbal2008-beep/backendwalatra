@@ -101,6 +101,11 @@ class Product extends Model implements HasMedia
         return $this->hasMany(StoreProductListing::class);
     }
 
+    public function warehouseStockSnapshots(): HasMany
+    {
+        return $this->hasMany(WarehouseProductStockSnapshot::class);
+    }
+
     public function registerMediaCollections(): void
     {
         $this->addMediaCollection('images');

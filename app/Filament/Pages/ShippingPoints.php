@@ -8,6 +8,7 @@ use App\Models\Warehouse;
 use App\Services\Warehouse\ExternalWarehouseDirectoryClient;
 use App\Services\Warehouse\WarehouseSyncService;
 use App\Support\CheckoutStock;
+use App\Support\GeoCoordinates;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Infolists\Components\TextEntry;
@@ -134,6 +135,27 @@ class ShippingPoints extends Page implements HasTable
             ->columns([
                 TextColumn::make('realname')->label('Nama titik pengiriman')->wrap(),
                 TextColumn::make('codename')->label('Wilayah')->wrap(),
+                TextColumn::make('coordinates')
+                    ->label('Latitude, Longitude')
+                    ->state(function (array $record): ?string {
+                        $latitude = $record['latitude'] ?? null;
+                        $longitude = $record['longitude'] ?? null;
+
+                        if (! GeoCoordinates::valid($latitude, $longitude)) {
+                            $coordinates = GeoCoordinates::parse(is_string($record['coordinates'] ?? null) ? $record['coordinates'] : null);
+
+                            if ($coordinates === null) {
+                                return null;
+                            }
+
+                            $latitude = $coordinates['latitude'];
+                            $longitude = $coordinates['longitude'];
+                        }
+
+                        return number_format((float) $latitude, 7, '.', '').', '.number_format((float) $longitude, 7, '.', '');
+                    })
+                    ->placeholder('Belum tersedia')
+                    ->copyable(),
                 TextColumn::make('area_group')->label('Grup')->badge()
                     ->formatStateUsing(fn (string $state): string => self::areaLabel($state)),
                 IconColumn::make('is_active')->label('Aktif lokal')->boolean()->visible(fn (): bool => $this->usesLocalDirectory()),
