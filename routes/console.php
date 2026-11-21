@@ -2,6 +2,7 @@
 
 use App\Jobs\ProcessMidtransNotification;
 use App\Jobs\ReconcileOrderPayment;
+use App\Models\ApiRequestAuditLog;
 use App\Models\ExternalApiActivityLog;
 use App\Models\Order;
 use App\Models\PaymentNotification;
@@ -63,6 +64,34 @@ Artisan::command('logs:prune-external {--days=} {--dry-run}', function () {
 })->purpose('Hapus log API eksternal yang melewati masa retensi');
 
 Schedule::command('logs:prune-external')->daily()->withoutOverlapping();
+
+Artisan::command('logs:prune-api-audit {--days=} {--dry-run}', function () {
+    $days = $this->option('days') ?? config('security.api_request_audit_retention_days', 90);
+    if (filter_var($days, FILTER_VALIDATE_INT) === false || (int) $days < 1 || (int) $days > 3650) {
+        $this->error('Retensi audit API harus antara 1 dan 3650 hari.');
+
+        return 1;
+    }
+
+    $query = ApiRequestAuditLog::where('started_at', '<', now()->subDays((int) $days));
+    if ($this->option('dry-run')) {
+        $this->info($query->count().' log audit request API melewati masa retensi.');
+
+        return 0;
+    }
+
+    $deleted = 0;
+    do {
+        $ids = (clone $query)->orderBy('id')->limit(1000)->pluck('id');
+        $deleted += ApiRequestAuditLog::whereIn('id', $ids)->delete();
+    } while ($ids->count() === 1000);
+
+    $this->info($deleted.' log audit request API kedaluwarsa dihapus.');
+
+    return 0;
+})->purpose('Hapus audit request API yang melewati masa retensi');
+
+Schedule::command('logs:prune-api-audit')->daily()->withoutOverlapping();
 
 Artisan::command('logs:sanitize-external {--dry-run}', function () {
     $logger = app(ExternalApiActivityLogger::class);

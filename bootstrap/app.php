@@ -7,6 +7,8 @@ use App\Exceptions\PaymentOperationInProgress;
 use App\Exceptions\ShippingUnavailableException;
 use App\Exceptions\WarehouseDirectoryUnavailableException;
 use App\Exceptions\WarehouseUnavailableException;
+use App\Http\Middleware\AuditIncomingApiRequest;
+use App\Services\ApiRequestAuditResponseFinalizer;
 use App\Support\ApiResponse;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
@@ -16,6 +18,7 @@ use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Laravel\Sanctum\Http\Middleware\CheckAbilities;
+use Symfony\Component\HttpFoundation\Response as HttpResponse;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 use Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException;
 
@@ -27,6 +30,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->prepend(AuditIncomingApiRequest::class);
         $middleware->alias([
             'abilities' => CheckAbilities::class,
         ]);
@@ -153,5 +157,13 @@ return Application::configure(basePath: dirname(__DIR__))
                 'NOT_FOUND',
                 status: 404,
             );
+        });
+
+        $exceptions->respond(function (HttpResponse $response): HttpResponse {
+            if (request()->is('api/*')) {
+                app(ApiRequestAuditResponseFinalizer::class)->finalize(request(), $response);
+            }
+
+            return $response;
         });
     })->create();
