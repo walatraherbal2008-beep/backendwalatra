@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+  <testsuite name="CLI Arguments" tests="3" assertions="110" errors="0" failures="0" skipped="0" time="11.402375">
+    <testsuite name="Tests\Audit\DiagnosedCartConcurrencyTest" file="/home/popes/Project/backendwalatra-remote/docs/audits/2026-11-23-qc-security/DiagnosedCartConcurrencyTest.php" tests="2" assertions="103" errors="0" failures="0" skipped="0" time="8.419824">
+      <testcase name="test_cart_mutations_wait_for_checkout_and_cannot_change_or_delete_its_snapshot" file="/home/popes/Project/backendwalatra-remote/tests/Integration/CartCheckoutConcurrencyTest.php" line="51" class="Tests\Audit\DiagnosedCartConcurrencyTest" classname="Tests.Audit.DiagnosedCartConcurrencyTest" assertions="80" time="4.922770"/>
+      <testcase name="test_master_product_and_bundle_price_updates_wait_until_order_is_committed" file="/home/popes/Project/backendwalatra-remote/tests/Integration/CartCheckoutConcurrencyTest.php" line="123" class="Tests\Audit\DiagnosedCartConcurrencyTest" classname="Tests.Audit.DiagnosedCartConcurrencyTest" assertions="23" time="3.497054"/>
+    </testsuite>
+    <testsuite name="Tests\Audit\WarehouseLockProbeTest" file="/home/popes/Project/backendwalatra-remote/docs/audits/2026-11-23-qc-security/WarehouseLockProbeTest.php" tests="1" assertions="7" errors="0" failures="0" skipped="0" time="2.982550">
+      <testcase name="test_checkout_holds_all_candidate_warehouse_locks_during_external_stock_request" file="/home/popes/Project/backendwalatra-remote/docs/audits/2026-11-23-qc-security/WarehouseLockProbeTest.php" line="18" class="Tests\Audit\WarehouseLockProbeTest" classname="Tests.Audit.WarehouseLockProbeTest" assertions="7" time="2.982550"/>
+    </testsuite>
+  </testsuite>
+</testsuites>

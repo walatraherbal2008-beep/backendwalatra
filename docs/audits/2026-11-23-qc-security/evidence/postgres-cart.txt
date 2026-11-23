@@ -1,0 +1,12 @@
+PHPUnit 11.5.58 by Sebastian Bergmann and contributors.
+
+Runtime:       PHP 8.4.27
+Configuration: /home/popes/Project/backendwalatra-remote/phpunit.xml
+
+..
+{"probe":"shared_warehouse_lock","selected":"NEAR","transaction_depth_during_http":1,"independent_connection_lock_results":{"NEAR":"55P03","FAR":"55P03"},"lock_timeout_ms":100}
+.                                                                 3 / 3 (100%)
+
+Time: 00:11.407, Memory: 74.50 MB
+
+OK (3 tests, 110 assertions)

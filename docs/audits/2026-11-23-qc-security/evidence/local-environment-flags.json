@@ -1,0 +1,9 @@
+{
+  "APP_ENV": "local",
+  "APP_DEBUG": "true",
+  "OTP_EXPOSE_CODE": "true",
+  "CHECKOUT_STOCK_MODE": "unlimited",
+  "CHECKOUT_WAREHOUSE_SELECTION": "nearest_available",
+  "FREE_SHIPPING_ENABLED": "true",
+  "WAREHOUSE_REMAINING_STOCK_ENABLED": "true"
+}

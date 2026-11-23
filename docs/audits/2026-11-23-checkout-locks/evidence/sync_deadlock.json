@@ -1,0 +1,55 @@
+{
+    "scenario": "sync_deadlock",
+    "blocking_before_cycle": {
+        "wait_event_type": "Lock",
+        "query": "select * from \"warehouses\" where \"is_active\" = $1 and \"is_listed\" = $2 and \"code\" in ($3, $4) order by \"code\" asc for update",
+        "blockers": "{51719}"
+    },
+    "sync": {
+        "status": 200,
+        "sqlstates": [],
+        "elapsed_ms": 1246.47,
+        "transactions_after_request": 0
+    },
+    "checkout": {
+        "status": 500,
+        "code": null,
+        "operation": "order",
+        "order_id": null,
+        "warehouse": null,
+        "elapsed_ms": 1049.43,
+        "selection_timeout_ms": 5000,
+        "first_http_delay_ms": null,
+        "lock_queries": [
+            {
+                "table": "users",
+                "duration_ms": 0.46
+            },
+            {
+                "table": "cart_items",
+                "duration_ms": 0.56
+            },
+            {
+                "table": "product_variants",
+                "duration_ms": 0.31
+            },
+            {
+                "table": "product_bundles",
+                "duration_ms": 0.44
+            },
+            {
+                "table": "warehouse_product_variants",
+                "duration_ms": 0.41
+            }
+        ],
+        "reported_database_errors": [
+            {
+                "class": "Illuminate\\Database\\QueryException",
+                "sqlstate": "40P01"
+            }
+        ],
+        "transactions_after_request": 0,
+        "orders_for_user": 0,
+        "cart_items_for_user": 1
+    }
+}

@@ -1,0 +1,21 @@
+{
+  "missing_report_links": [],
+  "audit_php_lint": [
+    {
+      "file": "docs/audits/2026-11-23-qc-security/AuditProbeTest.php",
+      "exit_code": 0
+    },
+    {
+      "file": "docs/audits/2026-11-23-qc-security/run-postgres.php",
+      "exit_code": 0
+    },
+    {
+      "file": "docs/audits/2026-11-23-qc-security/DiagnosedCartConcurrencyTest.php",
+      "exit_code": 0
+    },
+    {
+      "file": "docs/audits/2026-11-23-qc-security/WarehouseLockProbeTest.php",
+      "exit_code": 0
+    }
+  ]
+}

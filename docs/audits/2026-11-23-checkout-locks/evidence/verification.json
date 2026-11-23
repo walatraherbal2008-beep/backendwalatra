@@ -1,0 +1,35 @@
+{
+  "missing_report_links": [],
+  "tests": {
+    "name": "Tests\\Audit\\CheckoutLockAuditTest",
+    "file": "/home/popes/Project/backendwalatra-remote/docs/audits/2026-11-23-checkout-locks/CheckoutLockAuditTest.php",
+    "tests": "9",
+    "assertions": "220",
+    "errors": "0",
+    "failures": "0",
+    "skipped": "0",
+    "time": "38.135092"
+  },
+  "audit_php_lint": [
+    {
+      "file": "docs/audits/2026-11-23-checkout-locks/checkout-worker.php",
+      "exit_code": 0
+    },
+    {
+      "file": "docs/audits/2026-11-23-checkout-locks/warehouse-sync-worker.php",
+      "exit_code": 0
+    },
+    {
+      "file": "docs/audits/2026-11-23-checkout-locks/run-postgres.php",
+      "exit_code": 0
+    },
+    {
+      "file": "docs/audits/2026-11-23-checkout-locks/CheckoutLockAuditTest.php",
+      "exit_code": 0
+    }
+  ],
+  "tracked_changed_files": [
+    "app/Http/Controllers/Superadmin/CustomerExportController.php",
+    "tests/Feature/Filament/CustomerManagementTest.php"
+  ]
+}

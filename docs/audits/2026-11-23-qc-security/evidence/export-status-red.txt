@@ -1,0 +1,40 @@
+PHPUnit 11.5.58 by Sebastian Bergmann and contributors.
+
+Runtime:       PHP 8.4.27
+Configuration: /home/popes/Project/backendwalatra-remote/phpunit.xml
+
+..FFF                                                               5 / 5 (100%)
+
+Time: 00:00.395, Memory: 66.50 MB
+
+There were 3 failures:
+
+1) Tests\Feature\Filament\CustomerManagementTest::test_superadmin_cannot_export_after_account_is_deactivated with data set "blocked" ('blocked')
+Expected response status code [403] but received 200.
+Failed asserting that 200 is identical to 403.
+
+/home/popes/Project/backendwalatra-remote/vendor/laravel/framework/src/Illuminate/Testing/TestResponseAssert.php:45
+/home/popes/Project/backendwalatra-remote/vendor/laravel/framework/src/Illuminate/Testing/TestResponse.php:175
+/home/popes/Project/backendwalatra-remote/vendor/laravel/framework/src/Illuminate/Testing/Concerns/AssertsStatusCodes.php:141
+/home/popes/Project/backendwalatra-remote/tests/Feature/Filament/CustomerManagementTest.php:57
+
+2) Tests\Feature\Filament\CustomerManagementTest::test_superadmin_cannot_export_after_account_is_deactivated with data set "suspended" ('suspended')
+Expected response status code [403] but received 200.
+Failed asserting that 200 is identical to 403.
+
+/home/popes/Project/backendwalatra-remote/vendor/laravel/framework/src/Illuminate/Testing/TestResponseAssert.php:45
+/home/popes/Project/backendwalatra-remote/vendor/laravel/framework/src/Illuminate/Testing/TestResponse.php:175
+/home/popes/Project/backendwalatra-remote/vendor/laravel/framework/src/Illuminate/Testing/Concerns/AssertsStatusCodes.php:141
+/home/popes/Project/backendwalatra-remote/tests/Feature/Filament/CustomerManagementTest.php:57
+
+3) Tests\Feature\Filament\CustomerManagementTest::test_superadmin_cannot_export_after_account_is_deactivated with data set "inactive" ('inactive')
+Expected response status code [403] but received 200.
+Failed asserting that 200 is identical to 403.
+
+/home/popes/Project/backendwalatra-remote/vendor/laravel/framework/src/Illuminate/Testing/TestResponseAssert.php:45
+/home/popes/Project/backendwalatra-remote/vendor/laravel/framework/src/Illuminate/Testing/TestResponse.php:175
+/home/popes/Project/backendwalatra-remote/vendor/laravel/framework/src/Illuminate/Testing/Concerns/AssertsStatusCodes.php:141
+/home/popes/Project/backendwalatra-remote/tests/Feature/Filament/CustomerManagementTest.php:57
+
+FAILURES!
+Tests: 5, Assertions: 7, Failures: 3.

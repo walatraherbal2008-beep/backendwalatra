@@ -4,6 +4,7 @@ namespace Tests\Feature\Filament;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
@@ -30,6 +31,29 @@ class CustomerManagementTest extends TestCase
 
         $this->actingAs($customer)
             ->get(route('superadmin.customers.export'))
+            ->assertForbidden();
+    }
+
+    public static function nonActiveStatuses(): array
+    {
+        return [
+            'blocked' => ['blocked'],
+            'suspended' => ['suspended'],
+            'inactive' => ['inactive'],
+        ];
+    }
+
+    #[DataProvider('nonActiveStatuses')]
+    public function test_superadmin_cannot_export_after_account_is_deactivated(string $status): void
+    {
+        Role::findOrCreate('super_admin', 'web');
+        $admin = User::factory()->create(['user_type' => 'admin', 'status' => 'active']);
+        $admin->assignRole('super_admin');
+        $this->actingAs($admin);
+
+        $admin->update(['status' => $status]);
+
+        $this->get(route('superadmin.customers.export'))
             ->assertForbidden();
     }
 }

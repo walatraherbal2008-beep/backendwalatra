@@ -1,0 +1,37 @@
+PHPUnit 11.5.58 by Sebastian Bergmann and contributors.
+
+Runtime:       PHP 8.4.27
+Configuration: /home/popes/Project/backendwalatra-remote/phpunit.xml
+
+
+{"diagnostic":"cart_concurrency_response","uri":"\/api\/v1\/checkout\/preview","status":409,"code":"WAREHOUSE_NOT_AVAILABLE","message":"Barang yang dipilih belum tersedia pada titik pengiriman yang ditetapkan.","selection":"legacy","preferred_warehouse":"5504027954349"}
+F
+{"diagnostic":"cart_concurrency_response","uri":"\/api\/v1\/checkout\/preview","status":409,"code":"WAREHOUSE_NOT_AVAILABLE","message":"Barang yang dipilih belum tersedia pada titik pengiriman yang ditetapkan.","selection":"legacy","preferred_warehouse":"5504027954349"}
+F
+{"probe":"shared_warehouse_lock","selected":"NEAR","transaction_depth_during_http":1,"independent_connection_lock_results":{"NEAR":"55P03","FAR":"55P03"},"lock_timeout_ms":100}
+.                                                                 3 / 3 (100%)
+
+Time: 00:10.151, Memory: 72.50 MB
+
+There were 2 failures:
+
+1) Tests\Audit\DiagnosedCartConcurrencyTest::test_cart_mutations_wait_for_checkout_and_cannot_change_or_delete_its_snapshot
+Expected response status code [200] but received 409.
+Failed asserting that 409 is identical to 200.
+
+/home/popes/Project/backendwalatra-remote/vendor/laravel/framework/src/Illuminate/Testing/TestResponseAssert.php:45
+/home/popes/Project/backendwalatra-remote/vendor/laravel/framework/src/Illuminate/Testing/TestResponse.php:175
+/home/popes/Project/backendwalatra-remote/vendor/laravel/framework/src/Illuminate/Testing/Concerns/AssertsStatusCodes.php:16
+/home/popes/Project/backendwalatra-remote/tests/Integration/CartCheckoutConcurrencyTest.php:72
+
+2) Tests\Audit\DiagnosedCartConcurrencyTest::test_master_product_and_bundle_price_updates_wait_until_order_is_committed
+Expected response status code [200] but received 409.
+Failed asserting that 409 is identical to 200.
+
+/home/popes/Project/backendwalatra-remote/vendor/laravel/framework/src/Illuminate/Testing/TestResponseAssert.php:45
+/home/popes/Project/backendwalatra-remote/vendor/laravel/framework/src/Illuminate/Testing/TestResponse.php:175
+/home/popes/Project/backendwalatra-remote/vendor/laravel/framework/src/Illuminate/Testing/Concerns/AssertsStatusCodes.php:16
+/home/popes/Project/backendwalatra-remote/tests/Integration/CartCheckoutConcurrencyTest.php:144
+
+FAILURES!
+Tests: 3, Assertions: 14, Failures: 2.

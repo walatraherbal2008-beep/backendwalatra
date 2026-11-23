@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+  <testsuite name="CLI Arguments" tests="3" assertions="14" errors="0" failures="2" skipped="0" time="9.541882">
+    <testsuite name="Tests\Integration\CartCheckoutConcurrencyTest" file="/home/popes/Project/backendwalatra-remote/tests/Integration/CartCheckoutConcurrencyTest.php" tests="2" assertions="7" errors="0" failures="2" skipped="0" time="6.416074">
+      <testcase name="test_cart_mutations_wait_for_checkout_and_cannot_change_or_delete_its_snapshot" file="/home/popes/Project/backendwalatra-remote/tests/Integration/CartCheckoutConcurrencyTest.php" line="51" class="Tests\Integration\CartCheckoutConcurrencyTest" classname="Tests.Integration.CartCheckoutConcurrencyTest" assertions="4" time="3.766725">
+        <failure type="PHPUnit\Framework\ExpectationFailedException">Tests\Integration\CartCheckoutConcurrencyTest::test_cart_mutations_wait_for_checkout_and_cannot_change_or_delete_its_snapshot
+Expected response status code [200] but received 422.
+Failed asserting that 422 is identical to 200.
+
+The following errors occurred during the last request:
+
+{
+    "success": false,
+    "message": "Lengkapi titik latitude dan longitude alamat pengiriman sebelum checkout.",
+    "code": "VALIDATION_ERROR",
+    "errors": {
+        "shipping_address.latitude": [
+            "Lengkapi titik latitude dan longitude alamat pengiriman sebelum checkout."
+        ]
+    }
+}
+
+/home/popes/Project/backendwalatra-remote/vendor/laravel/framework/src/Illuminate/Testing/TestResponseAssert.php:45
+/home/popes/Project/backendwalatra-remote/vendor/laravel/framework/src/Illuminate/Testing/TestResponse.php:175
+/home/popes/Project/backendwalatra-remote/vendor/laravel/framework/src/Illuminate/Testing/Concerns/AssertsStatusCodes.php:16
+/home/popes/Project/backendwalatra-remote/tests/Integration/CartCheckoutConcurrencyTest.php:72</failure>
+      </testcase>
+      <testcase name="test_master_product_and_bundle_price_updates_wait_until_order_is_committed" file="/home/popes/Project/backendwalatra-remote/tests/Integration/CartCheckoutConcurrencyTest.php" line="123" class="Tests\Integration\CartCheckoutConcurrencyTest" classname="Tests.Integration.CartCheckoutConcurrencyTest" assertions="3" time="2.649349">
+        <failure type="PHPUnit\Framework\ExpectationFailedException">Tests\Integration\CartCheckoutConcurrencyTest::test_master_product_and_bundle_price_updates_wait_until_order_is_committed
+Expected response status code [200] but received 422.
+Failed asserting that 422 is identical to 200.
+
+The following errors occurred during the last request:
+
+{
+    "success": false,
+    "message": "Lengkapi titik latitude dan longitude alamat pengiriman sebelum checkout.",
+    "code": "VALIDATION_ERROR",
+    "errors": {
+        "shipping_address.latitude": [
+            "Lengkapi titik latitude dan longitude alamat pengiriman sebelum checkout."
+        ]
+    }
+}
+
+/home/popes/Project/backendwalatra-remote/vendor/laravel/framework/src/Illuminate/Testing/TestResponseAssert.php:45
+/home/popes/Project/backendwalatra-remote/vendor/laravel/framework/src/Illuminate/Testing/TestResponse.php:175
+/home/popes/Project/backendwalatra-remote/vendor/laravel/framework/src/Illuminate/Testing/Concerns/AssertsStatusCodes.php:16
+/home/popes/Project/backendwalatra-remote/tests/Integration/CartCheckoutConcurrencyTest.php:144</failure>
+      </testcase>
+    </testsuite>
+    <testsuite name="Tests\Audit\WarehouseLockProbeTest" file="/home/popes/Project/backendwalatra-remote/docs/audits/2026-11-23-qc-security/WarehouseLockProbeTest.php" tests="1" assertions="7" errors="0" failures="0" skipped="0" time="3.125808">
+      <testcase name="test_checkout_holds_all_candidate_warehouse_locks_during_external_stock_request" file="/home/popes/Project/backendwalatra-remote/docs/audits/2026-11-23-qc-security/WarehouseLockProbeTest.php" line="18" class="Tests\Audit\WarehouseLockProbeTest" classname="Tests.Audit.WarehouseLockProbeTest" assertions="7" time="3.125808"/>
+    </testsuite>
+  </testsuite>
+</testsuites>

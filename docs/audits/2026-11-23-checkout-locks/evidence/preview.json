@@ -1,0 +1,73 @@
+{
+    "scenario": "preview",
+    "blocking": null,
+    "candidate_codes": {
+        "a": [
+            "W1"
+        ],
+        "b": [
+            "W1"
+        ]
+    },
+    "b_completed_before_a_stock_release": true,
+    "a": {
+        "status": 201,
+        "code": null,
+        "operation": "order",
+        "order_id": 1,
+        "warehouse": "W1",
+        "elapsed_ms": 784.76,
+        "selection_timeout_ms": 5000,
+        "first_http_delay_ms": 65.21,
+        "lock_queries": [
+            {
+                "table": "users",
+                "duration_ms": 0.54
+            },
+            {
+                "table": "cart_items",
+                "duration_ms": 0.79
+            },
+            {
+                "table": "product_variants",
+                "duration_ms": 0.34
+            },
+            {
+                "table": "product_bundles",
+                "duration_ms": 0.54
+            },
+            {
+                "table": "warehouse_product_variants",
+                "duration_ms": 0.6
+            },
+            {
+                "table": "warehouses",
+                "duration_ms": 0.54
+            }
+        ],
+        "reported_database_errors": [],
+        "transactions_after_request": 0,
+        "orders_for_user": 1,
+        "cart_items_for_user": 0
+    },
+    "b": {
+        "status": 200,
+        "code": null,
+        "operation": "preview",
+        "order_id": null,
+        "warehouse": "W1",
+        "elapsed_ms": 288.47,
+        "selection_timeout_ms": 5000,
+        "first_http_delay_ms": 160.49,
+        "lock_queries": [],
+        "reported_database_errors": [],
+        "transactions_after_request": 0,
+        "orders_for_user": 0,
+        "cart_items_for_user": 1
+    },
+    "upstream_reported_quantity_per_call": 1,
+    "total_ordered_quantity": 1,
+    "order_reservations_present": [
+        false
+    ]
+}

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+  <testsuite name="Tests\Audit\AuditProbeTest" file="/home/popes/Project/backendwalatra-remote/docs/audits/2026-11-23-qc-security/AuditProbeTest.php" tests="5" assertions="29" errors="0" failures="0" skipped="0" time="0.484786">
+    <testcase name="test_customer_supplied_formula_survives_csv_export" file="/home/popes/Project/backendwalatra-remote/docs/audits/2026-11-23-qc-security/AuditProbeTest.php" line="43" class="Tests\Audit\AuditProbeTest" classname="Tests.Audit.AuditProbeTest" assertions="3" time="0.316153"/>
+    <testcase name="test_existing_session_can_export_after_admin_is_blocked" file="/home/popes/Project/backendwalatra-remote/docs/audits/2026-11-23-qc-security/AuditProbeTest.php" line="56" class="Tests\Audit\AuditProbeTest" classname="Tests.Audit.AuditProbeTest" assertions="3" time="0.024758"/>
+    <testcase name="test_non_numeric_route_parameters_produce_server_errors" file="/home/popes/Project/backendwalatra-remote/docs/audits/2026-11-23-qc-security/AuditProbeTest.php" line="67" class="Tests\Audit\AuditProbeTest" classname="Tests.Audit.AuditProbeTest" assertions="2" time="0.029756"/>
+    <testcase name="test_unmatched_public_api_requests_write_audit_rows_without_route_throttle" file="/home/popes/Project/backendwalatra-remote/docs/audits/2026-11-23-qc-security/AuditProbeTest.php" line="91" class="Tests\Audit\AuditProbeTest" classname="Tests.Audit.AuditProbeTest" assertions="13" time="0.028531"/>
+    <testcase name="test_product_catalog_query_count_at_two_page_sizes" file="/home/popes/Project/backendwalatra-remote/docs/audits/2026-11-23-qc-security/AuditProbeTest.php" line="108" class="Tests\Audit\AuditProbeTest" classname="Tests.Audit.AuditProbeTest" assertions="8" time="0.085587"/>
+  </testsuite>
+</testsuites>

@@ -1,0 +1,20 @@
+PHPUnit 11.5.58 by Sebastian Bergmann and contributors.
+
+Runtime:       PHP 8.4.27
+Configuration: /home/popes/Project/backendwalatra-remote/phpunit.xml
+
+
+{"probe":"csv_formula","profile_status":200,"export_status":200,"exported_name":"=1+1"}
+.
+{"probe":"blocked_admin_export","can_access_panel":false,"export_status":200}
+.
+{"probe":"invalid_route_ids","statuses":{"GET /api/v1/orders/not-a-number":500,"GET /api/v1/orders/not-a-number/payment":500,"POST /api/v1/orders/not-a-number/cancel":500,"PATCH /api/v1/cart/items/not-a-number":500},"exception_type":"TypeError"}
+.
+{"probe":"unmatched_request_audit_writes","requests":10,"status":404,"inserts":10,"updates":10}
+.
+{"probe":"catalog_query_scaling","database":"sqlite-memory","samples":[{"page_size":5,"queries":10,"elapsed_ms":10.68},{"page_size":25,"queries":10,"elapsed_ms":10.93}]}
+.                                                               5 / 5 (100%)
+
+Time: 00:00.488, Memory: 72.50 MB
+
+OK (5 tests, 29 assertions)

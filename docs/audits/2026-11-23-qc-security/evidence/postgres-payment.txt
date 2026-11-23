@@ -1,0 +1,10 @@
+PHPUnit 11.5.58 by Sebastian Bergmann and contributors.
+
+Runtime:       PHP 8.4.27
+Configuration: /home/popes/Project/backendwalatra-remote/phpunit.xml
+
+.                                                                   1 / 1 (100%)
+
+Time: 00:03.258, Memory: 66.50 MB
+
+OK (1 test, 17 assertions)

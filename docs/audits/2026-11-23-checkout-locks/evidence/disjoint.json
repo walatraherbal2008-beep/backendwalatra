@@ -1,0 +1,99 @@
+{
+    "scenario": "disjoint",
+    "blocking": null,
+    "candidate_codes": {
+        "a": [
+            "W1"
+        ],
+        "b": [
+            "W3"
+        ]
+    },
+    "b_completed_before_a_stock_release": true,
+    "a": {
+        "status": 201,
+        "code": null,
+        "operation": "order",
+        "order_id": 2,
+        "warehouse": "W1",
+        "elapsed_ms": 481.18,
+        "selection_timeout_ms": 5000,
+        "first_http_delay_ms": 50.95,
+        "lock_queries": [
+            {
+                "table": "users",
+                "duration_ms": 0.53
+            },
+            {
+                "table": "cart_items",
+                "duration_ms": 0.6
+            },
+            {
+                "table": "product_variants",
+                "duration_ms": 0.26
+            },
+            {
+                "table": "product_bundles",
+                "duration_ms": 0.34
+            },
+            {
+                "table": "warehouse_product_variants",
+                "duration_ms": 0.36
+            },
+            {
+                "table": "warehouses",
+                "duration_ms": 0.49
+            }
+        ],
+        "reported_database_errors": [],
+        "transactions_after_request": 0,
+        "orders_for_user": 1,
+        "cart_items_for_user": 0
+    },
+    "b": {
+        "status": 201,
+        "code": null,
+        "operation": "order",
+        "order_id": 1,
+        "warehouse": "W3",
+        "elapsed_ms": 81.5,
+        "selection_timeout_ms": 5000,
+        "first_http_delay_ms": 47.74,
+        "lock_queries": [
+            {
+                "table": "users",
+                "duration_ms": 0.45
+            },
+            {
+                "table": "cart_items",
+                "duration_ms": 0.61
+            },
+            {
+                "table": "product_variants",
+                "duration_ms": 0.28
+            },
+            {
+                "table": "product_bundles",
+                "duration_ms": 0.41
+            },
+            {
+                "table": "warehouse_product_variants",
+                "duration_ms": 0.41
+            },
+            {
+                "table": "warehouses",
+                "duration_ms": 0.4
+            }
+        ],
+        "reported_database_errors": [],
+        "transactions_after_request": 0,
+        "orders_for_user": 1,
+        "cart_items_for_user": 0
+    },
+    "upstream_reported_quantity_per_call": 1,
+    "total_ordered_quantity": 2,
+    "order_reservations_present": [
+        false,
+        false
+    ]
+}

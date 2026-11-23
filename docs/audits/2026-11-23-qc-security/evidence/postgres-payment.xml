@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+  <testsuite name="Tests\Integration\CorePaymentConcurrencyTest" file="/home/popes/Project/backendwalatra-remote/tests/Integration/CorePaymentConcurrencyTest.php" tests="1" assertions="17" errors="0" failures="0" skipped="0" time="3.255103">
+    <testcase name="test_concurrent_payment_requests_cannot_issue_a_second_charge" file="/home/popes/Project/backendwalatra-remote/tests/Integration/CorePaymentConcurrencyTest.php" line="16" class="Tests\Integration\CorePaymentConcurrencyTest" classname="Tests.Integration.CorePaymentConcurrencyTest" assertions="17" time="3.255103"/>
+  </testsuite>
+</testsuites>

@@ -1,0 +1,104 @@
+{
+    "scenario": "lock_timeout",
+    "blocking": {
+        "wait_event_type": "Lock",
+        "wait_event": "transactionid",
+        "query": "select * from \"warehouses\" where \"is_active\" = $1 and \"is_listed\" = $2 and \"code\" in ($3) order by \"code\" asc for update",
+        "blockers": "{51297}"
+    },
+    "candidate_codes": {
+        "a": [
+            "W1"
+        ],
+        "b": [
+            "W1"
+        ]
+    },
+    "b_completed_before_a_stock_release": false,
+    "a": {
+        "status": 201,
+        "code": null,
+        "operation": "order",
+        "order_id": 1,
+        "warehouse": "W1",
+        "elapsed_ms": 810.58,
+        "selection_timeout_ms": 5000,
+        "first_http_delay_ms": 49.36,
+        "lock_queries": [
+            {
+                "table": "users",
+                "duration_ms": 0.51
+            },
+            {
+                "table": "cart_items",
+                "duration_ms": 0.56
+            },
+            {
+                "table": "product_variants",
+                "duration_ms": 0.29
+            },
+            {
+                "table": "product_bundles",
+                "duration_ms": 0.4
+            },
+            {
+                "table": "warehouse_product_variants",
+                "duration_ms": 0.37
+            },
+            {
+                "table": "warehouses",
+                "duration_ms": 0.37
+            }
+        ],
+        "reported_database_errors": [],
+        "transactions_after_request": 0,
+        "orders_for_user": 1,
+        "cart_items_for_user": 0
+    },
+    "b": {
+        "status": 500,
+        "code": null,
+        "operation": "order",
+        "order_id": null,
+        "warehouse": null,
+        "elapsed_ms": 359.01,
+        "selection_timeout_ms": 5000,
+        "first_http_delay_ms": null,
+        "lock_queries": [
+            {
+                "table": "users",
+                "duration_ms": 0.52
+            },
+            {
+                "table": "cart_items",
+                "duration_ms": 0.67
+            },
+            {
+                "table": "product_variants",
+                "duration_ms": 0.22
+            },
+            {
+                "table": "product_bundles",
+                "duration_ms": 0.34
+            },
+            {
+                "table": "warehouse_product_variants",
+                "duration_ms": 0.35
+            }
+        ],
+        "reported_database_errors": [
+            {
+                "class": "Illuminate\\Database\\QueryException",
+                "sqlstate": "55P03"
+            }
+        ],
+        "transactions_after_request": 0,
+        "orders_for_user": 0,
+        "cart_items_for_user": 1
+    },
+    "upstream_reported_quantity_per_call": 1,
+    "total_ordered_quantity": 1,
+    "order_reservations_present": [
+        false
+    ]
+}

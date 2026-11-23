@@ -8,7 +8,8 @@ class CustomerExportController
 {
     public function __invoke()
     {
-        abort_unless(auth()->user()?->hasRole('super_admin'), 403);
+        $user = auth()->user();
+        abort_unless($user?->status === 'active' && $user->hasRole('super_admin'), 403);
 
         return response()->streamDownload(function (): void {
             $output = fopen('php://output', 'w');

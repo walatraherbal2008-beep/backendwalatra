@@ -1,0 +1,10 @@
+{
+    "cart": {
+        "database": "walatra_cart_concurrency_test_qc_20261123_bdb7a052",
+        "exit_code": 0
+    },
+    "payment": {
+        "database": "walatra_payment_concurrency_test_qc_20261123_bdb7a052",
+        "exit_code": 0
+    }
+}

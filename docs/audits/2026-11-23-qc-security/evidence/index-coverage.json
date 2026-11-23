@@ -1,0 +1,259 @@
+{
+  "content": [
+    {
+      "type": "text",
+      "text": "{\"project\":\"home-popes-Project-backendwalatra-remote\",\"signal\":\"best_effort\",\"indexed_at\":\"2026-11-23T02:54:41Z\",\"metadata\":{\"generation\":\"2026-11-23T02:54:41Z\",\"index_mode\":\"full\",\"recorded_at\":\"2026-11-23T02:54:41Z\",\"recording_status\":\"complete\",\"ignored_files_stored\":93,\"ignored_files_total\":93,\"hash_records_complete\":true,\"coverage_version\":9,\"generation_matches\":true},\"paths\":[{\"requested_path\":\"routes/api.php\",\"path\":\"routes/api.php\",\"status\":\"no_recorded_issue\",\"freshness\":\"metadata_match\",\"recommended_action\":\"use_graph_with_best_effort_caveat\",\"coverage\":[]},{\"requested_path\":\"routes/web.php\",\"path\":\"routes/web.php\",\"status\":\"no_recorded_issue\",\"freshness\":\"metadata_match\",\"recommended_action\":\"use_graph_with_best_effort_caveat\",\"coverage\":[]},{\"requested_path\":\"bootstrap/app.php\",\"path\":\"bootstrap/app.php\",\"status\":\"no_recorded_issue\",\"freshness\":\"metadata_match\",\"recommended_action\":\"use_graph_with_best_effort_caveat\",\"coverage\":[]},{\"requested_path\":\"app/Http/Controllers/Superadmin/CustomerExportController.php\",\"path\":\"app/Http/Controllers/Superadmin/CustomerExportController.php\",\"status\":\"no_recorded_issue\",\"freshness\":\"metadata_match\",\"recommended_action\":\"use_graph_with_best_effort_caveat\",\"coverage\":[]},{\"requested_path\":\"app/Models/User.php\",\"path\":\"app/Models/User.php\",\"status\":\"no_recorded_issue\",\"freshness\":\"metadata_match\",\"recommended_action\":\"use_graph_with_best_effort_caveat\",\"coverage\":[]},{\"requested_path\":\"app/Services/Warehouse/NearestWarehouseSelector.php\",\"path\":\"app/Services/Warehouse/NearestWarehouseSelector.php\",\"status\":\"no_recorded_issue\",\"freshness\":\"metadata_match\",\"recommended_action\":\"use_graph_with_best_effort_caveat\",\"coverage\":[]},{\"requested_path\":\"app/Services/Marketplace/CheckoutShippingOrigin.php\",\"path\":\"app/Services/Marketplace/CheckoutShippingOrigin.php\",\"status\":\"no_recorded_issue\",\"freshness\":\"metadata_match\",\"recommended_action\":\"use_graph_with_best_effort_caveat\",\"coverage\":[]},{\"requested_path\":\"app/Http/Controllers/Api/V1/OrderController.php\",\"path\":\"app/Http/Controllers/Api/V1/OrderController.php\",\"status\":\"no_recorded_issue\",\"freshness\":\"metadata_match\",\"recommended_action\":\"use_graph_with_best_effort_caveat\",\"coverage\":[]},{\"requested_path\":\"app/Http/Requests/Api/V1/UpdateCustomerProfileRequest.php\",\"path\":\"app/Http/Requests/Api/V1/UpdateCustomerProfileRequest.php\",\"status\":\"no_recorded_issue\",\"freshness\":\"metadata_match\",\"recommended_action\":\"use_graph_with_best_effort_caveat\",\"coverage\":[]},{\"requested_path\":\"app/Http/Middleware/AuditIncomingApiRequest.php\",\"path\":\"app/Http/Middleware/AuditIncomingApiRequest.php\",\"status\":\"no_recorded_issue\",\"freshness\":\"metadata_match\",\"recommended_action\":\"use_graph_with_best_effort_caveat\",\"coverage\":[]},{\"requested_path\":\"app/Services/ApiRequestAuditResponseFinalizer.php\",\"path\":\"app/Services/ApiRequestAuditResponseFinalizer.php\",\"status\":\"no_recorded_issue\",\"freshness\":\"metadata_match\",\"recommended_action\":\"use_graph_with_best_effort_caveat\",\"coverage\":[]},{\"requested_path\":\"app/Http/Controllers/Api/V1/PaymentController.php\",\"path\":\"app/Http/Controllers/Api/V1/PaymentController.php\",\"status\":\"no_recorded_issue\",\"freshness\":\"metadata_match\",\"recommended_action\":\"use_graph_with_best_effort_caveat\",\"coverage\":[]},{\"requested_path\":\"app/Http/Controllers/Api/V1/CartController.php\",\"path\":\"app/Http/Controllers/Api/V1/CartController.php\",\"status\":\"no_recorded_issue\",\"freshness\":\"metadata_match\",\"recommended_action\":\"use_graph_with_best_effort_caveat\",\"coverage\":[]},{\"requested_path\":\"app/Http/Controllers/Api/V1/CustomerAuthController.php\",\"path\":\"app/Http/Controllers/Api/V1/CustomerAuthController.php\",\"status\":\"no_recorded_issue\",\"freshness\":\"metadata_match\",\"recommended_action\":\"use_graph_with_best_effort_caveat\",\"coverage\":[]},{\"requested_path\":\"app/Support/ProductionSecurity.php\",\"path\":\"app/Support/ProductionSecurity.php\",\"status\":\"no_recorded_issue\",\"freshness\":\"metadata_match\",\"recommended_action\":\"use_graph_with_best_effort_caveat\",\"coverage\":[]},{\"requested_path\":\"app/Providers/HorizonServiceProvider.php\",\"path\":\"app/Providers/HorizonServiceProvider.php\",\"status\":\"no_recorded_issue\",\"freshness\":\"metadata_match\",\"recommended_action\":\"use_graph_with_best_effort_caveat\",\"coverage\":[]},{\"requested_path\":\"package-lock.json\",\"path\":\"package-lock.json\",\"status\":\"no_recorded_issue\",\"freshness\":\"not_tracked\",\"recommended_action\":\"read_source_and_reindex\",\"coverage\":[]},{\"requested_path\":\"composer.lock\",\"path\":\"composer.lock\",\"status\":\"no_recorded_issue\",\"freshness\":\"not_tracked\",\"recommended_action\":\"read_source_and_reindex\",\"coverage\":[]},{\"requested_path\":\".env\",\"path\":\".env\",\"status\":\"excluded\",\"freshness\":\"not_tracked\",\"recommended_action\":\"read_source_and_reindex\",\"coverage\":[{\"path\":\".env\",\"kind\":\"not_indexed_file\",\"match\":\"exact\",\"detail\":\"gitignore\"}]},{\"requested_path\":\".env.production.example\",\"path\":\".env.production.example\",\"status\":\"no_recorded_issue\",\"freshness\":\"metadata_match\",\"recommended_action\":\"use_graph_with_best_effort_caveat\",\"coverage\":[]},{\"requested_path\":\"phpunit.xml\",\"path\":\"phpunit.xml\",\"status\":\"no_recorded_issue\",\"freshness\":\"metadata_match\",\"recommended_action\":\"use_graph_with_best_effort_caveat\",\"coverage\":[]},{\"requested_path\":\"tests/Integration/CartCheckoutConcurrencyTest.php\",\"path\":\"tests/Integration/CartCheckoutConcurrencyTest.php\",\"status\":\"no_recorded_issue\",\"freshness\":\"metadata_match\",\"recommended_action\":\"use_graph_with_best_effort_caveat\",\"coverage\":[]},{\"requested_path\":\"tests/Integration/CorePaymentConcurrencyTest.php\",\"path\":\"tests/Integration/CorePaymentConcurrencyTest.php\",\"status\":\"no_recorded_issue\",\"freshness\":\"metadata_match\",\"recommended_action\":\"use_graph_with_best_effort_caveat\",\"coverage\":[]},{\"requested_path\":\"docs/audits/2026-11-23-qc-security/AuditProbeTest.php\",\"path\":\"docs/audits/2026-11-23-qc-security/AuditProbeTest.php\",\"status\":\"no_recorded_issue\",\"freshness\":\"metadata_match\",\"recommended_action\":\"use_graph_with_best_effort_caveat\",\"coverage\":[]},{\"requested_path\":\"docs/audits/2026-11-23-qc-security/WarehouseLockProbeTest.php\",\"path\":\"docs/audits/2026-11-23-qc-security/WarehouseLockProbeTest.php\",\"status\":\"no_recorded_issue\",\"freshness\":\"metadata_match\",\"recommended_action\":\"use_graph_with_best_effort_caveat\",\"coverage\":[]},{\"requested_path\":\"docs/audits/2026-11-23-qc-security/DiagnosedCartConcurrencyTest.php\",\"path\":\"docs/audits/2026-11-23-qc-security/DiagnosedCartConcurrencyTest.php\",\"status\":\"no_recorded_issue\",\"freshness\":\"metadata_match\",\"recommended_action\":\"use_graph_with_best_effort_caveat\",\"coverage\":[]},{\"requested_path\":\"docs/audits/2026-11-23-qc-security/run-postgres.php\",\"path\":\"docs/audits/2026-11-23-qc-security/run-postgres.php\",\"status\":\"no_recorded_issue\",\"freshness\":\"metadata_match\",\"recommended_action\":\"use_graph_with_best_effort_caveat\",\"coverage\":[]}],\"path_total\":27,\"path_returned\":27,\"path_has_more\":false,\"scopes\":[],\"scope_total\":0,\"scope_returned\":0,\"scope_truncated\":false,\"has_more\":false,\"caveat\":\"Best-effort signal only. No recorded issue does not prove graph or source completeness; read flagged source and qualify claims when metadata is changed or unavailable.\"}"
+    }
+  ],
+  "structuredContent": {
+    "project": "home-popes-Project-backendwalatra-remote",
+    "signal": "best_effort",
+    "indexed_at": "2026-11-23T02:54:41Z",
+    "metadata": {
+      "generation": "2026-11-23T02:54:41Z",
+      "index_mode": "full",
+      "recorded_at": "2026-11-23T02:54:41Z",
+      "recording_status": "complete",
+      "ignored_files_stored": 93,
+      "ignored_files_total": 93,
+      "hash_records_complete": true,
+      "coverage_version": 9,
+      "generation_matches": true
+    },
+    "paths": [
+      {
+        "requested_path": "routes/api.php",
+        "path": "routes/api.php",
+        "status": "no_recorded_issue",
+        "freshness": "metadata_match",
+        "recommended_action": "use_graph_with_best_effort_caveat",
+        "coverage": []
+      },
+      {
+        "requested_path": "routes/web.php",
+        "path": "routes/web.php",
+        "status": "no_recorded_issue",
+        "freshness": "metadata_match",
+        "recommended_action": "use_graph_with_best_effort_caveat",
+        "coverage": []
+      },
+      {
+        "requested_path": "bootstrap/app.php",
+        "path": "bootstrap/app.php",
+        "status": "no_recorded_issue",
+        "freshness": "metadata_match",
+        "recommended_action": "use_graph_with_best_effort_caveat",
+        "coverage": []
+      },
+      {
+        "requested_path": "app/Http/Controllers/Superadmin/CustomerExportController.php",
+        "path": "app/Http/Controllers/Superadmin/CustomerExportController.php",
+        "status": "no_recorded_issue",
+        "freshness": "metadata_match",
+        "recommended_action": "use_graph_with_best_effort_caveat",
+        "coverage": []
+      },
+      {
+        "requested_path": "app/Models/User.php",
+        "path": "app/Models/User.php",
+        "status": "no_recorded_issue",
+        "freshness": "metadata_match",
+        "recommended_action": "use_graph_with_best_effort_caveat",
+        "coverage": []
+      },
+      {
+        "requested_path": "app/Services/Warehouse/NearestWarehouseSelector.php",
+        "path": "app/Services/Warehouse/NearestWarehouseSelector.php",
+        "status": "no_recorded_issue",
+        "freshness": "metadata_match",
+        "recommended_action": "use_graph_with_best_effort_caveat",
+        "coverage": []
+      },
+      {
+        "requested_path": "app/Services/Marketplace/CheckoutShippingOrigin.php",
+        "path": "app/Services/Marketplace/CheckoutShippingOrigin.php",
+        "status": "no_recorded_issue",
+        "freshness": "metadata_match",
+        "recommended_action": "use_graph_with_best_effort_caveat",
+        "coverage": []
+      },
+      {
+        "requested_path": "app/Http/Controllers/Api/V1/OrderController.php",
+        "path": "app/Http/Controllers/Api/V1/OrderController.php",
+        "status": "no_recorded_issue",
+        "freshness": "metadata_match",
+        "recommended_action": "use_graph_with_best_effort_caveat",
+        "coverage": []
+      },
+      {
+        "requested_path": "app/Http/Requests/Api/V1/UpdateCustomerProfileRequest.php",
+        "path": "app/Http/Requests/Api/V1/UpdateCustomerProfileRequest.php",
+        "status": "no_recorded_issue",
+        "freshness": "metadata_match",
+        "recommended_action": "use_graph_with_best_effort_caveat",
+        "coverage": []
+      },
+      {
+        "requested_path": "app/Http/Middleware/AuditIncomingApiRequest.php",
+        "path": "app/Http/Middleware/AuditIncomingApiRequest.php",
+        "status": "no_recorded_issue",
+        "freshness": "metadata_match",
+        "recommended_action": "use_graph_with_best_effort_caveat",
+        "coverage": []
+      },
+      {
+        "requested_path": "app/Services/ApiRequestAuditResponseFinalizer.php",
+        "path": "app/Services/ApiRequestAuditResponseFinalizer.php",
+        "status": "no_recorded_issue",
+        "freshness": "metadata_match",
+        "recommended_action": "use_graph_with_best_effort_caveat",
+        "coverage": []
+      },
+      {
+        "requested_path": "app/Http/Controllers/Api/V1/PaymentController.php",
+        "path": "app/Http/Controllers/Api/V1/PaymentController.php",
+        "status": "no_recorded_issue",
+        "freshness": "metadata_match",
+        "recommended_action": "use_graph_with_best_effort_caveat",
+        "coverage": []
+      },
+      {
+        "requested_path": "app/Http/Controllers/Api/V1/CartController.php",
+        "path": "app/Http/Controllers/Api/V1/CartController.php",
+        "status": "no_recorded_issue",
+        "freshness": "metadata_match",
+        "recommended_action": "use_graph_with_best_effort_caveat",
+        "coverage": []
+      },
+      {
+        "requested_path": "app/Http/Controllers/Api/V1/CustomerAuthController.php",
+        "path": "app/Http/Controllers/Api/V1/CustomerAuthController.php",
+        "status": "no_recorded_issue",
+        "freshness": "metadata_match",
+        "recommended_action": "use_graph_with_best_effort_caveat",
+        "coverage": []
+      },
+      {
+        "requested_path": "app/Support/ProductionSecurity.php",
+        "path": "app/Support/ProductionSecurity.php",
+        "status": "no_recorded_issue",
+        "freshness": "metadata_match",
+        "recommended_action": "use_graph_with_best_effort_caveat",
+        "coverage": []
+      },
+      {
+        "requested_path": "app/Providers/HorizonServiceProvider.php",
+        "path": "app/Providers/HorizonServiceProvider.php",
+        "status": "no_recorded_issue",
+        "freshness": "metadata_match",
+        "recommended_action": "use_graph_with_best_effort_caveat",
+        "coverage": []
+      },
+      {
+        "requested_path": "package-lock.json",
+        "path": "package-lock.json",
+        "status": "no_recorded_issue",
+        "freshness": "not_tracked",
+        "recommended_action": "read_source_and_reindex",
+        "coverage": []
+      },
+      {
+        "requested_path": "composer.lock",
+        "path": "composer.lock",
+        "status": "no_recorded_issue",
+        "freshness": "not_tracked",
+        "recommended_action": "read_source_and_reindex",
+        "coverage": []
+      },
+      {
+        "requested_path": ".env",
+        "path": ".env",
+        "status": "excluded",
+        "freshness": "not_tracked",
+        "recommended_action": "read_source_and_reindex",
+        "coverage": [
+          {
+            "path": ".env",
+            "kind": "not_indexed_file",
+            "match": "exact",
+            "detail": "gitignore"
+          }
+        ]
+      },
+      {
+        "requested_path": ".env.production.example",
+        "path": ".env.production.example",
+        "status": "no_recorded_issue",
+        "freshness": "metadata_match",
+        "recommended_action": "use_graph_with_best_effort_caveat",
+        "coverage": []
+      },
+      {
+        "requested_path": "phpunit.xml",
+        "path": "phpunit.xml",
+        "status": "no_recorded_issue",
+        "freshness": "metadata_match",
+        "recommended_action": "use_graph_with_best_effort_caveat",
+        "coverage": []
+      },
+      {
+        "requested_path": "tests/Integration/CartCheckoutConcurrencyTest.php",
+        "path": "tests/Integration/CartCheckoutConcurrencyTest.php",
+        "status": "no_recorded_issue",
+        "freshness": "metadata_match",
+        "recommended_action": "use_graph_with_best_effort_caveat",
+        "coverage": []
+      },
+      {
+        "requested_path": "tests/Integration/CorePaymentConcurrencyTest.php",
+        "path": "tests/Integration/CorePaymentConcurrencyTest.php",
+        "status": "no_recorded_issue",
+        "freshness": "metadata_match",
+        "recommended_action": "use_graph_with_best_effort_caveat",
+        "coverage": []
+      },
+      {
+        "requested_path": "docs/audits/2026-11-23-qc-security/AuditProbeTest.php",
+        "path": "docs/audits/2026-11-23-qc-security/AuditProbeTest.php",
+        "status": "no_recorded_issue",
+        "freshness": "metadata_match",
+        "recommended_action": "use_graph_with_best_effort_caveat",
+        "coverage": []
+      },
+      {
+        "requested_path": "docs/audits/2026-11-23-qc-security/WarehouseLockProbeTest.php",
+        "path": "docs/audits/2026-11-23-qc-security/WarehouseLockProbeTest.php",
+        "status": "no_recorded_issue",
+        "freshness": "metadata_match",
+        "recommended_action": "use_graph_with_best_effort_caveat",
+        "coverage": []
+      },
+      {
+        "requested_path": "docs/audits/2026-11-23-qc-security/DiagnosedCartConcurrencyTest.php",
+        "path": "docs/audits/2026-11-23-qc-security/DiagnosedCartConcurrencyTest.php",
+        "status": "no_recorded_issue",
+        "freshness": "metadata_match",
+        "recommended_action": "use_graph_with_best_effort_caveat",
+        "coverage": []
+      },
+      {
+        "requested_path": "docs/audits/2026-11-23-qc-security/run-postgres.php",
+        "path": "docs/audits/2026-11-23-qc-security/run-postgres.php",
+        "status": "no_recorded_issue",
+        "freshness": "metadata_match",
+        "recommended_action": "use_graph_with_best_effort_caveat",
+        "coverage": []
+      }
+    ],
+    "path_total": 27,
+    "path_returned": 27,
+    "path_has_more": false,
+    "scopes": [],
+    "scope_total": 0,
+    "scope_returned": 0,
+    "scope_truncated": false,
+    "has_more": false,
+    "caveat": "Best-effort signal only. No recorded issue does not prove graph or source completeness; read flagged source and qualify claims when metadata is changed or unavailable."
+  },
+  "isError": false
+}

@@ -1,0 +1,28 @@
+PHPUnit 11.5.58 by Sebastian Bergmann and contributors.
+
+Runtime:       PHP 8.4.27
+Configuration: /home/popes/Project/backendwalatra-remote/phpunit.xml
+
+
+{"scenario":"shared_warehouse","statuses":[201,201],"b_elapsed_ms":511.67,"b_first_http_delay_ms":460.8}
+.
+{"scenario":"unused_overlap","statuses":[201,201],"b_elapsed_ms":452.39,"b_first_http_delay_ms":428.03}
+.
+{"scenario":"same_variant","statuses":[201,201],"b_elapsed_ms":590.91,"b_first_http_delay_ms":459.41}
+.
+{"scenario":"disjoint","statuses":[201,201],"b_elapsed_ms":81.5,"b_first_http_delay_ms":47.74}
+.
+{"scenario":"preview","statuses":[201,200],"b_elapsed_ms":288.47,"b_first_http_delay_ms":160.49}
+.
+{"scenario":"lock_timeout","statuses":[201,500],"b_elapsed_ms":359.01,"b_first_http_delay_ms":null}
+.
+{"scenario":"upstream_failure","statuses":[503,201],"b_elapsed_ms":566.15,"b_first_http_delay_ms":442.45}
+.
+{"scenario":"invalid_token","statuses":[422,201],"b_elapsed_ms":524.71,"b_first_http_delay_ms":420.05}
+.
+{"scenario":"sync_deadlock","sqlstates":["40P01"],"sync_status":200,"checkout_status":500}
+.                                                           9 / 9 (100%)
+
+Time: 00:38.139, Memory: 74.50 MB
+
+OK (9 tests, 220 assertions)
