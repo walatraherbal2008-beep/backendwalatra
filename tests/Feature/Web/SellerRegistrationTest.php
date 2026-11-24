@@ -6,6 +6,7 @@ use App\Models\MarketplaceSetting;
 use App\Models\OtpChallenge;
 use App\Models\Store;
 use App\Models\User;
+use App\Notifications\VerifyStoreAdminEmailNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
@@ -85,7 +86,7 @@ class SellerRegistrationTest extends TestCase
             'status' => 'pending_approval',
         ]);
         $this->assertTrue($member->fresh()->hasRole('store_admin'));
-        Notification::assertSentOnDemand(\App\Notifications\VerifyStoreAdminEmailNotification::class);
+        Notification::assertSentOnDemand(VerifyStoreAdminEmailNotification::class);
     }
 
     public function test_registration_requires_six_character_password(): void
@@ -105,6 +106,37 @@ class SellerRegistrationTest extends TestCase
         ])->assertSessionHasErrors('password');
 
         $this->assertDatabaseMissing('stores', ['name' => 'Toko Pendek']);
+    }
+
+    public function test_registration_saves_everpro_location_ids_and_labels(): void
+    {
+        $member = User::factory()->create(['email' => null]);
+        $location = [
+            'province_id' => 'province==', 'province' => 'Jawa Barat',
+            'city_id' => 'city=', 'city' => 'Bandung Barat',
+            'district_id' => 'district=', 'district' => 'Batujajar',
+            'sub_district_id' => 'sub-district=', 'sub_district_name' => 'Bojonghaleuang',
+            'postal_code' => '40561', 'address' => 'Jalan Toko Nomor 10',
+        ];
+
+        $this->actingAs($member)->post('/seller/register', [
+            'name' => 'Seller Alamat', 'email' => 'alamat@example.com',
+            'password' => 'rahasia6', 'store_name' => 'Toko Alamat', ...$location,
+        ])->assertRedirect(route('seller.register.status'));
+
+        $this->assertDatabaseHas('stores', ['owner_user_id' => $member->id, ...$location]);
+    }
+
+    public function test_partial_everpro_hierarchy_is_rejected_without_creating_a_store(): void
+    {
+        $member = User::factory()->create(['email' => null]);
+
+        $this->actingAs($member)->post('/seller/register', [
+            'name' => 'Seller Alamat', 'email' => 'alamat@example.com',
+            'password' => 'rahasia6', 'province_id' => 'province==', 'province' => 'Jawa Barat',
+        ])->assertSessionHasErrors(['city_id', 'district_id', 'sub_district_id']);
+
+        $this->assertDatabaseCount('stores', 0);
     }
 
     public function test_registration_can_be_disabled_by_superadmin_setting(): void

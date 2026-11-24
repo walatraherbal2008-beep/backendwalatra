@@ -8,9 +8,9 @@
         <title>{{ $title ?? 'Pendaftaran Seller | Walatra Herbal' }}</title>
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body class="min-h-screen bg-[#f8f5ec] text-[#173127] antialiased">
+    <body @class(['min-h-screen bg-[#f8f5ec] text-[#173127] antialiased', 'sr-page' => $registrationLayout ?? false])>
         <header class="border-b border-[#1d4d3a]/10 bg-[#fffdf8]/90">
-            <div class="mx-auto flex w-[min(100%-2rem,960px)] items-center justify-between py-5 sm:w-[min(100%-3rem,960px)]">
+            <div class="{{ ($registrationLayout ?? false) ? 'sr-header-inner' : 'mx-auto flex w-[min(100%-2rem,960px)] items-center justify-between py-5 sm:w-[min(100%-3rem,960px)]' }}">
                 <a href="{{ url('/') }}" class="font-serif text-xl font-semibold tracking-tight text-[#1d4d3a]">Walatra Herbal</a>
                 @auth
                     <form method="POST" action="{{ route('seller.logout') }}">
@@ -20,7 +20,7 @@
                 @endauth
             </div>
         </header>
-        <main class="mx-auto w-[min(100%-2rem,960px)] py-10 sm:w-[min(100%-3rem,960px)] sm:py-16">
+        <main class="{{ ($registrationLayout ?? false) ? 'sr-main' : 'mx-auto w-[min(100%-2rem,960px)] py-10 sm:w-[min(100%-3rem,960px)] sm:py-16' }}">
             @if(session('success'))
                 <div class="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800" role="status">{{ session('success') }}</div>
             @endif

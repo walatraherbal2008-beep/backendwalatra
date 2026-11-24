@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -80,8 +80,13 @@ class Store extends Model implements HasMedia
         'contact_phone',
         'contact_email',
         'province',
+        'province_id',
         'city',
+        'city_id',
         'district',
+        'district_id',
+        'sub_district_id',
+        'sub_district_name',
         'postal_code',
         'address',
         'latitude',

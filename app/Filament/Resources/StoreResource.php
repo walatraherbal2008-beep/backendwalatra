@@ -123,6 +123,7 @@ class StoreResource extends Resource
             TextInput::make('province')->maxLength(100),
             TextInput::make('city')->maxLength(100),
             TextInput::make('district')->maxLength(100),
+            TextInput::make('sub_district_name')->label('Kelurahan/Desa')->maxLength(100),
             TextInput::make('postal_code')->maxLength(10),
             Textarea::make('address')
                 ->label('Alamat')
