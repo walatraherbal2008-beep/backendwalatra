@@ -232,7 +232,10 @@ if (form) {
         const password = form.querySelector('#password');
         const visible = password.type === 'password';
         password.type = visible ? 'text' : 'password';
-        event.currentTarget.textContent = visible ? 'Sembunyikan' : 'Tampilkan';
+        const label = visible ? 'Sembunyikan password' : 'Tampilkan password';
+        event.currentTarget.setAttribute('aria-label', label);
+        event.currentTarget.setAttribute('title', label);
+        event.currentTarget.querySelector('[data-password-slash]').toggleAttribute('hidden', !visible);
         event.currentTarget.setAttribute('aria-pressed', String(visible));
     });
     form.addEventListener('submit', (event) => {

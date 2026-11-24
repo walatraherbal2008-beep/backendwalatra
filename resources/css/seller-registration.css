@@ -58,8 +58,8 @@
 .sr-field-error, .sr-location-feedback [data-error='true'] { margin: 7px 0 0; color: #a32d2d; font-size: .8125rem; line-height: 1.6; }
 .sr-error-summary { padding: 14px 16px; margin-bottom: 24px; border-left: 3px solid #a32d2d; background: #fff0ed; color: #7d2323; font-size: .875rem; line-height: 1.6; }
 .sr-password-field { position: relative; }
-.sr-password-field input { padding-right: 100px !important; }
-.sr-password-field button { position: absolute; top: 3px; right: 5px; min-height: 44px; padding-inline: 10px; border-radius: 5px; color: var(--sr-forest); font-size: .8125rem; font-weight: 600; cursor: pointer; }
+.sr-password-field input { padding-right: 56px !important; }
+.sr-password-field button { position: absolute; top: 3px; right: 5px; display: inline-flex; align-items: center; justify-content: center; width: 44px; min-height: 44px; border-radius: 5px; color: var(--sr-forest); cursor: pointer; }
 .sr-password-field button:hover { background: #edf2e9; }
 .sr-address-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
 .sr-location-feedback { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }

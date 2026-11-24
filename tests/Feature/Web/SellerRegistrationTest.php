@@ -11,6 +11,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Queue;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
@@ -163,5 +164,40 @@ class SellerRegistrationTest extends TestCase
             ->assertOk()
             ->assertSee($store->name)
             ->assertSee('Menunggu persetujuan');
+    }
+
+    #[DataProvider('storeStatusCases')]
+    public function test_status_page_reflects_the_current_store_status(string $status, string $label, string $heading): void
+    {
+        $member = User::factory()->create(['email_verified_at' => now()]);
+        $member->assignRole('store_admin');
+        Store::factory()->create(['owner_user_id' => $member->id, 'status' => $status]);
+
+        $response = $this->actingAs($member)->get('/seller/register/status')
+            ->assertOk()
+            ->assertSee($label)
+            ->assertSee($heading);
+
+        if ($status !== 'pending_approval') {
+            $response->assertDontSee('Menunggu persetujuan')->assertDontSee('Toko sedang diperiksa.');
+        }
+
+        if ($status === 'active') {
+            $response->assertSee('Buka panel toko');
+        } else {
+            $response->assertDontSee('Buka panel toko');
+        }
+    }
+
+    public static function storeStatusCases(): array
+    {
+        return [
+            'pending' => ['pending_approval', 'Menunggu persetujuan', 'Toko sedang diperiksa.'],
+            'approved' => ['active', 'Aktif', 'Toko Anda sudah disetujui.'],
+            'rejected' => ['rejected', 'Ditolak', 'Pengajuan toko ditolak.'],
+            'suspended' => ['suspended', 'Ditangguhkan', 'Toko Anda ditangguhkan.'],
+            'inactive' => ['inactive', 'Tidak aktif', 'Toko Anda tidak aktif.'],
+            'pending owner' => ['pending_owner', 'Menunggu pemilik member', 'Toko menunggu penetapan pemilik.'],
+        ];
     }
 }
